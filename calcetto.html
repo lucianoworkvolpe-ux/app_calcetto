@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Calcetto</title>
+<style>
+:root{
+  --green:#1a7a4a;--green-light:#e8f5ee;--green-mid:#2d9e62;
+  --blue:#1a5fa8;--blue-light:#deeaf8;
+  --amber:#b87000;--amber-light:#fff0cc;
+  --red:#c0392b;--red-light:#fdecea;
+  --gray:#f2f4f7;--gray2:#e4e7ec;--gray3:#c0c6d0;
+  --text:#151a22;--text2:#506070;--text3:#8a95a5;
+  --radius:14px;--radius-sm:9px;
+  --shadow:0 2px 10px rgba(0,0,0,0.09);--tr:0.16s ease;
+  /* role colours */
+  --att:#c0392b;   --att-light:#fdecea; --att-mid:#e05c5c;
+  --mid:#2e8b4a;   --mid-light:#e4f7ec; --mid-mid:#3aad5e;
+  --def:#1278b8;   --def-light:#daeef9; --def-mid:#2a9dd4;
+}
+@media(prefers-color-scheme:dark){:root{
+  --green:#27c46e;--green-light:#0a2218;--green-mid:#22a85a;
+  --blue:#4a9eff;--blue-light:#0a1c30;
+  --amber:#f0b030;--amber-light:#261800;
+  --red:#e05c4e;--red-light:#280d0a;
+  --gray:#181c24;--gray2:#232830;--gray3:#384050;
+  --text:#eaedf5;--text2:#8898aa;--text3:#586070;
+  --shadow:0 2px 10px rgba(0,0,0,0.32);
+  --att:#e05c4e;   --att-light:#280d0a; --att-mid:#e87060;
+  --mid:#2ecc70;   --mid-light:#082210; --mid-mid:#28b060;
+  --def:#4ab8f0;   --def-light:#061828; --def-mid:#38a8e0;
+}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:16px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--gray);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ─── header ─── */
+header{background:var(--green);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 14px rgba(0,0,0,0.2)}
+.logo{display:flex;align-items:center;gap:9px;font-size:18px;font-weight:800;letter-spacing:-0.4px}
+.logo svg{width:28px;height:28px;flex-shrink:0}
+.hdr-right{display:flex;gap:7px;align-items:center}
+.btn-icon{background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;transition:background var(--tr);white-space:nowrap;min-height:38px}
+.btn-icon:active{background:rgba(255,255,255,0.35)}
+
+/* ─── bottom nav (mobile-first) ─── */
+.bottom-nav{display:flex;background:#fff;border-top:1px solid var(--gray2);position:sticky;bottom:0;z-index:200}
+@media(prefers-color-scheme:dark){.bottom-nav{background:#181c24}}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;cursor:pointer;border:none;background:transparent;color:var(--text3);font-size:10px;font-weight:600;border-top:2px solid transparent;transition:color var(--tr),border-color var(--tr)}
+.bnav-item .bni{font-size:20px;line-height:1}
+.bnav-item.active{color:var(--green);border-top-color:var(--green)}
+
+/* ─── pages ─── */
+.page{display:none;padding:14px;padding-bottom:20px;max-width:800px;margin:0 auto}
+.page.active{display:block}
+.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+@media(prefers-color-scheme:dark){.card{background:#1e232e}}
+
+/* ─── player card ─── */
+.player-header{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;min-height:48px}
+.avatar{width:40px;height:40px;border-radius:50%;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.av-att{background:var(--att-light);color:var(--att)}
+.av-mid{background:var(--mid-light);color:var(--mid)}
+.av-def{background:var(--def-light);color:var(--def)}
+.av-multi{background:#f0eaf8;color:#6b3fa0}
+.av-none{background:var(--gray2);color:var(--text3)}
+.player-name-input{flex:1;border:none;background:transparent;font-size:15px;font-weight:700;color:var(--text);padding:0;outline:none;min-width:0;min-height:40px}
+.player-name-input:focus{border-bottom:2px solid var(--green)}
+.ovr-badge{font-size:12px;font-weight:800;padding:3px 9px;border-radius:99px;background:var(--green-light);color:var(--green);white-space:nowrap;flex-shrink:0}
+.chevron{font-size:14px;color:var(--text3);transition:transform var(--tr);flex-shrink:0}
+.chevron.open{transform:rotate(180deg)}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:6px;line-height:1;flex-shrink:0;min-height:40px;min-width:36px;display:flex;align-items:center;justify-content:center}
+.del-btn:active{color:var(--red)}
+
+/* ─── role toggles ─── */
+.role-section{margin:12px 0 0;padding-top:12px;border-top:1px solid var(--gray2)}
+.role-section-label{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:9px}
+.role-toggles{display:flex;gap:8px}
+.role-toggle{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border:2px solid;border-radius:var(--radius-sm);background:transparent;cursor:pointer;transition:all var(--tr);min-height:72px;justify-content:center}
+.role-toggle .rt-icon{font-size:20px}
+.role-toggle .rt-label{font-size:11px;font-weight:700}
+.role-toggle .rt-check{width:18px;height:18px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all var(--tr)}
+
+/* ATT — always red border, red label; filled when active */
+.role-toggle.role-att{border-color:var(--att-mid)}
+.role-toggle.role-att .rt-label{color:var(--att)}
+.role-toggle.role-att .rt-check{border-color:var(--att-mid);color:transparent}
+.role-toggle.role-att.tog-att{background:var(--att-light)}
+.role-toggle.role-att.tog-att .rt-check{background:var(--att-mid);border-color:var(--att-mid);color:#fff}
+
+/* MED — always green border, green label; filled when active */
+.role-toggle.role-mid{border-color:var(--mid-mid)}
+.role-toggle.role-mid .rt-label{color:var(--mid)}
+.role-toggle.role-mid .rt-check{border-color:var(--mid-mid);color:transparent}
+.role-toggle.role-mid.tog-mid{background:var(--mid-light)}
+.role-toggle.role-mid.tog-mid .rt-check{background:var(--mid-mid);border-color:var(--mid-mid);color:#fff}
+
+/* DIF — always sky border, sky label; filled when active */
+.role-toggle.role-def{border-color:var(--def-mid)}
+.role-toggle.role-def .rt-label{color:var(--def)}
+.role-toggle.role-def .rt-check{border-color:var(--def-mid);color:transparent}
+.role-toggle.role-def.tog-def{background:var(--def-light)}
+.role-toggle.role-def.tog-def .rt-check{background:var(--def-mid);border-color:var(--def-mid);color:#fff}
+.role-pills-display{display:flex;gap:3px;flex-wrap:wrap}
+.rp{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px}
+.rp-att{background:var(--att-light);color:var(--att)}
+.rp-mid{background:var(--mid-light);color:var(--mid)}
+.rp-def{background:var(--def-light);color:var(--def)}
+
+/* ─── stats grid ─── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px 18px;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray2)}
+.stat-row{display:flex;align-items:center;gap:6px}
+.stat-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
+.stat-name{font-size:12px;color:var(--text2);width:70px;flex-shrink:0;text-transform:capitalize}
+.stat-input{width:44px;font-size:14px;font-weight:700;padding:4px 4px;border:1.5px solid var(--gray2);border-radius:7px;background:var(--gray);color:var(--text);text-align:center;min-height:36px}
+.stat-input:focus{outline:none;border-color:var(--green)}
+.mini-bar{flex:1;height:5px;background:var(--gray2);border-radius:3px;overflow:hidden}
+.mini-bar-fill{height:100%;background:var(--green-mid);border-radius:3px;transition:width 0.2s}
+
+/* ─── partita setup ─── */
+.section-header{font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px}
+
+/* format grid: 3 base formats + asymmetric toggle row */
+.format-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.format-btn{padding:10px 4px;border:2px solid var(--gray2);border-radius:var(--radius-sm);background:transparent;font-size:14px;font-weight:800;cursor:pointer;color:var(--text2);transition:all var(--tr);text-align:center;min-height:48px}
+.format-btn.active{background:var(--green-light);border-color:var(--green);color:var(--green)}
+.format-sub{font-size:10px;font-weight:500;display:block;margin-top:1px;opacity:.7}
+.asym-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--gray2);margin-top:4px}
+.asym-label{font-size:12px;color:var(--text2);flex:1}
+.asym-toggle{position:relative;width:42px;height:24px;flex-shrink:0}
+.asym-toggle input{opacity:0;width:0;height:0;position:absolute}
+.asym-track{display:block;width:42px;height:24px;background:var(--gray3);border-radius:12px;cursor:pointer;transition:background var(--tr)}
+.asym-toggle input:checked + .asym-track{background:var(--green)}
+.asym-knob{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform var(--tr);pointer-events:none}
+.asym-toggle input:checked ~ .asym-knob{transform:translateX(18px)}
+.format-display{font-size:22px;font-weight:800;color:var(--green);text-align:center;margin:4px 0 8px;letter-spacing:1px}
+.format-hint{font-size:11px;color:var(--text3);text-align:center;margin-bottom:4px}
+
+/* ─── asym adj buttons ─── */
+.adj-btn{width:32px;height:32px;border-radius:8px;border:none;background:rgba(0,0,0,0.1);color:inherit;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background var(--tr)}
+.adj-btn:active{background:rgba(0,0,0,0.22)}
+
+/* convocati */
+.conv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px;margin-top:8px}
+@media(max-width:360px){.conv-grid{grid-template-columns:1fr 1fr}}
+.conv-item{
+  display:flex;align-items:center;gap:10px;padding:10px 11px;
+  border-radius:var(--radius-sm);border:2px solid var(--gray2);
+  background:#fff;cursor:pointer;transition:border-color var(--tr),box-shadow var(--tr);
+  user-select:none;min-height:54px;
+}
+@media(prefers-color-scheme:dark){.conv-item{background:#1e232e}}
+.conv-item:hover{border-color:var(--gray3)}
+/* selected: unico colore verde per tutti */
+.conv-item.sel{border-color:var(--green);box-shadow:inset 0 0 0 1px var(--green)}
+.conv-item.sel .conv-check{background:var(--green);border-color:var(--green);color:#fff}
+.conv-avatar{width:42px;height:42px;border-radius:50%;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative}
+.conv-avatar .ovr-dot{position:absolute;bottom:-3px;right:-3px;background:#1a1d23;color:#fff;font-size:9px;font-weight:800;border-radius:99px;padding:1px 4px;line-height:1.4;border:1.5px solid #fff;white-space:nowrap}
+@media(prefers-color-scheme:dark){.conv-avatar .ovr-dot{background:#e8eaf0;color:#1a1d23;border-color:var(--gray2)}}
+.conv-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.conv-name{font-size:14px;font-weight:700;color:var(--text);white-space:normal;word-break:break-word;line-height:1.2}
+.conv-roles{display:flex;gap:3px;flex-wrap:wrap}
+.conv-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--gray3);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;transition:all var(--tr)}
+.conv-status{font-size:13px;color:var(--text2);margin:10px 0 0;text-align:center}
+.cnt{font-weight:800;color:var(--green)}
+.cnt.warn{color:var(--red)}
+
+/* ─── buttons ─── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 20px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:14px;font-weight:700;transition:opacity var(--tr),transform var(--tr);min-height:48px;white-space:nowrap}
+.btn:active{transform:scale(0.96)}
+.btn-primary{background:var(--green);color:#fff}
+.btn-primary:active{opacity:.88}
+.btn-secondary{background:var(--gray2);color:var(--text)}
+.btn-danger{background:var(--red-light);color:var(--red)}
+.btn-full{width:100%}
+.btn-sm{padding:8px 14px;font-size:12px;min-height:38px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ─── pitch ─── */
+.pitch-wrap{background:#1b5e2d;border-radius:var(--radius);overflow:visible;box-shadow:var(--shadow);margin-bottom:12px}
+.pitch-title-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(0,0,0,0.22);border-radius:var(--radius) var(--radius) 0 0}
+.pitch-title{color:#fff;font-size:14px;font-weight:800}
+.pitch-legend{display:flex;gap:12px}
+.pitch-legend span{color:rgba(255,255,255,0.85);font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px}
+.dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)}
+
+/* ─── result ─── */
+.team-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+@media(max-width:420px){.team-row{grid-template-columns:1fr}}
+.team-card{border-radius:var(--radius);padding:12px}
+.team-blue{background:var(--blue-light)}
+.team-amber{background:var(--amber-light)}
+.team-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.team-nm{font-size:14px;font-weight:800}
+.team-nm.bl{color:var(--blue)}
+.team-nm.am{color:var(--amber)}
+.media-pill{font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px}
+.mp-bl{background:#b8d4f5;color:var(--blue)}
+.mp-am{background:#ffc940;color:#5a3800}
+.pchip{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;margin-bottom:4px;font-size:13px;font-weight:600;min-height:36px}
+.pc-bl{background:rgba(26,95,168,0.13);color:var(--blue)}
+.pc-am{background:rgba(184,112,0,0.13);color:var(--amber)}
+.role-divider{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;opacity:.5;margin:7px 0 3px 2px}
+.cmp-row{display:flex;align-items:center;gap:5px;margin-bottom:5px;font-size:12px}
+.cmp-v{width:28px;text-align:right;font-weight:800}
+.cmp-v.bl{color:var(--blue)}
+.cmp-v.am{color:var(--amber)}
+.cmp-bar{flex:1;display:flex;align-items:center;gap:3px}
+.cmp-lbl{font-size:10px;color:var(--text3);min-width:56px;text-align:center}
+.cf-bl{height:6px;background:var(--blue);border-radius:3px 0 0 3px}
+.cf-am{height:6px;background:var(--amber);border-radius:0 3px 3px 0}
+.balance-row{text-align:center;margin:10px 0;font-size:13px}
+.pill-ok{background:#d0f5e0;color:#0e5028;padding:4px 14px;border-radius:99px;font-weight:800}
+.pill-warn{background:#fff0b0;color:#6a4000;padding:4px 14px;border-radius:99px;font-weight:800}
+.combo-nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:10px}
+.combo-btn{background:var(--gray2);border:none;border-radius:var(--radius-sm);padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;color:var(--text);min-height:44px}
+.combo-idx{font-size:13px;color:var(--text2);font-weight:600}
+
+/* ─── module picker ─── */
+.module-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-bottom:4px}
+.mod-btn{background:rgba(255,255,255,0.06);border:2px solid var(--gray2);border-radius:var(--radius-sm);padding:6px;cursor:pointer;transition:all var(--tr);display:flex;flex-direction:column;align-items:center;gap:5px}
+@media(prefers-color-scheme:dark){.mod-btn{background:rgba(255,255,255,0.04)}}
+.mod-btn:active{transform:scale(0.95)}
+.mod-btn.mod-active{border-color:var(--green);background:var(--green-light)}
+.mod-preview{width:100%;aspect-ratio:90/58}
+.mod-label{font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.2px}
+.mod-btn.mod-active .mod-label{color:var(--green)}
+
+/* ─── settings ─── */
+.weight-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.weight-label{font-size:13px;color:var(--text);width:96px;display:flex;align-items:center;gap:5px;flex-shrink:0}
+.weight-input{flex:1;accent-color:var(--green);cursor:pointer;height:20px}
+.weight-val{font-size:13px;font-weight:800;width:28px;text-align:right;color:var(--green)}
+
+/* ─── toast ─── */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);background:#151a22;color:#fff;padding:10px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;opacity:0;transition:all 0.25s;z-index:999;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+input[type=file]{display:none}
+
+/* ─── empty state ─── */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text2)}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.empty-text{font-size:14px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 28 28" fill="none">
+      <circle cx="14" cy="14" r="13" stroke="white" stroke-width="1.5"/>
+      <path d="M14 1L14 27M1 14L27 14" stroke="white" stroke-width="1" opacity="0.4"/>
+      <path d="M5 5Q14 10 23 5Q18 14 23 23Q14 18 5 23Q10 14 5 5Z" fill="white" opacity="0.9"/>
+    </svg>
+    Calcetto
+  </div>
+  <div class="hdr-right">
+    <button class="btn-icon" onclick="exportJSON()">⬇ Salva</button>
+    <button class="btn-icon" onclick="document.getElementById('imp').click()">⬆ Carica</button>
+    <input type="file" id="imp" accept=".json" onchange="importJSON(event)">
+  </div>
+</header>
+
+<!-- ══════ PAGES ══════ -->
+
+<div id="page-rosa" class="page active">
+  <div id="players-list"></div>
+  <div class="btn-row" style="margin-top:4px">
+    <button class="btn btn-secondary" style="flex:1" onclick="addPlayer()">+ Aggiungi giocatore</button>
+  </div>
+</div>
+
+<div id="page-partita" class="page">
+  <!-- Setup card -->
+  <div class="card">
+    <div class="section-header">Formato partita</div>
+
+    <!-- 3 base formats -->
+    <div class="format-grid">
+      <button class="format-btn active" id="fmt-5" onclick="setBaseFormat(5)">
+        5 vs 5<span class="format-sub">10 gioc.</span>
+      </button>
+      <button class="format-btn" id="fmt-6" onclick="setBaseFormat(6)">
+        6 vs 6<span class="format-sub">12 gioc.</span>
+      </button>
+      <button class="format-btn" id="fmt-7" onclick="setBaseFormat(7)">
+        7 vs 7<span class="format-sub">14 gioc.</span>
+      </button>
+    </div>
+
+    <!-- asymmetric toggle -->
+    <div class="asym-row">
+      <span class="asym-label">⚖️ Squadre asimmetriche (es. 5 vs 6)</span>
+      <label class="asym-toggle">
+        <input type="checkbox" id="asym-check" onchange="toggleAsym()">
+        <span class="asym-track"></span>
+        <span class="asym-knob"></span>
+      </label>
+    </div>
+
+    <!-- asymmetric spinners, hidden by default -->
+    <div id="asym-controls" style="display:none;gap:10px;align-items:center;justify-content:center;padding:10px 0 4px;flex-wrap:wrap">
+      <!-- Team A -->
+      <div style="display:flex;align-items:center;gap:8px;background:var(--blue-light);border-radius:var(--radius-sm);padding:8px 12px">
+        <span style="font-size:12px;font-weight:700;color:var(--blue);min-width:52px">🔵 Blu</span>
+        <button class="adj-btn" onclick="adjTeam('A',-1)">−</button>
+        <span id="sz-a" style="font-size:22px;font-weight:800;color:var(--blue);min-width:24px;text-align:center">5</span>
+        <button class="adj-btn" onclick="adjTeam('A',1)">+</button>
+      </div>
+      <div style="font-size:18px;color:var(--text3);font-weight:300">vs</div>
+      <!-- Team B -->
+      <div style="display:flex;align-items:center;gap:8px;background:var(--amber-light);border-radius:var(--radius-sm);padding:8px 12px">
+        <button class="adj-btn" onclick="adjTeam('B',-1)">−</button>
+        <span id="sz-b" style="font-size:22px;font-weight:800;color:var(--amber);min-width:24px;text-align:center">6</span>
+        <button class="adj-btn" onclick="adjTeam('B',1)">+</button>
+        <span style="font-size:12px;font-weight:700;color:var(--amber);min-width:52px;text-align:right">Arancio 🟠</span>
+      </div>
+    </div>
+
+    <div class="format-display" id="format-display">5 vs 5</div>
+    <div class="format-hint" id="format-hint">Seleziona <strong id="needed-n">10</strong> giocatori</div>
+
+    <!-- convocati -->
+    <div class="section-header" style="margin-top:14px">Convocati</div>
+    <div class="btn-row" style="margin-bottom:8px">
+      <button class="btn btn-secondary btn-sm" onclick="selectFirst()">✓ Seleziona i primi <span id="sfn">10</span></button>
+      <button class="btn btn-secondary btn-sm" onclick="clearSel()">✕ Tutti</button>
+    </div>
+    <div class="conv-grid" id="conv-list"></div>
+    <div class="conv-status">Selezionati: <span class="cnt" id="sel-cnt">0</span> / <span id="needed-n2">10</span> richiesti</div>
+  </div>
+
+  <button class="btn btn-primary btn-full" style="margin-bottom:14px" onclick="generateTeams()">⚽ Genera squadre bilanciate</button>
+
+  <div id="partita-result" style="display:none">
+    <!-- pitch -->
+    <div class="pitch-wrap">
+      <div class="pitch-title-bar">
+        <span class="pitch-title">Campo</span>
+        <div class="pitch-legend">
+          <span><div class="dot" style="background:#3a8fef"></div>Blu</span>
+          <span><div class="dot" style="background:#e8a020"></div>Arancio</span>
+        </div>
+      </div>
+      <svg id="pitch-svg" class="pitch" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <!-- teams -->
+    <div class="team-row">
+      <div class="team-card team-blue">
+        <div class="team-hd"><span class="team-nm bl">🔵 Blu</span><span class="media-pill mp-bl" id="avg-a">—</span></div>
+        <div style="font-size:11px;color:var(--blue);font-weight:700;opacity:.7;margin-bottom:7px" id="mod-label-a"></div>
+        <div id="chips-a"></div>
+      </div>
+      <div class="team-card team-amber">
+        <div class="team-hd"><span class="team-nm am">🟠 Arancio</span><span class="media-pill mp-am" id="avg-b">—</span></div>
+        <div style="font-size:11px;color:var(--amber);font-weight:700;opacity:.7;margin-bottom:7px" id="mod-label-b"></div>
+        <div id="chips-b"></div>
+      </div>
+    </div>
+
+    <!-- stats compare -->
+    <div class="card">
+      <div class="section-header" style="margin-bottom:10px">Confronto statistiche</div>
+      <div id="stat-cmp"></div>
+    </div>
+
+    <div class="balance-row" id="bal-row"></div>
+    <div class="combo-nav">
+      <button class="combo-btn" onclick="prevC()">◀</button>
+      <div style="text-align:center">
+        <div class="combo-idx" id="combo-idx">1 / 1</div>
+        <div style="font-size:11px;font-weight:600;margin-top:2px" id="combo-quality"></div>
+      </div>
+      <button class="combo-btn" onclick="nextC()">▶</button>
+    </div>
+  </div>
+</div>
+
+<div id="page-settings" class="page">
+  <div class="card">
+    <div id="settings-inner"></div>
+  </div>
+</div>
+
+<!-- bottom nav -->
+<nav class="bottom-nav">
+  <button class="bnav-item active" id="bnav-rosa" onclick="showPage('rosa')">
+    <span class="bni">👥</span>Rosa
+  </button>
+  <button class="bnav-item" id="bnav-partita" onclick="showPage('partita')">
+    <span class="bni">⚽</span>Partita
+  </button>
+  <button class="bnav-item" id="bnav-settings" onclick="showPage('settings')">
+    <span class="bni">⚙️</span>Settings
+  </button>
+</nav>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ════════════════════════════════════
+   CONSTANTS
+════════════════════════════════════ */
+const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta'];
+const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤'];
+const ROLES=['ATT','MED','DIF'];
+const RLBL={ATT:'Attacco',MED:'Centrocampo',DIF:'Difesa'};
+const RICO={ATT:'⚔️',MED:'🔀',DIF:'🛡️'};
+
+// ── MODULES ──────────────────────────────────────────────────────────────────
+// Each module: { name, notation, slots[] }
+// slots: {role:'DIF'|'MED'|'ATT', x:0..1, y:0..1}
+// x=0→own goal (GK end), x=1→opponent goal; y=0→top, y=1→bottom
+// First slot is always the goalkeeper (DIF, x≈0.08, y=0.5)
+
+function makeSlots(por, def, mid, att){
+  // por=1 always (goalkeeper), def/mid/att = outfield counts
+  const s=[];
+  // GK
+  s.push({role:'DIF',x:0.07,y:0.50});
+  // spread n players in a band at x, vertically centered
+  function band(count, x, role){
+    if(count===0) return;
+    for(let i=0;i<count;i++) s.push({role, x, y:(i+0.5)/count});
+  }
+  band(def, 0.28, 'DIF');
+  band(mid, 0.55, 'MED');
+  band(att, 0.82, 'ATT');
+  return s;
+}
+
+const MODULES={
+  // 5vs5: POR + outfield = 5 total → makeSlots(1, def, mid, att) where def+mid+att=4
+  5:[
+    {notation:'1-1-2-1', desc:'equilibrato/offensivo',  slots:makeSlots(1,1,2,1)},
+    {notation:'1-2-1-1', desc:'più coperto',            slots:makeSlots(1,2,1,1)},
+    {notation:'1-2-2-0', desc:'senza punta, palleggio', slots:makeSlots(1,2,2,0)},
+  ],
+  // 6vs6: POR + outfield = 6 → def+mid+att=5
+  6:[
+    {notation:'1-2-2-1', desc:'equilibrato',            slots:makeSlots(1,2,2,1)},
+    {notation:'1-3-1-1', desc:'difensivo',              slots:makeSlots(1,3,1,1)},
+    {notation:'1-2-3-0', desc:'centrocampo folto',      slots:makeSlots(1,2,3,0)},
+    {notation:'1-1-3-1', desc:'offensivo/possesso',     slots:makeSlots(1,1,3,1)},
+  ],
+  // 7vs7: POR + outfield = 7 → def+mid+att=6
+  7:[
+    {notation:'1-3-2-1', desc:'equilibrato/coperto',    slots:makeSlots(1,3,2,1)},
+    {notation:'1-2-3-1', desc:'più centrocampo',        slots:makeSlots(1,2,3,1)},
+    {notation:'1-2-2-2', desc:'più offensivo',          slots:makeSlots(1,2,2,2)},
+  ],
+};
+
+// fallback for sizes not covered by MODULES (asymmetric teams)
+const SLOT_FALLBACK={
+  1:[{role:'ATT',x:0.5,y:0.5}],
+  2:[{role:'DIF',x:0.25,y:0.5},{role:'ATT',x:0.75,y:0.5}],
+  3:makeSlots(1,1,0,1),
+  4:makeSlots(1,1,1,1),
+  5:MODULES[5][0].slots,
+  6:MODULES[6][0].slots,
+  7:MODULES[7][0].slots,
+  8:makeSlots(1,2,2,2),
+};
+
+/* ════════════════════════════════════
+   STATE
+════════════════════════════════════ */
+let players=[], weights=STATS.map(()=>1);
+let sizeA=5, sizeB=5, asymMode=false;
+let selected=new Set(), allCombos=[], currentIdx=0;
+
+/* ════════════════════════════════════
+   DEFAULTS
+════════════════════════════════════ */
+function defaultPlayers(){
+  const nm=['Marco','Luca','Gianni','Fabio','Enzo','Davide','Matteo','Andrea','Simone','Roberto','Claudio','Stefano','Paolo','Riccardo','Nicola'];
+  const rl=[['ATT'],['DIF'],['MED'],['DIF'],['ATT','MED'],['MED'],['ATT'],['DIF','MED'],['MED'],['ATT'],['DIF'],['MED'],['ATT'],['DIF'],['MED','ATT']];
+  const vs=[
+    [7,6,8,7,8,6,9,5,7,4],[6,8,7,6,5,7,6,8,6,5],[8,7,9,8,7,8,7,6,8,3],[5,9,6,5,4,6,5,9,5,6],[7,6,7,8,9,7,9,5,7,4],
+    [6,7,8,7,7,9,7,6,8,3],[5,5,6,9,7,5,8,4,6,5],[8,6,7,6,5,7,5,9,6,7],[6,8,6,7,6,8,6,7,7,4],[7,7,8,8,8,6,9,5,7,5],
+    [6,8,5,6,5,6,5,9,5,8],[7,6,7,7,7,8,7,7,7,4],[8,5,8,8,9,5,9,4,8,3],[5,9,5,5,4,6,4,9,5,7],[6,7,7,6,6,8,6,7,7,5]
+  ];
+  return nm.map((n,i)=>({name:n,roles:[...rl[i]],stats:[...vs[i]]}));
+}
+
+/* ════════════════════════════════════
+   STORAGE
+════════════════════════════════════ */
+function save(){
+  localStorage.setItem('calc5_p',JSON.stringify(players));
+  localStorage.setItem('calc5_w',JSON.stringify(weights));
+  localStorage.setItem('calc5_fmt',JSON.stringify({sizeA,sizeB,asymMode}));
+}
+function load(){
+  try{
+    const rp=localStorage.getItem('calc5_p');
+    players=rp?JSON.parse(rp):defaultPlayers();
+    players.forEach(p=>{
+      if(!p.roles){p.roles=p.role?[p.role]:['MED'];delete p.role;}
+      if(!Array.isArray(p.roles))p.roles=[p.roles];
+      if(p.roles.length===0)p.roles=['MED'];
+      // migrate old players with fewer stats — pad with 5
+      while(p.stats.length<STATS.length)p.stats.push(5);
+    });
+    const rw=localStorage.getItem('calc5_w');if(rw)weights=JSON.parse(rw);
+    const rf=localStorage.getItem('calc5_fmt');
+    if(rf){const f=JSON.parse(rf);sizeA=f.sizeA||5;sizeB=f.sizeB||5;asymMode=!!f.asymMode;}
+  }catch(e){players=defaultPlayers();}
+}
+
+/* ════════════════════════════════════
+   HELPERS
+════════════════════════════════════ */
+function ini(n){return(n||'?').substring(0,2).toUpperCase()}
+function primaryRole(p){return p.roles[0]||'MED'}
+function avCls(p){
+  const r=p.roles;
+  if(!r||r.length===0)return 'av-none';
+  if(r.length>1)return 'av-multi';
+  return r[0]==='ATT'?'av-att':r[0]==='DIF'?'av-def':'av-mid';
+}
+function calcOvr(stats){const tot=weights.reduce((a,b)=>a+b,0)||1;return stats.reduce((s,v,i)=>s+v*weights[i],0)/tot}
+function wScore(p){return calcOvr(p.stats)}
+function neededTotal(){return sizeA+sizeB}
+
+/* ════════════════════════════════════
+   ROSA
+════════════════════════════════════ */
+function buildRosa(){
+  const c=document.getElementById('players-list');c.innerHTML='';
+  players.forEach((p,i)=>{
+    const ovr=calcOvr(p.stats).toFixed(1);
+    const roleMap={ATT:'att',MED:'mid',DIF:'def'};
+    const toggles=ROLES.map(r=>{
+      const on=p.roles.includes(r);
+      const baseCls=`role-toggle role-${roleMap[r]}${on?' tog-'+roleMap[r]:''}`;
+      return `<button class="${baseCls}" onclick="toggleRole(${i},'${r}',event)">
+        <span class="rt-icon">${RICO[r]}</span>
+        <span class="rt-label">${RLBL[r]}</span>
+        <div class="rt-check">${on?'✓':''}</div>
+      </button>`;
+    }).join('');
+    let sg='<div class="stats-grid">';
+    STATS.forEach((s,j)=>{
+      sg+=`<div class="stat-row">
+        <span class="stat-icon">${ICONS[j]}</span>
+        <span class="stat-name">${s}</span>
+        <input class="stat-input" type="number" min="1" max="10" step="1" value="${p.stats[j]}" inputmode="numeric" oninput="upStat(${i},${j},this.value)">
+        <div class="mini-bar"><div class="mini-bar-fill" id="b${i}-${j}" style="width:${p.stats[j]*10}%"></div></div>
+      </div>`;
+    });
+    sg+='</div>';
+    const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
+    const d=document.createElement('div');d.className='card';
+    d.innerHTML=`<div class="player-header" onclick="toggleCard(${i})">
+      <div class="avatar ${avCls(p)}" id="av${i}">${ini(p.name)}</div>
+      <input class="player-name-input" type="text" value="${p.name}" placeholder="Nome"
+        oninput="upName(${i},this.value)" onclick="event.stopPropagation()">
+      <div class="role-pills-display" id="rpills${i}">${pills}</div>
+      <span class="ovr-badge" id="ov${i}">OVR ${ovr}</span>
+      <button class="del-btn" onclick="delPlayer(${i},event)">✕</button>
+      <span class="chevron" id="ch${i}">▾</span>
+    </div>
+    <div id="cd${i}" style="display:none">
+      <div class="role-section">
+        <div class="role-section-label">Ruoli (anche più di uno)</div>
+        <div class="role-toggles">${toggles}</div>
+      </div>${sg}
+    </div>`;
+    c.appendChild(d);
+  });
+}
+function toggleCard(i){
+  const e=document.getElementById('cd'+i),ch=document.getElementById('ch'+i),o=e.style.display!=='none';
+  e.style.display=o?'none':'block';ch.className=o?'chevron':'chevron open';
+}
+function upName(i,v){players[i].name=v;document.getElementById('av'+i).textContent=ini(v);save();buildConvList()}
+function upStat(i,j,v){
+  const n=Math.min(10,Math.max(1,parseFloat(v)||1));
+  players[i].stats[j]=n;
+  document.getElementById('b'+i+'-'+j).style.width=(n*10)+'%';
+  document.getElementById('ov'+i).textContent='OVR '+calcOvr(players[i].stats).toFixed(1);
+  save();
+}
+function toggleRole(i,r,e){
+  e.stopPropagation();
+  const idx=players[i].roles.indexOf(r);
+  if(idx>=0){if(players[i].roles.length===1){toast('Almeno un ruolo è richiesto');return}players[i].roles.splice(idx,1);}
+  else players[i].roles.push(r);
+  save();buildRosa();buildConvList();
+  const cd=document.getElementById('cd'+i);if(cd){cd.style.display='block';document.getElementById('ch'+i).className='chevron open';}
+}
+function delPlayer(i,e){
+  e.stopPropagation();
+  if(players.length<=2){toast('Minimo 2 giocatori');return}
+  if(confirm('Rimuovere '+players[i].name+'?')){players.splice(i,1);selected.clear();save();buildRosa();buildConvList();}
+}
+function addPlayer(){players.push({name:'Giocatore '+(players.length+1),roles:['MED'],stats:STATS.map(()=>5)});save();buildRosa();buildConvList();toast('Giocatore aggiunto')}
+function confirmReset(){if(confirm('Resettare la rosa?')){players=defaultPlayers();selected.clear();save();buildRosa();buildConvList();toast('Reset effettuato')}}
+
+/* ════════════════════════════════════
+   FORMAT PICKER
+════════════════════════════════════ */
+function setBaseFormat(n){
+  sizeA=n;sizeB=n;
+  [5,6,7].forEach(x=>{const b=document.getElementById('fmt-'+x);if(b)b.classList.toggle('active',x===n)});
+  save();updateFormatUI();buildConvList();
+}
+function toggleAsym(){
+  asymMode=document.getElementById('asym-check').checked;
+  const ctrl=document.getElementById('asym-controls');
+  ctrl.style.display=asymMode?'flex':'none';
+  if(asymMode){sizeB=sizeA+1;updateAsymDisplay();}
+  else{sizeB=sizeA;}
+  save();updateFormatUI();buildConvList();
+}
+function adjTeam(team,delta){
+  if(team==='A'){sizeA=Math.max(1,Math.min(8,sizeA+delta));}
+  else{sizeB=Math.max(1,Math.min(8,sizeB+delta));}
+  updateAsymDisplay();save();updateFormatUI();buildConvList();
+}
+function updateAsymDisplay(){
+  document.getElementById('sz-a').textContent=sizeA;
+  document.getElementById('sz-b').textContent=sizeB;
+}
+function updateFormatUI(){
+  const total=neededTotal();
+  const display=document.getElementById('format-display');
+  const hint=document.getElementById('format-hint');
+  const nn=document.getElementById('needed-n');
+  const nn2=document.getElementById('needed-n2');
+  const sfn=document.getElementById('sfn');
+  if(display)display.textContent=sizeA+' vs '+sizeB;
+  if(hint)hint.innerHTML='Seleziona <strong>'+total+'</strong> giocatori';
+  if(nn)nn.textContent=total;
+  if(nn2)nn2.textContent=total;
+  if(sfn)sfn.textContent=total;
+}
+
+/* ════════════════════════════════════
+   CONVOCATI
+════════════════════════════════════ */
+function buildConvList(){
+  const c=document.getElementById('conv-list');if(!c)return;
+  c.innerHTML='';
+  selected.forEach(i=>{if(i>=players.length)selected.delete(i)});
+  players.forEach((p,i)=>{
+    const sel=selected.has(i);
+    const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
+    const selCls=sel?' sel':'';
+    const ovr=calcOvr(p.stats).toFixed(1);
+    c.innerHTML+=`<div class="conv-item${selCls}" onclick="toggleConv(${i})">
+      <div class="conv-avatar ${avCls(p)}">${ini(p.name)}<span class="ovr-dot">${ovr}</span></div>
+      <div class="conv-info">
+        <span class="conv-name">${p.name}</span>
+        <div class="conv-roles">${pills}</div>
+      </div>
+      <div class="conv-check">${sel?'✓':''}</div>
+    </div>`;
+  });
+  updateCnt();
+}
+function toggleConv(i){selected.has(i)?selected.delete(i):selected.add(i);buildConvList()}
+function updateCnt(){
+  const n=neededTotal(),s=selected.size;
+  const el=document.getElementById('sel-cnt');
+  if(el){el.textContent=s;el.className='cnt'+(s===n?'':' warn')}
+}
+function selectFirst(){selected.clear();const n=Math.min(neededTotal(),players.length);for(let i=0;i<n;i++)selected.add(i);buildConvList()}
+function clearSel(){selected.clear();buildConvList()}
+
+/* ════════════════════════════════════
+   GENERATE
+════════════════════════════════════ */
+// pick all subsets of size k from arr
+function combos(arr,k){
+  const res=[];
+  function go(s,ch){if(ch.length===k){res.push([...ch]);return}for(let i=s;i<arr.length;i++){ch.push(arr[i]);go(i+1,ch);ch.pop()}}
+  go(0,[]);return res;
+}
+
+function generateTeams(){
+  const total=neededTotal();
+  if(selected.size!==total){toast(`Seleziona esattamente ${total} giocatori (${selected.size}/${total})`);return}
+  const idx=[...selected];
+
+  // ── RoleFit: proportional slot coverage (not binary) ──────────────────────
+  // For each role needed by the module's outfield slots, credit = min(have, need) / need.
+  // GK slot (x<0.15) excluded — goalkeeper rotates among all players.
+  function roleFitScore(team, slots){
+    const outfield=slots.filter(s=>!(s.role==='DIF'&&s.x<0.15));
+    if(!outfield.length)return 1;
+    const need={ATT:0,MED:0,DIF:0};
+    outfield.forEach(s=>{if(need[s.role]!==undefined)need[s.role]++;});
+    const have={ATT:0,MED:0,DIF:0};
+    // a multi-role player contributes to each of their roles
+    team.forEach(i=>players[i].roles.forEach(r=>{if(have[r]!==undefined)have[r]++;}));
+    let filled=0;
+    ['ATT','MED','DIF'].forEach(r=>{filled+=Math.min(need[r],have[r]);});
+    return filled/outfield.length; // 0..1
+  }
+
+  function getModulesForSize(n){
+    return MODULES[n]?MODULES[n]:[{slots:SLOT_FALLBACK[n]||SLOT_FALLBACK[5],notation:'auto',desc:''}];
+  }
+
+  const subsetsA=combos(idx,sizeA);
+  const allScored=[];
+  const seen=new Set();
+
+  subsetsA.forEach(tA=>{
+    const tB=idx.filter(i=>!tA.includes(i));
+    const sA=tA.reduce((s,i)=>s+wScore(players[i]),0)/tA.length;
+    const sB=tB.reduce((s,i)=>s+wScore(players[i]),0)/tB.length;
+    const diff=Math.abs(sA-sB);
+
+    const modsA=getModulesForSize(tA.length);
+    const modsB=getModulesForSize(tB.length);
+
+    modsA.forEach(modA=>{
+      modsB.forEach(modB=>{
+        // ── Canonical key: fix symmetric-team duplicate bug ────────────────
+        // For sizeA==sizeB, "A vs B" and "B vs A" are the same match.
+        // We canonicalize by always putting the lexicographically smaller
+        // player-set first, and sorting the module pair accordingly.
+        const kA=[...tA].sort((a,b)=>a-b).join(',');
+        const kB=[...tB].sort((a,b)=>a-b).join(',');
+        let splitKey, notKey;
+        if(sizeA===sizeB){
+          // symmetric: canonical order
+          if(kA<=kB){
+            splitKey=kA+'/'+kB;
+            notKey=modA.notation+'|'+modB.notation;
+          }else{
+            splitKey=kB+'/'+kA;
+            notKey=modB.notation+'|'+modA.notation;
+          }
+        }else{
+          // asymmetric: A and B are distinguishable by size
+          splitKey=kA+'/'+kB;
+          notKey=modA.notation+'|'+modB.notation;
+        }
+        const key=splitKey+'::'+notKey;
+        if(seen.has(key))return;
+        seen.add(key);
+
+        const fitA=roleFitScore(tA,modA.slots);
+        const fitB=roleFitScore(tB,modB.slots);
+        const roleFit=(fitA+fitB)/2; // 0..1
+
+        // ── Score: balance is primary, roleFit is a small tiebreaker ─────
+        // roleFit weight (0.1) is intentionally small so that balance always
+        // dominates — a perfectly balanced split with mediocre roles beats
+        // an unbalanced split with perfect roles.
+        const score=diff-(roleFit*0.1);
+        allScored.push({tA,tB,sA,sB,diff,roleFit,modA,modB,score});
+      });
+    });
+  });
+
+  allScored.sort((a,b)=>a.score-b.score);
+  allCombos=allScored.slice(0,50);
+  currentIdx=0;
+  renderResult();
+  document.getElementById('partita-result').style.display='block';
+  setTimeout(()=>document.getElementById('partita-result').scrollIntoView({behavior:'smooth',block:'nearest'}),60);
+}
+
+/* ════════════════════════════════════
+   RENDER RESULT
+════════════════════════════════════ */
+function renderResult(){
+  if(!allCombos.length)return;
+  const c=allCombos[currentIdx];
+  const roleOrder={ATT:0,MED:1,DIF:2};
+  const pA=c.tA.map(i=>({...players[i],idx:i,score:wScore(players[i]),dispRole:primaryRole(players[i])})).sort((a,b)=>roleOrder[a.dispRole]-roleOrder[b.dispRole]);
+  const pB=c.tB.map(i=>({...players[i],idx:i,score:wScore(players[i]),dispRole:primaryRole(players[i])})).sort((a,b)=>roleOrder[a.dispRole]-roleOrder[b.dispRole]);
+
+  document.getElementById('avg-a').textContent='Media '+c.sA.toFixed(1);
+  document.getElementById('avg-b').textContent='Media '+c.sB.toFixed(1);
+
+  // show module notation under team name
+  const modLabelA=c.modA ? `${c.modA.notation}  ·  ${c.modA.desc||''}` : '';
+  const modLabelB=c.modB ? `${c.modB.notation}  ·  ${c.modB.desc||''}` : '';
+  const elMA=document.getElementById('mod-label-a');
+  const elMB=document.getElementById('mod-label-b');
+  if(elMA)elMA.textContent=modLabelA;
+  if(elMB)elMB.textContent=modLabelB;
+
+  const renderChips=(arr,pcls)=>
+    arr.map(p=>`<div class="pchip ${pcls}"><span>${p.name}</span><span>${p.score.toFixed(1)}</span></div>`).join('');
+  document.getElementById('chips-a').innerHTML=renderChips(pA,'pc-bl');
+  document.getElementById('chips-b').innerHTML=renderChips(pB,'pc-am');
+
+  const avgA=STATS.map((_,j)=>c.tA.reduce((s,i)=>s+players[i].stats[j],0)/c.tA.length);
+  const avgB=STATS.map((_,j)=>c.tB.reduce((s,i)=>s+players[i].stats[j],0)/c.tB.length);
+  let cmp='';
+  STATS.forEach((s,j)=>{
+    const a=avgA[j],b=avgB[j];
+    cmp+=`<div class="cmp-row">
+      <span class="cmp-v bl" style="font-weight:${a>b?800:500}">${a.toFixed(1)}</span>
+      <div class="cmp-bar"><div class="cf-bl" style="flex:${a}"></div><span class="cmp-lbl">${ICONS[j]} ${s}</span><div class="cf-am" style="flex:${b}"></div></div>
+      <span class="cmp-v am" style="font-weight:${b>a?800:500}">${b.toFixed(1)}</span>
+    </div>`;
+  });
+  document.getElementById('stat-cmp').innerHTML=cmp;
+
+  const diff=c.diff;
+  document.getElementById('bal-row').innerHTML=diff<=0.5
+    ?`<span class="pill-ok">✓ Ben bilanciate — diff ${diff.toFixed(2)}</span>`
+    :`<span class="pill-warn">⚠ Differenza media ${diff.toFixed(2)}</span>`;
+  document.getElementById('combo-idx').textContent=`${currentIdx+1} / ${allCombos.length}`;
+  // show quality info for current combo
+  const qualEl=document.getElementById('combo-quality');
+  if(qualEl){
+    const rfPct=Math.round((c.roleFit||0)*100);
+    qualEl.textContent=`diff ${c.diff.toFixed(2)}  ·  ruoli ${rfPct}%`;
+    qualEl.style.color=c.diff<=0.3?'var(--green)':c.diff<=0.7?'var(--amber)':'var(--red)';
+  }
+
+  renderPitch(pA,pB,c.modA,c.modB);
+}
+
+/* ════════════════════════════════════
+   PITCH SVG  —  viewBox dynamic based on player count
+════════════════════════════════════ */
+function renderPitch(pA,pB,modA,modB){
+  const svg=document.getElementById('pitch-svg');
+  // choose viewBox height based on max team size so players don't overlap
+  const maxN=Math.max(pA.length,pB.length);
+  const H=maxN<=5?240:maxN<=6?270:300;
+  const W=560;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+
+  const M=14;
+  const fw=W-2*M,fh=H-2*M,midX=W/2;
+  let s='';
+
+  // background + stripes
+  s+=`<rect x="0" y="0" width="${W}" height="${H}" fill="#1b5e2d"/>`;
+  const sh=Math.round(fh/9);
+  for(let y=M;y<M+fh;y+=sh*2)
+    s+=`<rect x="${M}" y="${y}" width="${fw}" height="${Math.min(sh,M+fh-y)}" fill="rgba(255,255,255,0.03)"/>`;
+
+  // field lines
+  s+=`<rect x="${M}" y="${M}" width="${fw}" height="${fh}" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.8"/>`;
+  s+=`<line x1="${midX}" y1="${M}" x2="${midX}" y2="${M+fh}" stroke="rgba(255,255,255,0.7)" stroke-width="1.8"/>`;
+  const cr2=Math.min(H*0.12,28);
+  s+=`<circle cx="${midX}" cy="${H/2}" r="${cr2}" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.8"/>`;
+  s+=`<circle cx="${midX}" cy="${H/2}" r="2.5" fill="rgba(255,255,255,0.8)"/>`;
+
+  // penalty areas
+  const paH=fh*0.52,paW=fw*0.12,paY=M+(fh-paH)/2;
+  s+=`<rect x="${M}" y="${paY}" width="${paW}" height="${paH}" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.2"/>`;
+  s+=`<rect x="${M+fw-paW}" y="${paY}" width="${paW}" height="${paH}" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.2"/>`;
+
+  // goals
+  const gH=fh*0.25,gW=10,gY=M+(fh-gH)/2;
+  s+=`<rect x="${M-gW}" y="${gY}" width="${gW}" height="${gH}" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>`;
+  s+=`<rect x="${M+fw}" y="${gY}" width="${gW}" height="${gH}" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"/>`;
+
+  // corner arcs
+  const cr=8;
+  [[M,M,'0 0 0'],[M+fw,M,'0 0 1'],[M,M+fh,'0 0 0'],[M+fw,M+fh,'0 0 1']].forEach(([x,y,f],i)=>{
+    const dx=i%2===0?cr:-cr, dy=i<2?cr:-cr;
+    s+=`<path d="M ${x+dx} ${y} A ${cr} ${cr} ${f} ${x} ${y+dy}" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.2"/>`;
+  });
+
+  // use the module chosen by the algorithm, fallback gracefully
+  function fallbackSlots(n){return SLOT_FALLBACK[n]||SLOT_FALLBACK[5]}
+  const slotsA=(modA&&modA.slots)||fallbackSlots(pA.length);
+  const slotsB=(modB&&modB.slots)||fallbackSlots(pB.length);
+
+  const lxS=M+10,lxE=midX-8,yS=M+10,yE=M+fh-10;
+  const rxS=midX+8,rxE=M+fw-10;
+
+  function assignToSlots(playerArr,slots){
+    const result=new Array(slots.length).fill(null);
+    const used=new Set();
+    slots.forEach((sl,si)=>{
+      let best=null,bestScore=-1;
+      playerArr.forEach((p,pi)=>{
+        if(used.has(pi))return;
+        let sc=0;
+        if(p.roles.includes(sl.role))sc+=2;
+        if(p.dispRole===sl.role)sc+=1;
+        if(sc>bestScore){bestScore=sc;best=pi;}
+      });
+      if(best!==null){result[si]=playerArr[best];used.add(best);}
+    });
+    let ri=0;const rem=playerArr.filter((_,pi)=>!used.has(pi));
+    result.forEach((v,i)=>{if(v===null&&ri<rem.length)result[i]=rem[ri++]});
+    return result;
+  }
+
+  const assignedA=assignToSlots(pA,slotsA);
+  const assignedB=assignToSlots(pB,slotsB);
+
+  const PR=17; // player circle radius — bigger for readability
+  function drawPlayer(px,py,name,fill){
+    const short=name.length>7?name.substring(0,6)+'…':name;
+    s+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${PR}" fill="${fill}" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>`;
+    s+=`<text x="${px.toFixed(1)}" y="${(py+4).toFixed(1)}" text-anchor="middle" font-size="8.5" font-weight="800" fill="white" font-family="-apple-system,BlinkMacSystemFont,sans-serif">${short}</text>`;
+  }
+
+  slotsA.forEach((sl,i)=>{
+    if(!assignedA[i])return;
+    drawPlayer(lxS+sl.x*(lxE-lxS), yS+sl.y*(yE-yS), assignedA[i].name,'#1e62c2');
+  });
+  slotsB.forEach((sl,i)=>{
+    if(!assignedB[i])return;
+    drawPlayer(rxS+(1-sl.x)*(rxE-rxS), yS+sl.y*(yE-yS), assignedB[i].name,'#c47a00');
+  });
+
+  svg.innerHTML=s;
+}
+
+function prevC(){currentIdx=(currentIdx-1+allCombos.length)%allCombos.length;renderResult()}
+function nextC(){currentIdx=(currentIdx+1)%allCombos.length;renderResult()}
+
+/* ════════════════════════════════════
+   SETTINGS — modules + weights
+════════════════════════════════════ */
+function moduleComposition(slots){
+  // count POR (first DIF at x<0.15), DEF, MED, ATT
+  const por=slots.filter(s=>s.role==='DIF'&&s.x<0.15).length;
+  const def=slots.filter(s=>s.role==='DIF'&&s.x>=0.15).length;
+  const med=slots.filter(s=>s.role==='MED').length;
+  const att=slots.filter(s=>s.role==='ATT').length;
+  return {por,def,med,att};
+}
+
+function buildSettings(){
+  let html='';
+
+  // ── Auto info banner ──
+  html+=`<div class="section-header">Moduli di gioco</div>
+  <div style="background:var(--green-light);border-radius:var(--radius-sm);padding:11px 13px;margin-bottom:16px;border:1px solid var(--green-mid)">
+    <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px">🤖 Scelta automatica</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.5">
+      L'algoritmo prova <strong>tutte</strong> le formazioni disponibili e sceglie quella che bilancia meglio i ruoli dei giocatori convocati.
+    </div>
+  </div>`;
+
+  // ── Modules per format ──
+  [5,6,7].forEach(n=>{
+    if(!MODULES[n])return;
+    html+=`<div style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:14px;font-weight:800;color:var(--text)">${n}vs${n}
+          <span style="font-size:11px;font-weight:500;color:var(--text3);margin-left:4px">${n} giocatori per squadra</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px" id="mod-list-${n}">`;
+
+    MODULES[n].forEach((m,idx)=>{
+      const c=moduleComposition(m.slots);
+      html+=`<div style="display:flex;align-items:center;gap:10px;background:var(--gray);border-radius:var(--radius-sm);padding:10px 12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:3px">${m.notation}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <span style="font-size:11px;color:var(--text2)">🧤 Por: <strong>${c.por}</strong></span>
+            <span style="font-size:11px;color:var(--def)">🛡️ Dif: <strong>${c.def}</strong></span>
+            <span style="font-size:11px;color:var(--mid)">🔀 Med: <strong>${c.med}</strong></span>
+            <span style="font-size:11px;color:var(--att)">⚔️ Att: <strong>${c.att}</strong></span>
+          </div>
+          ${m.desc?`<div style="font-size:11px;color:var(--text3);margin-top:3px;font-style:italic">${m.desc}</div>`:''}
+        </div>
+        ${MODULES[n].length>1?`<button onclick="deleteModule(${n},${idx})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:4px;flex-shrink:0" title="Rimuovi">🗑️</button>`:''}
+      </div>`;
+    });
+
+    html+='</div>';
+
+    // ── Add module form ──
+    html+=`<div style="margin-top:8px;background:var(--gray2);border-radius:var(--radius-sm);padding:11px 12px">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:9px">➕ Aggiungi formazione ${n}vs${n}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px">
+        <div>
+          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">🛡️ Difensori</label>
+          <input type="number" min="0" max="6" value="2" id="new-def-${n}" style="width:100%;padding:7px 8px;border:1.5px solid var(--gray3);border-radius:7px;background:var(--gray);color:var(--text);font-size:14px;font-weight:700;text-align:center">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">🔀 Centrocampisti</label>
+          <input type="number" min="0" max="6" value="2" id="new-mid-${n}" style="width:100%;padding:7px 8px;border:1.5px solid var(--gray3);border-radius:7px;background:var(--gray);color:var(--text);font-size:14px;font-weight:700;text-align:center">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">⚔️ Attaccanti</label>
+          <input type="number" min="0" max="6" value="1" id="new-att-${n}" style="width:100%;padding:7px 8px;border:1.5px solid var(--gray3);border-radius:7px;background:var(--gray);color:var(--text);font-size:14px;font-weight:700;text-align:center">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">📝 Descrizione (opz.)</label>
+          <input type="text" placeholder="es. offensivo" id="new-desc-${n}" style="width:100%;padding:7px 8px;border:1.5px solid var(--gray3);border-radius:7px;background:var(--gray);color:var(--text);font-size:12px">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px" id="new-preview-${n}">POR fissa (1) + i valori sopra devono sommare ${n-1}</div>
+      <button class="btn btn-primary btn-full btn-sm" onclick="addModule(${n})">Aggiungi formazione</button>
+    </div>`;
+
+    html+='</div>';
+  });
+
+  // ── Weights ──
+  html+=`<div class="section-header" style="margin-top:4px">Peso statistiche</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Imposta a 0 per escludere una statistica dal bilanciamento.</p>`;
+  STATS.forEach((s,i)=>{
+    html+=`<div class="weight-row">
+      <span class="weight-label">${ICONS[i]} ${s}</span>
+      <input class="weight-input" type="range" min="0" max="3" step="0.5" value="${weights[i]}" oninput="upW(${i},this.value)">
+      <span class="weight-val" id="wv${i}">${parseFloat(weights[i]).toFixed(1)}</span>
+    </div>`;
+  });
+
+  const c=document.getElementById('settings-inner');
+  if(c)c.innerHTML=html;
+}
+
+function addModule(n){
+  const def=parseInt(document.getElementById('new-def-'+n).value)||0;
+  const med=parseInt(document.getElementById('new-mid-'+n).value)||0;
+  const att=parseInt(document.getElementById('new-att-'+n).value)||0;
+  const desc=document.getElementById('new-desc-'+n).value.trim();
+  const total=def+med+att;
+  const expected=n-1; // POR is always 1
+  if(total!==expected){
+    toast(`Difensori+Med+Att devono sommare ${expected} (ora: ${total})`);
+    return;
+  }
+  const notation=`1-${def}-${med}-${att}`;
+  // check duplicate
+  if(MODULES[n].some(m=>m.notation===notation)){
+    toast(`Formazione ${notation} già presente`);
+    return;
+  }
+  MODULES[n].push({notation, desc, slots:makeSlots(1,def,med,att)});
+  saveModules();
+  buildSettings();
+  toast(`Formazione ${notation} aggiunta!`);
+}
+
+function deleteModule(n,idx){
+  if(MODULES[n].length<=1){toast('Almeno una formazione è richiesta');return}
+  const m=MODULES[n][idx];
+  if(confirm(`Rimuovere la formazione ${m.notation}?`)){
+    MODULES[n].splice(idx,1);
+    saveModules();
+    buildSettings();
+  }
+}
+
+function saveModules(){
+  // persist custom modules
+  const custom={};
+  [5,6,7].forEach(n=>{custom[n]=MODULES[n].map(m=>({notation:m.notation,desc:m.desc||'',counts:moduleComposition(m.slots)}))});
+  localStorage.setItem('calc5_modules',JSON.stringify(custom));
+}
+
+function loadModules(){
+  try{
+    const raw=localStorage.getItem('calc5_modules');
+    if(!raw)return;
+    const custom=JSON.parse(raw);
+    [5,6,7].forEach(n=>{
+      if(!custom[n])return;
+      MODULES[n]=custom[n].map(m=>{
+        const {def,med,att}=m.counts||{def:2,med:2,att:1};
+        return{notation:m.notation,desc:m.desc||'',slots:makeSlots(1,def,med,att)};
+      });
+    });
+  }catch(e){}
+}
+
+function upW(i,v){weights[i]=parseFloat(v);document.getElementById('wv'+i).textContent=weights[i].toFixed(1);save()}
+
+/* ════════════════════════════════════
+   NAV
+════════════════════════════════════ */
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('bnav-'+name).classList.add('active');
+  if(name==='partita'){buildConvList();updateFormatUI();}
+  if(name==='settings')buildSettings();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ════════════════════════════════════
+   TOAST
+════════════════════════════════════ */
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+
+/* ════════════════════════════════════
+   IO
+════════════════════════════════════ */
+function exportJSON(){
+  const data={players,weights,sizeA,sizeB,asymMode,version:5,exported:new Date().toISOString()};
+  const b=new Blob([JSON.stringify(data,null,2)],{type:'application/octet-stream'});
+  const url=URL.createObjectURL(b);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='rosa_calcetto.json';
+  a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},200);
+  toast('File salvato!');
+}
+function importJSON(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(d.players&&Array.isArray(d.players)){
+        players=d.players;
+        players.forEach(p=>{if(!p.roles){p.roles=p.role?[p.role]:['MED'];delete p.role;}if(!Array.isArray(p.roles))p.roles=[p.roles];if(p.roles.length===0)p.roles=['MED'];while(p.stats.length<STATS.length)p.stats.push(5);});
+        if(d.weights)weights=d.weights;
+        if(d.sizeA)sizeA=d.sizeA;if(d.sizeB)sizeB=d.sizeB;if(d.asymMode!==undefined)asymMode=d.asymMode;
+        // backcompat
+        if(d.matchFormat&&!d.sizeA){sizeA=d.matchFormat;sizeB=d.matchFormat;}
+        selected.clear();save();buildRosa();buildConvList();buildSettings();updateFormatUI();
+        toast('Giocatori caricati!');
+      }else toast('File non valido');
+    }catch(err){toast('Errore nel file JSON')}
+    e.target.value='';
+  };
+  r.readAsText(f);
+}
+
+/* ════════════════════════════════════
+   INIT
+════════════════════════════════════ */
+load();
+loadModules();
+buildRosa();
+buildSettings();
+// restore UI state for format
+const asymEl=document.getElementById('asym-check');
+if(asymMode){asymEl.checked=true;document.getElementById('asym-controls').style.display='flex';}
+updateAsymDisplay();
+updateFormatUI();
+// highlight correct base format button
+if(!asymMode)[5,6,7].forEach(x=>document.getElementById('fmt-'+x).classList.toggle('active',x===sizeA));
+</script>
+</body>
+</html>
