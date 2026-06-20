@@ -236,6 +236,17 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 .weight-input{flex:1;accent-color:var(--green);cursor:pointer;height:20px}
 .weight-val{font-size:13px;font-weight:800;width:28px;text-align:right;color:var(--green)}
 
+/* ─── rate stepper ─── */
+.rate-stepper{display:flex;align-items:center;gap:2px;flex-shrink:0;background:rgba(0,0,0,0.05);border-radius:8px;padding:1px}
+@media(prefers-color-scheme:dark){.rate-stepper{background:rgba(255,255,255,0.06)}}
+.rate-stepper input{width:36px;padding:5px 2px;border:1.5px solid var(--gray3);border-radius:5px;background:var(--gray);color:var(--text);font-size:13px;font-weight:800;text-align:center;-moz-appearance:textfield}
+.rate-stepper input::-webkit-outer-spin-button,
+.rate-stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.rate-btn{width:26px;height:26px;border:none;background:transparent;font-size:18px;font-weight:800;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text);transition:background var(--tr);line-height:1;padding:0;flex-shrink:0}
+.rate-btn:active{background:rgba(0,0,0,0.15)}
+.rate-btn-minus{color:var(--red)}
+.rate-btn-plus{color:var(--green)}
+
 /* ─── compact weight pills ─── */
 .w-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}
 .w-name{font-size:12px;color:var(--text);width:92px;display:flex;align-items:center;gap:4px;flex-shrink:0;text-transform:capitalize}
@@ -1727,9 +1738,15 @@ function openMatch(id){
       <div style="font-size:12px;font-weight:800;color:${col};margin-bottom:8px">${name}</div>
       ${team.map(p=>{
         const r=getRating(p);
-        return `<div style="display:flex;align-items:center;gap:7px;padding:5px 0;font-size:12px">
-          <span style="flex:1;font-weight:600">${p}</span>
-          <input type="number" min="1" max="10" step="0.5" placeholder="—" value="${r?r.rating:''}" id="rate-${cls}-${idx(p)}" style="width:48px;padding:4px;border:1.5px solid var(--gray3);border-radius:6px;background:var(--gray);color:var(--text);font-size:13px;font-weight:700;text-align:center" inputmode="decimal">
+        const val=r?r.rating:'';
+        const localIdx=idx(p);
+        return `<div style="display:flex;align-items:center;gap:6px;padding:6px 0;font-size:12px">
+          <span style="flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p}</span>
+          <div class="rate-stepper" data-pid="rate-${cls}-${localIdx}">
+            <button type="button" onclick="rateStep('rate-${cls}-${localIdx}',-1)" class="rate-btn rate-btn-minus">−</button>
+            <input type="number" min="1" max="10" step="0.5" placeholder="—" value="${val}" id="rate-${cls}-${localIdx}" inputmode="decimal" oninput="rateColor(this)">
+            <button type="button" onclick="rateStep('rate-${cls}-${localIdx}',1)" class="rate-btn rate-btn-plus">+</button>
+          </div>
         </div>`;
       }).join('')}
     </div>`;
@@ -1754,6 +1771,32 @@ function openMatch(id){
       </div>
     </div>`;
   document.getElementById('match-modal').style.display='block';
+  // apply initial colors
+  document.querySelectorAll('.rate-stepper input').forEach(el=>rateColor(el));
+}
+
+function rateStep(id, delta){
+  const el=document.getElementById(id);
+  if(!el)return;
+  let v=parseFloat(el.value);
+  if(isNaN(v)) v = delta>0 ? 6 : 6;  // start from 6 if empty
+  else v += delta * 0.5;
+  v = Math.max(1, Math.min(10, v));
+  el.value = v;
+  rateColor(el);
+}
+
+function rateColor(el){
+  const v=parseFloat(el.value);
+  let bg='var(--gray)', color='var(--text)', border='var(--gray3)';
+  if(!isNaN(v)){
+    if(v<5){ bg='#fde8e8'; color='#a82020'; border='#e05c5c'; }
+    else if(v<6.5){ bg='#fff4d6'; color='#7a4a00'; border='#c4a040'; }
+    else { bg='#e4f7ec'; color='#1a5a2a'; border='#3aad5e'; }
+  }
+  el.style.background=bg;
+  el.style.color=color;
+  el.style.borderColor=border;
 }
 
 async function saveRatings(matchId){
