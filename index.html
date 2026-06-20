@@ -548,6 +548,7 @@ function applyData(d){
   if(d.sizeA){sizeA=d.sizeA;sizeB=d.sizeB;}
   if(d.matchFormat&&!d.sizeA){sizeA=d.matchFormat;sizeB=d.matchFormat;}
   if(d.asymMode!==undefined)asymMode=d.asymMode;
+  if(d.backendUrl) backendUrl=d.backendUrl;
 }
 
 // localStorage backup (saves every edit)
@@ -594,9 +595,11 @@ async function loadData(){
   setDataSource('📋 Rosa di esempio');
 }
 
-// Load backend URL from localStorage (always)
+// Load backend URL from localStorage if not already set from JSON
 function loadBackendUrl(){
-  backendUrl=localStorage.getItem('calcio_backend')||'';
+  if(!backendUrl){
+    backendUrl=localStorage.getItem('calcio_backend')||'';
+  }
 }
 
 function setDataSource(msg){
@@ -613,7 +616,7 @@ function toast(m){const t=document.getElementById('toast');t.textContent=m;t.cla
    IO
 ════════════════════════════════════ */
 function exportJSON(){
-  const data={players,weights,sizeA,sizeB,asymMode,version:6,exported:new Date().toISOString()};
+  const data={players,weights,sizeA,sizeB,asymMode,backendUrl,version:6,exported:new Date().toISOString()};
   const b=new Blob([JSON.stringify(data,null,2)],{type:'application/octet-stream'});
   const url=URL.createObjectURL(b);
   const a=document.createElement('a');
@@ -1257,6 +1260,7 @@ function buildSettings(){
         <button class="btn btn-secondary btn-sm" onclick="testBackend()">🧪 Test</button>
       </div>
       <div id="backend-status" style="font-size:11px;margin-top:6px;color:var(--text3)"></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5">💡 Salva l'URL, poi premi <strong>⬇ Salva</strong> in alto per esportare <code>rosa_calcetto.json</code> con l'URL incluso. Caricalo su GitHub e l'URL sarà disponibile su tutti i dispositivi.</div>
     </div>`;
 
   // ── Weights ──
