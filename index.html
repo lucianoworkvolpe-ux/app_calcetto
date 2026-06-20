@@ -254,6 +254,7 @@ input[type=file]{display:none}
       <path d="M5 5Q14 10 23 5Q18 14 23 23Q14 18 5 23Q10 14 5 5Z" fill="white" opacity="0.9"/>
     </svg>
     CalcioLercio
+    <span id="data-source" style="font-size:10px;font-weight:500;opacity:0.7;margin-left:6px"></span>
   </div>
   <div class="hdr-right">
     <button class="btn-icon" onclick="exportJSON()">⬇ Salva</button>
@@ -378,7 +379,45 @@ input[type=file]{display:none}
   </div>
 </div>
 
-<div id="page-settings" class="page">
+<!-- ══════════ PARTITE ══════════ -->
+<div id="page-partite" class="page">
+  <div id="partite-status" class="card" style="display:none">
+    <div style="display:flex;align-items:center;gap:9px">
+      <span style="font-size:22px">⚠️</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;margin-bottom:3px">Backend non configurato</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.4">Configura l'URL del foglio Google in <strong>Settings</strong> per gestire partite e pagelle.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="partite-content" style="display:none">
+    <!-- New match button -->
+    <button class="btn btn-primary btn-full" style="margin-bottom:14px" onclick="newMatch()">📅 Nuova partita</button>
+
+    <!-- Matches list -->
+    <div class="card" id="matches-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="section-header" style="margin:0">Storico partite</div>
+        <button class="btn btn-secondary btn-sm" onclick="loadMatches()">🔄</button>
+      </div>
+      <div id="matches-list">
+        <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">⏳ Caricamento...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Match detail modal -->
+<div id="match-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;padding:14px;overflow-y:auto">
+  <div style="max-width:600px;margin:0 auto;background:var(--gray);border-radius:var(--radius);padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.3)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:16px;font-weight:800" id="match-modal-title">Partita</div>
+      <button onclick="closeMatchModal()" style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:22px;padding:4px">✕</button>
+    </div>
+    <div id="match-modal-body"></div>
+  </div>
+</div>
   <div class="card">
     <div id="settings-inner"></div>
   </div>
@@ -391,6 +430,9 @@ input[type=file]{display:none}
   </button>
   <button class="bnav-item" id="bnav-partita" onclick="showPage('partita')">
     <span class="bni">⚽</span>Partita
+  </button>
+  <button class="bnav-item" id="bnav-partite" onclick="showPage('partite')">
+    <span class="bni">📅</span>Partite
   </button>
   <button class="bnav-item" id="bnav-settings" onclick="showPage('settings')">
     <span class="bni">⚙️</span>Settings
@@ -470,6 +512,7 @@ const SLOT_FALLBACK={
 ════════════════════════════════════ */
 let players=[], weights=STATS.map(()=>1);
 let sizeA=5, sizeB=5, asymMode=false;
+let backendUrl='', matches=[], matchesCache={timestamp:0, data:null};
 let selected=new Set(), allCombos=[], currentIdx=0;
 
 /* ════════════════════════════════════
@@ -514,20 +557,22 @@ function save(){
   localStorage.setItem('calcio_fmt',JSON.stringify({sizeA,sizeB,asymMode}));
 }
 
-// async init: 1) try fetch rosa_calcetto.json from same origin
+// async init: 1) try fetch rosa_calcetto.json from same origin (only if served via HTTP)
 //              2) fallback to localStorage
 //              3) fallback to hardcoded defaults
 async function loadData(){
-  // 1 — try to fetch the JSON file from the same folder as the HTML
-  try{
-    const res=await fetch('rosa_calcetto.json?_='+Date.now());
-    if(res.ok){
-      const d=await res.json();
-      applyData(d);
-      console.log('✅ Dati caricati da rosa_calcetto.json');
-      return;
-    }
-  }catch(e){/* file not found or CORS in local file:// — continue */}
+  // 1 — fetch only works on HTTP/HTTPS, not on file://
+  if(location.protocol==='http:'||location.protocol==='https:'){
+    try{
+      const res=await fetch('rosa_calcetto.json?_='+Date.now());
+      if(res.ok){
+        const d=await res.json();
+        applyData(d);
+        setDataSource('📡 Dati da rosa_calcetto.json');
+        return;
+      }
+    }catch(e){/* file not found — continue */}
+  }
 
   // 2 — fallback to localStorage
   try{
@@ -539,14 +584,24 @@ async function loadData(){
         ...JSON.parse(localStorage.getItem('calcio_fmt')||'{}')
       };
       applyData(d);
-      console.log('💾 Dati caricati da localStorage');
+      setDataSource('💾 Dati da memoria locale');
       return;
     }
   }catch(e){}
 
   // 3 — defaults
   players=defaultPlayers();
-  console.log('📋 Dati di default caricati');
+  setDataSource('📋 Rosa di esempio');
+}
+
+// Load backend URL from localStorage (always)
+function loadBackendUrl(){
+  backendUrl=localStorage.getItem('calcio_backend')||'';
+}
+
+function setDataSource(msg){
+  const el=document.getElementById('data-source');
+  if(el)el.textContent=msg;
 }
 
 /* ════════════════════════════════════
@@ -596,6 +651,7 @@ function importJSON(e){
     '<div style="text-align:center;padding:40px;color:var(--text3);font-size:14px">⏳ Caricamento rosa...</div>';
 
   await loadData();
+  loadBackendUrl();
   loadModules();
   buildRosa();
   buildSettings();
@@ -661,6 +717,7 @@ function buildRosa(){
         <div class="role-section-label">Ruoli (anche più di uno)</div>
         <div class="role-toggles">${toggles}</div>
       </div>${sg}
+      <div id="pagelle-${i}" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray2)"></div>
     </div>`;
     c.appendChild(d);
   });
@@ -668,6 +725,100 @@ function buildRosa(){
 function toggleCard(i){
   const e=document.getElementById('cd'+i),ch=document.getElementById('ch'+i),o=e.style.display!=='none';
   e.style.display=o?'none':'block';ch.className=o?'chevron':'chevron open';
+  if(!o) renderPlayerPagelle(i);
+}
+
+function renderPlayerPagelle(i){
+  const container=document.getElementById('pagelle-'+i);
+  if(!container)return;
+  const name=players[i].name;
+  if(!backendUrl){
+    container.innerHTML=`<div style="font-size:12px;color:var(--text3);text-align:center">📊 Configura il backend in Settings per vedere le pagelle</div>`;
+    return;
+  }
+  // Use cached ratings if available
+  if(!matchesCache.data){
+    container.innerHTML=`<div style="font-size:12px;color:var(--text3);text-align:center"><button class="btn btn-secondary btn-sm" onclick="loadAndRefreshPagelle(${i})">📊 Carica pagelle</button></div>`;
+    return;
+  }
+  drawPagelle(i,name,container);
+}
+
+async function loadAndRefreshPagelle(i){
+  const container=document.getElementById('pagelle-'+i);
+  container.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center">⏳ Caricamento...</div>';
+  try{
+    const data=await backendCall('matches');
+    if(data.ok){
+      matches=data.matches||[];
+      matchesCache.data={matches, ratings:data.ratings||[]};
+      matchesCache.timestamp=Date.now();
+    }
+    drawPagelle(i,players[i].name,container);
+  }catch(e){
+    container.innerHTML=`<div style="font-size:12px;color:var(--red);text-align:center">❌ ${e.message}</div>`;
+  }
+}
+
+function drawPagelle(i,name,container){
+  const ratings=matchesCache.data.ratings.filter(r=>r.player===name);
+  // join with match dates
+  const dated=ratings.map(r=>{
+    const m=matches.find(x=>x.id===r.matchId);
+    return{date:m?m.date:'',rating:r.rating,matchId:r.matchId};
+  }).filter(r=>r.date).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+
+  if(!dated.length){
+    container.innerHTML=`<div style="font-size:12px;color:var(--text3);text-align:center">📊 Nessuna pagella ancora</div>`;
+    return;
+  }
+
+  const sum=dated.reduce((s,r)=>s+r.rating,0);
+  const avg=sum/dated.length;
+  const max=Math.max(...dated.map(r=>r.rating));
+  const min=Math.min(...dated.map(r=>r.rating));
+  const ovr=calcOvr(players[i].stats);
+  const delta=avg-ovr;
+  const deltaCol=delta>0.5?'var(--green)':delta<-0.5?'var(--red)':'var(--amber)';
+  const deltaSym=delta>0.3?'↑':delta<-0.3?'↓':'≈';
+
+  // SVG line chart
+  const W=300,H=80,M=18;
+  const fw=W-2*M, fh=H-2*M;
+  const xs=dated.map((_,j)=>dated.length===1?W/2:M+(j/(dated.length-1))*fw);
+  // y: rating 1..10 maps to fh..0
+  const ys=dated.map(r=>M+fh-((r.rating-1)/9)*fh);
+  const path=xs.map((x,j)=>`${j===0?'M':'L'}${x.toFixed(1)},${ys[j].toFixed(1)}`).join(' ');
+  const avgY=M+fh-((avg-1)/9)*fh;
+
+  container.innerHTML=`
+    <div style="font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">📊 Andamento pagelle</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
+      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Media</div>
+        <div style="font-size:15px;font-weight:800;color:var(--text)">${avg.toFixed(2)}</div>
+      </div>
+      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Partite</div>
+        <div style="font-size:15px;font-weight:800;color:var(--text)">${dated.length}</div>
+      </div>
+      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Min · Max</div>
+        <div style="font-size:13px;font-weight:800;color:var(--text)">${min} · ${max}</div>
+      </div>
+      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">vs OVR</div>
+        <div style="font-size:14px;font-weight:800;color:${deltaCol}">${deltaSym} ${delta.toFixed(1)}</div>
+      </div>
+    </div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:var(--gray);border-radius:8px;display:block">
+      <line x1="${M}" y1="${avgY}" x2="${W-M}" y2="${avgY}" stroke="var(--text3)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.5"/>
+      <text x="${W-M+2}" y="${avgY+3}" font-size="8" fill="var(--text3)">μ</text>
+      <path d="${path}" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${xs.map((x,j)=>`<circle cx="${x.toFixed(1)}" cy="${ys[j].toFixed(1)}" r="3" fill="var(--green)" stroke="var(--gray)" stroke-width="1.5"><title>${formatDate(dated[j].date)}: ${dated[j].rating}</title></circle>`).join('')}
+    </svg>
+    <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px">Da ${formatDate(dated[0].date)} a ${formatDate(dated[dated.length-1].date)}</div>
+  `;
 }
 function upName(i,v){players[i].name=v;document.getElementById('av'+i).textContent=ini(v);save();buildConvList()}
 function upStat(i,j,v){
@@ -1095,6 +1246,19 @@ function buildSettings(){
     html+='</div>';
   });
 
+  // ── Backend Google Sheets ──
+  html+=`<div class="section-header" style="margin-top:4px">📊 Backend partite e pagelle</div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5">Per gestire partite e pagelle serve un foglio Google con uno script. <a href="#" onclick="showSetupGuide();return false" style="color:var(--green);font-weight:700">Vedi guida ▸</a></p>
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">URL Web App di Apps Script</label>
+      <input type="text" id="apps-script-url" value="${backendUrl||''}" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%;padding:9px 10px;border:1.5px solid var(--gray3);border-radius:7px;background:var(--gray);color:var(--text);font-size:12px;font-family:monospace">
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveBackendUrl()">💾 Salva URL</button>
+        <button class="btn btn-secondary btn-sm" onclick="testBackend()">🧪 Test</button>
+      </div>
+      <div id="backend-status" style="font-size:11px;margin-top:6px;color:var(--text3)"></div>
+    </div>`;
+
   // ── Weights ──
   html+=`<div class="section-header" style="margin-top:4px">Peso statistiche</div>
     <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Imposta a 0 per escludere una statistica dal bilanciamento.</p>`;
@@ -1176,6 +1340,7 @@ function showPage(name){
   document.getElementById('page-'+name).classList.add('active');
   document.getElementById('bnav-'+name).classList.add('active');
   if(name==='partita'){buildConvList();updateFormatUI();}
+  if(name==='partite')buildPartitePage();
   if(name==='settings')buildSettings();
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -1221,6 +1386,397 @@ function importJSON(e){
     e.target.value='';
   };
   r.readAsText(f);
+}
+
+/* ════════════════════════════════════
+   BACKEND (Google Sheets via Apps Script)
+════════════════════════════════════ */
+function saveBackendUrl(){
+  const v=document.getElementById('apps-script-url').value.trim();
+  backendUrl=v;
+  localStorage.setItem('calcio_backend',v);
+  toast(v?'URL salvato!':'URL rimosso');
+  document.getElementById('backend-status').textContent='';
+}
+
+async function testBackend(){
+  const v=document.getElementById('apps-script-url').value.trim();
+  if(!v){toast('Inserisci prima l\'URL');return}
+  const st=document.getElementById('backend-status');
+  st.textContent='⏳ Test in corso...';
+  st.style.color='var(--text3)';
+  try{
+    const res=await fetch(v+'?action=ping',{method:'GET'});
+    const data=await res.json();
+    if(data.ok){
+      st.textContent='✅ Connessione OK — '+(data.matchCount||0)+' partite nel foglio';
+      st.style.color='var(--green)';
+    }else{
+      st.textContent='⚠️ Risposta inattesa: '+JSON.stringify(data);
+      st.style.color='var(--amber)';
+    }
+  }catch(e){
+    st.textContent='❌ Errore: '+e.message;
+    st.style.color='var(--red)';
+  }
+}
+
+async function backendCall(action, payload){
+  if(!backendUrl)throw new Error('Backend non configurato');
+  const url=backendUrl+'?action='+encodeURIComponent(action);
+  const opts={method:payload?'POST':'GET'};
+  if(payload){
+    opts.headers={'Content-Type':'text/plain;charset=utf-8'};
+    opts.body=JSON.stringify(payload);
+  }
+  const res=await fetch(url,opts);
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  return await res.json();
+}
+
+function showSetupGuide(){
+  const m=document.getElementById('match-modal');
+  document.getElementById('match-modal-title').textContent='📘 Setup Google Sheets';
+  document.getElementById('match-modal-body').innerHTML=`
+    <div style="font-size:13px;line-height:1.7;color:var(--text)">
+      <p><strong>1.</strong> Crea un nuovo Google Sheet (sheets.new)</p>
+      <p><strong>2.</strong> Estensioni → Apps Script</p>
+      <p><strong>3.</strong> Incolla il codice qui sotto, salva (💾)</p>
+      <p><strong>4.</strong> Distribuisci → Nuova distribuzione → Tipo "App web"</p>
+      <p><strong>5.</strong> Esegui come: <em>Me</em> · Accesso: <em>Chiunque</em></p>
+      <p><strong>6.</strong> Copia l'URL e incollalo nei Settings</p>
+      <div style="margin:10px 0">
+        <button class="btn btn-primary btn-sm btn-full" onclick="copySetupCode()">📋 Copia codice Apps Script</button>
+      </div>
+      <textarea id="setup-code" readonly style="width:100%;height:200px;font-family:monospace;font-size:10px;padding:8px;border-radius:6px;border:1px solid var(--gray3);background:var(--gray);color:var(--text);resize:vertical">${getAppsScriptCode()}</textarea>
+    </div>`;
+  m.style.display='block';
+}
+
+function copySetupCode(){
+  const ta=document.getElementById('setup-code');
+  ta.select();
+  document.execCommand('copy');
+  toast('Codice copiato!');
+}
+
+function getAppsScriptCode(){
+  return `// CalcioLercio backend — incolla in Apps Script del tuo foglio Google
+const SHEET_MATCHES = 'partite';
+const SHEET_RATINGS = 'pagelle';
+
+function doGet(e) {
+  const action = e.parameter.action || 'ping';
+  try {
+    if (action === 'ping') return out({ok:true, matchCount:getMatches().length});
+    if (action === 'matches') return out({ok:true, matches:getMatches(), ratings:getRatings()});
+    return out({ok:false, error:'unknown action'});
+  } catch(err) {
+    return out({ok:false, error:String(err)});
+  }
+}
+
+function doPost(e) {
+  const action = e.parameter.action;
+  const body = JSON.parse(e.postData.contents);
+  try {
+    if (action === 'addMatch')    return out({ok:true, id:addMatch(body)});
+    if (action === 'deleteMatch') return out({ok:true, deleted:deleteMatch(body.id)});
+    if (action === 'saveRatings') return out({ok:true, saved:saveRatings(body)});
+    return out({ok:false, error:'unknown action'});
+  } catch(err) {
+    return out({ok:false, error:String(err)});
+  }
+}
+
+function out(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getSheet(name, headers) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+    sh.appendRow(headers);
+  }
+  return sh;
+}
+
+function getMatches() {
+  const sh = getSheet(SHEET_MATCHES, ['id','date','notes','teamA','teamB','scoreA','scoreB']);
+  const data = sh.getDataRange().getValues();
+  if (data.length < 2) return [];
+  return data.slice(1).map(r => ({
+    id: r[0], date: r[1], notes: r[2] || '',
+    teamA: r[3] ? JSON.parse(r[3]) : [],
+    teamB: r[4] ? JSON.parse(r[4]) : [],
+    scoreA: r[5], scoreB: r[6]
+  })).filter(m => m.id);
+}
+
+function getRatings() {
+  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes']);
+  const data = sh.getDataRange().getValues();
+  if (data.length < 2) return [];
+  return data.slice(1).map(r => ({
+    matchId: r[0], player: r[1], rating: parseFloat(r[2]) || 0, notes: r[3] || ''
+  })).filter(r => r.matchId && r.player);
+}
+
+function addMatch(m) {
+  const sh = getSheet(SHEET_MATCHES, ['id','date','notes','teamA','teamB','scoreA','scoreB']);
+  const id = m.id || ('m_' + Date.now());
+  sh.appendRow([id, m.date, m.notes || '',
+    JSON.stringify(m.teamA || []),
+    JSON.stringify(m.teamB || []),
+    m.scoreA || '', m.scoreB || '']);
+  return id;
+}
+
+function deleteMatch(id) {
+  const sh = getSheet(SHEET_MATCHES, ['id','date','notes','teamA','teamB','scoreA','scoreB']);
+  const data = sh.getDataRange().getValues();
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][0] === id) sh.deleteRow(i + 1);
+  }
+  // delete ratings too
+  const rs = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes']);
+  const rd = rs.getDataRange().getValues();
+  for (let i = rd.length - 1; i >= 1; i--) {
+    if (rd[i][0] === id) rs.deleteRow(i + 1);
+  }
+  return true;
+}
+
+function saveRatings(payload) {
+  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes']);
+  const data = sh.getDataRange().getValues();
+  // remove old ratings for this match
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][0] === payload.matchId) sh.deleteRow(i + 1);
+  }
+  // append new ones
+  (payload.ratings || []).forEach(r => {
+    sh.appendRow([payload.matchId, r.player, r.rating, r.notes || '']);
+  });
+  return (payload.ratings || []).length;
+}`;
+}
+
+/* ════════════════════════════════════
+   PARTITE — list & detail
+════════════════════════════════════ */
+function buildPartitePage(){
+  if(!backendUrl){
+    document.getElementById('partite-status').style.display='block';
+    document.getElementById('partite-content').style.display='none';
+    return;
+  }
+  document.getElementById('partite-status').style.display='none';
+  document.getElementById('partite-content').style.display='block';
+  loadMatches();
+}
+
+async function loadMatches(){
+  const list=document.getElementById('matches-list');
+  list.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">⏳ Caricamento...</div>';
+  try{
+    const data=await backendCall('matches');
+    if(!data.ok)throw new Error(data.error||'errore sconosciuto');
+    matches=data.matches||[];
+    matchesCache.data={matches, ratings:data.ratings||[]};
+    matchesCache.timestamp=Date.now();
+    renderMatchesList();
+  }catch(e){
+    list.innerHTML=`<div style="text-align:center;padding:20px;color:var(--red);font-size:13px">❌ ${e.message}</div>`;
+  }
+}
+
+function renderMatchesList(){
+  const list=document.getElementById('matches-list');
+  if(!matches.length){
+    list.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Nessuna partita ancora. Crea la prima!</div>';
+    return;
+  }
+  // sort by date desc
+  const sorted=[...matches].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const ratings=matchesCache.data?.ratings||[];
+
+  list.innerHTML=sorted.map(m=>{
+    const ratedCount=ratings.filter(r=>r.matchId===m.id).length;
+    const totalPlayers=(m.teamA?.length||0)+(m.teamB?.length||0);
+    const hasRatings=ratedCount>0;
+    const score=(m.scoreA!==''&&m.scoreB!=='')?`${m.scoreA} - ${m.scoreB}`:'';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:11px;border-radius:var(--radius-sm);background:var(--gray);margin-bottom:7px;cursor:pointer" onclick="openMatch('${m.id}')">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+          <span style="font-size:13px;font-weight:800;color:var(--text)">${formatDate(m.date)}</span>
+          ${score?`<span style="font-size:13px;font-weight:800;color:var(--green)">${score}</span>`:''}
+        </div>
+        <div style="font-size:11px;color:var(--text2)">${totalPlayers} giocatori · ${ratedCount}/${totalPlayers} pagelle</div>
+        ${m.notes?`<div style="font-size:11px;color:var(--text3);font-style:italic;margin-top:2px">${m.notes}</div>`:''}
+      </div>
+      ${hasRatings?'<span style="font-size:18px">📊</span>':'<span style="font-size:18px;opacity:.4">📝</span>'}
+      <span style="color:var(--text3);font-size:16px">›</span>
+    </div>`;
+  }).join('');
+}
+
+function formatDate(d){
+  if(!d)return '—';
+  // ISO yyyy-mm-dd → dd/mm/yyyy
+  const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m)return `${m[3]}/${m[2]}/${m[1]}`;
+  return d;
+}
+
+/* ════════════════════════════════════
+   NEW MATCH
+════════════════════════════════════ */
+function newMatch(){
+  const today=new Date().toISOString().substring(0,10);
+  document.getElementById('match-modal-title').textContent='📅 Nuova partita';
+  // can we use the last generated combo to prefill teams?
+  const lastCombo=allCombos[currentIdx];
+  let presetA='', presetB='';
+  if(lastCombo){
+    presetA=lastCombo.tA.map(i=>players[i].name).join(', ');
+    presetB=lastCombo.tB.map(i=>players[i].name).join(', ');
+  }
+  document.getElementById('match-modal-body').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:11px">
+      <div>
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">📅 Data partita</label>
+        <input type="date" id="nm-date" value="${today}" style="width:100%;padding:9px 11px;border:1.5px solid var(--gray3);border-radius:7px;background:var(--gray);color:var(--text);font-size:14px">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">📝 Note (opz.)</label>
+        <input type="text" id="nm-notes" placeholder="es. partita serale al Sole" style="width:100%;padding:9px 11px;border:1.5px solid var(--gray3);border-radius:7px;background:var(--gray);color:var(--text);font-size:13px">
+      </div>
+      ${lastCombo?`<div style="background:var(--green-light);border-radius:var(--radius-sm);padding:9px 11px;border:1px solid var(--green)">
+        <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">✓ Squadre dall'ultima generazione</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.5"><strong>🔵 Blu:</strong> ${presetA}<br><strong>🟠 Arancio:</strong> ${presetB}</div>
+      </div>`:`<div style="background:var(--amber-light);border-radius:var(--radius-sm);padding:9px 11px;font-size:12px;color:var(--text)">⚠️ Genera prima le squadre nella scheda Partita</div>`}
+      <div>
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">⚽ Risultato (opz.)</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="nm-scoreA" placeholder="—" min="0" style="width:60px;padding:9px 11px;border:1.5px solid var(--gray3);border-radius:7px;background:var(--gray);color:var(--text);font-size:16px;font-weight:800;text-align:center">
+          <span style="font-size:14px;color:var(--text3)">vs</span>
+          <input type="number" id="nm-scoreB" placeholder="—" min="0" style="width:60px;padding:9px 11px;border:1.5px solid var(--gray3);border-radius:7px;background:var(--gray);color:var(--text);font-size:16px;font-weight:800;text-align:center">
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="saveNewMatch()" ${!lastCombo?'disabled':''}>💾 Crea partita</button>
+    </div>`;
+  document.getElementById('match-modal').style.display='block';
+}
+
+async function saveNewMatch(){
+  const lastCombo=allCombos[currentIdx];
+  if(!lastCombo){toast('Genera prima le squadre');return}
+  const m={
+    date:document.getElementById('nm-date').value,
+    notes:document.getElementById('nm-notes').value.trim(),
+    teamA:lastCombo.tA.map(i=>players[i].name),
+    teamB:lastCombo.tB.map(i=>players[i].name),
+    scoreA:document.getElementById('nm-scoreA').value,
+    scoreB:document.getElementById('nm-scoreB').value
+  };
+  try{
+    toast('⏳ Salvataggio...');
+    await backendCall('addMatch',m);
+    closeMatchModal();
+    toast('Partita creata!');
+    loadMatches();
+  }catch(e){toast('Errore: '+e.message)}
+}
+
+/* ════════════════════════════════════
+   MATCH DETAIL (view + ratings)
+════════════════════════════════════ */
+function openMatch(id){
+  const m=matches.find(x=>x.id===id);
+  if(!m)return;
+  const ratings=(matchesCache.data?.ratings||[]).filter(r=>r.matchId===id);
+
+  document.getElementById('match-modal-title').textContent='📅 '+formatDate(m.date);
+
+  const allPlayers=[...(m.teamA||[]),...(m.teamB||[])];
+  const getRating=name=>ratings.find(r=>r.player===name);
+
+  const renderTeam=(name, team, isBlue)=>{
+    const cls=isBlue?'bl':'am';
+    const bg=isBlue?'var(--blue-light)':'var(--amber-light)';
+    const col=isBlue?'var(--blue)':'var(--amber)';
+    return `<div style="background:${bg};border-radius:var(--radius-sm);padding:10px;flex:1">
+      <div style="font-size:12px;font-weight:800;color:${col};margin-bottom:8px">${name}</div>
+      ${team.map(p=>{
+        const r=getRating(p);
+        return `<div style="display:flex;align-items:center;gap:7px;padding:5px 0;font-size:12px">
+          <span style="flex:1;font-weight:600">${p}</span>
+          <input type="number" min="1" max="10" step="0.5" placeholder="—" value="${r?r.rating:''}" id="rate-${cls}-${idx(p)}" style="width:48px;padding:4px;border:1.5px solid var(--gray3);border-radius:6px;background:var(--gray);color:var(--text);font-size:13px;font-weight:700;text-align:center" inputmode="decimal">
+        </div>`;
+      }).join('')}
+    </div>`;
+  };
+
+  function idx(name){return allPlayers.indexOf(name)}
+
+  const score=(m.scoreA!==''&&m.scoreB!=='')?`<div style="font-size:22px;font-weight:800;text-align:center;margin:8px 0;color:var(--green)">${m.scoreA} - ${m.scoreB}</div>`:'';
+
+  document.getElementById('match-modal-body').innerHTML=`
+    <div>
+      ${m.notes?`<div style="font-size:12px;color:var(--text2);font-style:italic;margin-bottom:8px">${m.notes}</div>`:''}
+      ${score}
+      <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">Pagelle (1–10)</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        ${renderTeam('🔵 Blu',m.teamA||[],true)}
+        ${renderTeam('🟠 Arancio',m.teamB||[],false)}
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" style="flex:1" onclick="saveRatings('${id}')">💾 Salva pagelle</button>
+        <button class="btn btn-danger" onclick="deleteMatch('${id}')">🗑️</button>
+      </div>
+    </div>`;
+  document.getElementById('match-modal').style.display='block';
+}
+
+async function saveRatings(matchId){
+  const m=matches.find(x=>x.id===matchId);
+  if(!m)return;
+  const all=[...(m.teamA||[]),...(m.teamB||[])];
+  const ratings=[];
+  all.forEach((name,i)=>{
+    const teamCls=i<(m.teamA?.length||0)?'bl':'am';
+    const localIdx=all.indexOf(name);
+    const el=document.getElementById('rate-'+teamCls+'-'+localIdx);
+    if(el && el.value!==''){
+      const v=parseFloat(el.value);
+      if(v>=1&&v<=10) ratings.push({player:name,rating:v,notes:''});
+    }
+  });
+  try{
+    toast('⏳ Salvataggio pagelle...');
+    await backendCall('saveRatings',{matchId,ratings});
+    toast(`${ratings.length} pagelle salvate!`);
+    closeMatchModal();
+    loadMatches();
+  }catch(e){toast('Errore: '+e.message)}
+}
+
+async function deleteMatch(id){
+  if(!confirm('Eliminare questa partita e tutte le sue pagelle?'))return;
+  try{
+    await backendCall('deleteMatch',{id});
+    closeMatchModal();
+    toast('Partita eliminata');
+    loadMatches();
+  }catch(e){toast('Errore: '+e.message)}
+}
+
+function closeMatchModal(){
+  document.getElementById('match-modal').style.display='none';
 }
 </script>
 </body>
