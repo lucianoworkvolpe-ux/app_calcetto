@@ -237,6 +237,11 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 .rate-btn:active{background:rgba(0,0,0,0.15)}
 .rate-btn-minus{color:var(--red)}
 .rate-btn-plus{color:var(--green)}
+.score-stepper{display:flex;align-items:center;gap:2px;background:rgba(0,0,0,0.05);border-radius:8px;padding:1px}
+@media(prefers-color-scheme:dark){.score-stepper{background:rgba(255,255,255,0.06)}}
+.score-stepper input{width:38px;padding:6px 2px;border:1.5px solid var(--gray3);border-radius:5px;background:var(--gray);color:var(--text);font-size:16px;font-weight:800;text-align:center;-moz-appearance:textfield}
+.score-stepper input::-webkit-outer-spin-button,
+.score-stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
 /* ─── compact weight pills ─── */
 .w-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}
@@ -521,6 +526,12 @@ let selected=new Set(), allCombos=[], currentIdx=0;
 /* ════════════════════════════════════
    DEFAULTS
 ════════════════════════════════════ */
+function uid(){
+  return (crypto && crypto.randomUUID)
+    ? 'p_'+crypto.randomUUID()
+    : 'p_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+}
+
 function defaultPlayers(){
   const nm=['Marco','Luca','Gianni','Fabio','Enzo','Davide','Matteo','Andrea','Simone','Roberto','Claudio','Stefano','Paolo','Riccardo','Nicola'];
   const rl=[['ATT'],['DIF'],['MED'],['DIF'],['ATT','MED'],['MED'],['ATT'],['DIF','MED'],['MED'],['ATT'],['DIF'],['MED'],['ATT'],['DIF'],['MED','ATT']];
@@ -529,17 +540,24 @@ function defaultPlayers(){
     [6,7,8,7,7,9,7,6,8,3],[5,5,6,9,7,5,8,4,6,5],[8,6,7,6,5,7,5,9,6,7],[6,8,6,7,6,8,6,7,7,4],[7,7,8,8,8,6,9,5,7,5],
     [6,8,5,6,5,6,5,9,5,8],[7,6,7,7,7,8,7,7,7,4],[8,5,8,8,9,5,9,4,8,3],[5,9,5,5,4,6,4,9,5,7],[6,7,7,6,6,8,6,7,7,5]
   ];
-  return nm.map((n,i)=>({name:n,roles:[...rl[i]],stats:[...vs[i]]}));
+  return nm.map((n,i)=>({id:uid(),name:n,roles:[...rl[i]],stats:[...vs[i]]}));
 }
 
 /* ════════════════════════════════════
    STORAGE
 ════════════════════════════════════ */
 function migratePlayer(p){
+  if(!p.id) p.id=uid();
   if(!p.roles){p.roles=p.role?[p.role]:['MED'];delete p.role;}
   if(!Array.isArray(p.roles))p.roles=[p.roles];
   if(p.roles.length===0)p.roles=['MED'];
+  if(!Array.isArray(p.stats))p.stats=[];
   while(p.stats.length<STATS.length)p.stats.push(5);
+  p.stats=p.stats.map(v=>{
+    v=parseFloat(v);
+    if(isNaN(v))return 5;
+    return Math.max(1,Math.min(10,v));
+  });
 }
 
 function applyData(d){
@@ -681,12 +699,27 @@ function avCls(p){
 function calcOvr(stats){const tot=weights.reduce((a,b)=>a+b,0)||1;return stats.reduce((s,v,i)=>s+v*weights[i],0)/tot}
 function wScore(p){return calcOvr(p.stats)}
 
+// Normalize a stored team into [{id,name}] — handles legacy string[] and new object[]
+function normalizeTeam(team){
+  return (team||[]).map(x => (typeof x==='string') ? {id:null, name:x} : {id:x.id||null, name:x.name||''});
+}
+
+// All ratings for a given player object: match by id first, fall back to name for legacy rows
+function ratingsForPlayer(player){
+  if(!matchesCache.data || !matchesCache.data.ratings) return [];
+  const id=player.id, name=player.name;
+  return matchesCache.data.ratings.filter(r=>{
+    if(r.playerId && id) return r.playerId===id;     // both have id → strict id match
+    return r.player===name;                          // legacy / no-id → name match
+  });
+}
+
 // Returns {label, cls, avg} for a player based on their average ratings from cached matches
-function getPlayerPagInfo(playerName){
+function getPlayerPagInfo(player){
   if(!matchesCache.data || !matchesCache.data.ratings){
     return {label:'PAG —', cls:'pag-none', avg:null};
   }
-  const ratings=matchesCache.data.ratings.filter(r=>r.player===playerName);
+  const ratings=ratingsForPlayer(player);
   if(!ratings.length){
     return {label:'PAG —', cls:'pag-none', avg:null};
   }
@@ -726,7 +759,7 @@ function buildRosa(){
     });
     sg+='</div>';
     const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
-    const pagInfo=getPlayerPagInfo(p.name);
+    const pagInfo=getPlayerPagInfo(p);
     const d=document.createElement('div');d.className='card card-compact';
     d.innerHTML=`<div class="player-header" onclick="toggleCard(${i})">
       <div class="avatar ${avCls(p)}" id="av${i}">${ini(p.name)}</div>
@@ -768,7 +801,7 @@ function renderPlayerPagelle(i){
     container.innerHTML=`<div style="font-size:12px;color:var(--text3);text-align:center"><button class="btn btn-secondary btn-sm" onclick="loadAndRefreshPagelle(${i})">📊 Carica pagelle</button></div>`;
     return;
   }
-  drawPagelle(i,name,container);
+  drawPagelle(i,players[i],container);
 }
 
 async function loadAndRefreshPagelle(i){
@@ -781,14 +814,14 @@ async function loadAndRefreshPagelle(i){
       matchesCache.data={matches, ratings:data.ratings||[]};
       matchesCache.timestamp=Date.now();
     }
-    drawPagelle(i,players[i].name,container);
+    drawPagelle(i,players[i],container);
   }catch(e){
     container.innerHTML=`<div style="font-size:12px;color:var(--red);text-align:center">❌ ${e.message}</div>`;
   }
 }
 
-function drawPagelle(i,name,container){
-  const ratings=matchesCache.data.ratings.filter(r=>r.player===name);
+function drawPagelle(i,player,container){
+  const ratings=ratingsForPlayer(player);
   // join with match dates
   const dated=ratings.map(r=>{
     const m=matches.find(x=>x.id===r.matchId);
@@ -1429,7 +1462,7 @@ async function ensureMatchesCachedForRosa(){
       players.forEach((p,i)=>{
         const el=document.getElementById('pag'+i);
         if(el){
-          const info=getPlayerPagInfo(p.name);
+          const info=getPlayerPagInfo(p);
           el.textContent=info.label;
           el.className='pag-badge '+info.cls;
         }
@@ -1533,6 +1566,7 @@ function doPost(e) {
     if (action === 'addMatch')    return out({ok:true, id:addMatch(body)});
     if (action === 'deleteMatch') return out({ok:true, deleted:deleteMatch(body.id)});
     if (action === 'saveRatings') return out({ok:true, saved:saveRatings(body)});
+    if (action === 'updateScore') return out({ok:true, updated:updateScore(body)});
     return out({ok:false, error:'unknown action'});
   } catch(err) {
     return out({ok:false, error:String(err)});
@@ -1567,12 +1601,12 @@ function getMatches() {
 }
 
 function getRatings() {
-  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes']);
+  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId']);
   const data = sh.getDataRange().getValues();
   if (data.length < 2) return [];
   return data.slice(1).map(r => ({
-    matchId: r[0], player: r[1], rating: parseFloat(r[2]) || 0, notes: r[3] || ''
-  })).filter(r => r.matchId && r.player);
+    matchId: r[0], player: r[1], rating: parseFloat(r[2]) || 0, notes: r[3] || '', playerId: r[4] || ''
+  })).filter(r => r.matchId && (r.player || r.playerId));
 }
 
 function addMatch(m) {
@@ -1592,7 +1626,7 @@ function deleteMatch(id) {
     if (data[i][0] === id) sh.deleteRow(i + 1);
   }
   // delete ratings too
-  const rs = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes']);
+  const rs = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId']);
   const rd = rs.getDataRange().getValues();
   for (let i = rd.length - 1; i >= 1; i--) {
     if (rd[i][0] === id) rs.deleteRow(i + 1);
@@ -1601,7 +1635,7 @@ function deleteMatch(id) {
 }
 
 function saveRatings(payload) {
-  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes']);
+  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId']);
   const data = sh.getDataRange().getValues();
   // remove old ratings for this match
   for (let i = data.length - 1; i >= 1; i--) {
@@ -1609,9 +1643,22 @@ function saveRatings(payload) {
   }
   // append new ones
   (payload.ratings || []).forEach(r => {
-    sh.appendRow([payload.matchId, r.player, r.rating, r.notes || '']);
+    sh.appendRow([payload.matchId, r.player, r.rating, r.notes || '', r.playerId || '']);
   });
   return (payload.ratings || []).length;
+}
+
+function updateScore(payload) {
+  const sh = getSheet(SHEET_MATCHES, ['id','date','notes','teamA','teamB','scoreA','scoreB']);
+  const data = sh.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === payload.id) {
+      sh.getRange(i + 1, 6).setValue(payload.scoreA);
+      sh.getRange(i + 1, 7).setValue(payload.scoreB);
+      return true;
+    }
+  }
+  return false;
 }`;
 }
 
@@ -1728,8 +1775,8 @@ async function saveNewMatch(){
   const m={
     date:document.getElementById('nm-date').value,
     notes:document.getElementById('nm-notes').value.trim(),
-    teamA:lastCombo.tA.map(i=>players[i].name),
-    teamB:lastCombo.tB.map(i=>players[i].name),
+    teamA:lastCombo.tA.map(i=>({id:players[i].id, name:players[i].name})),
+    teamB:lastCombo.tB.map(i=>({id:players[i].id, name:players[i].name})),
     scoreA:document.getElementById('nm-scoreA').value,
     scoreB:document.getElementById('nm-scoreB').value
   };
@@ -1752,22 +1799,30 @@ function openMatch(id){
 
   document.getElementById('match-modal-title').textContent='📅 '+formatDate(m.date);
 
-  const allPlayers=[...(m.teamA||[]),...(m.teamB||[])];
-  const getRating=name=>ratings.find(r=>r.player===name);
+  // normalize teams to [{id,name}] (handles legacy string[] data)
+  const teamA=normalizeTeam(m.teamA);
+  const teamB=normalizeTeam(m.teamB);
+  const allPlayers=[...teamA,...teamB];
 
-  const renderTeam=(name, team, isBlue)=>{
+  // find existing rating for a player object: id first, then name
+  const getRating=pl=>ratings.find(r=>{
+    if(r.playerId && pl.id) return r.playerId===pl.id;
+    return r.player===pl.name;
+  });
+
+  const renderTeam=(title, team, isBlue)=>{
     const cls=isBlue?'bl':'am';
     const bg=isBlue?'var(--blue-light)':'var(--amber-light)';
     const col=isBlue?'var(--blue)':'var(--amber)';
     return `<div style="background:${bg};border-radius:var(--radius-sm);padding:10px;flex:1">
-      <div style="font-size:12px;font-weight:800;color:${col};margin-bottom:8px">${name}</div>
-      ${team.map(p=>{
-        const r=getRating(p);
+      <div style="font-size:12px;font-weight:800;color:${col};margin-bottom:8px">${title}</div>
+      ${team.map(pl=>{
+        const r=getRating(pl);
         const val=r?r.rating:'';
-        const localIdx=idx(p);
+        const localIdx=allPlayers.indexOf(pl);
         return `<div style="display:flex;align-items:center;gap:6px;padding:6px 0;font-size:12px">
-          <span style="flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p}</span>
-          <div class="rate-stepper" data-pid="rate-${cls}-${localIdx}">
+          <span style="flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pl.name}</span>
+          <div class="rate-stepper">
             <button type="button" onclick="rateStep('rate-${cls}-${localIdx}',-1)" class="rate-btn rate-btn-minus">−</button>
             <input type="number" min="1" max="10" step="0.5" placeholder="—" value="${val}" id="rate-${cls}-${localIdx}" inputmode="decimal" oninput="rateColor(this)">
             <button type="button" onclick="rateStep('rate-${cls}-${localIdx}',1)" class="rate-btn rate-btn-plus">+</button>
@@ -1777,27 +1832,53 @@ function openMatch(id){
     </div>`;
   };
 
-  function idx(name){return allPlayers.indexOf(name)}
-
-  const score=(m.scoreA!==''&&m.scoreB!=='')?`<div style="font-size:22px;font-weight:800;text-align:center;margin:8px 0;color:var(--green)">${m.scoreA} - ${m.scoreB}</div>`:'';
+  const scoreA=(m.scoreA!==''&&m.scoreA!=null)?m.scoreA:'';
+  const scoreB=(m.scoreB!==''&&m.scoreB!=null)?m.scoreB:'';
+  const scoreEditor=`
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:10px 0 4px">
+      <span style="font-size:11px;font-weight:700;color:var(--blue)">🔵 Blu</span>
+      <div class="score-stepper">
+        <button type="button" onclick="scoreStep('sc-a',-1)" class="rate-btn rate-btn-minus">−</button>
+        <input type="number" min="0" max="99" id="sc-a" value="${scoreA}" placeholder="0" inputmode="numeric">
+        <button type="button" onclick="scoreStep('sc-a',1)" class="rate-btn rate-btn-plus">+</button>
+      </div>
+      <span style="font-size:18px;color:var(--text3);font-weight:300">-</span>
+      <div class="score-stepper">
+        <button type="button" onclick="scoreStep('sc-b',-1)" class="rate-btn rate-btn-minus">−</button>
+        <input type="number" min="0" max="99" id="sc-b" value="${scoreB}" placeholder="0" inputmode="numeric">
+        <button type="button" onclick="scoreStep('sc-b',1)" class="rate-btn rate-btn-plus">+</button>
+      </div>
+      <span style="font-size:11px;font-weight:700;color:var(--amber)">Arancio 🟠</span>
+    </div>`;
 
   document.getElementById('match-modal-body').innerHTML=`
     <div>
       ${m.notes?`<div style="font-size:12px;color:var(--text2);font-style:italic;margin-bottom:8px">${m.notes}</div>`:''}
-      ${score}
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-top:8px">Risultato</div>
+      ${scoreEditor}
       <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">Pagelle (1–10)</div>
       <div style="display:flex;gap:8px;margin-bottom:14px">
-        ${renderTeam('🔵 Blu',m.teamA||[],true)}
-        ${renderTeam('🟠 Arancio',m.teamB||[],false)}
+        ${renderTeam('🔵 Blu',teamA,true)}
+        ${renderTeam('🟠 Arancio',teamB,false)}
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-primary" style="flex:1" onclick="saveRatings('${id}')">💾 Salva pagelle</button>
+        <button class="btn btn-primary" style="flex:1" onclick="saveRatings('${id}')">💾 Salva partita</button>
         <button class="btn btn-danger" onclick="deleteMatch('${id}')">🗑️</button>
       </div>
     </div>`;
   document.getElementById('match-modal').style.display='block';
   // apply initial colors
   document.querySelectorAll('.rate-stepper input').forEach(el=>rateColor(el));
+}
+
+function scoreStep(id, delta){
+  const el=document.getElementById(id);
+  if(!el)return;
+  let v=parseInt(el.value);
+  if(isNaN(v)) v = delta>0 ? 1 : 0;
+  else v += delta;
+  v = Math.max(0, Math.min(99, v));
+  el.value = v;
 }
 
 function rateStep(id, delta){
@@ -1827,21 +1908,31 @@ function rateColor(el){
 async function saveRatings(matchId){
   const m=matches.find(x=>x.id===matchId);
   if(!m)return;
-  const all=[...(m.teamA||[]),...(m.teamB||[])];
+  const teamA=normalizeTeam(m.teamA);
+  const teamB=normalizeTeam(m.teamB);
+  const all=[...teamA,...teamB];
   const ratings=[];
-  all.forEach((name,i)=>{
-    const teamCls=i<(m.teamA?.length||0)?'bl':'am';
-    const localIdx=all.indexOf(name);
-    const el=document.getElementById('rate-'+teamCls+'-'+localIdx);
+  all.forEach((pl,i)=>{
+    const teamCls=i<teamA.length?'bl':'am';
+    const el=document.getElementById('rate-'+teamCls+'-'+i);
     if(el && el.value!==''){
       const v=parseFloat(el.value);
-      if(v>=1&&v<=10) ratings.push({player:name,rating:v,notes:''});
+      if(v>=1&&v<=10) ratings.push({playerId:pl.id||'', player:pl.name, rating:v, notes:''});
     }
   });
+  // read possibly-edited score
+  const scA=document.getElementById('sc-a');
+  const scB=document.getElementById('sc-b');
+  const scoreA=scA&&scA.value!==''?scA.value:'';
+  const scoreB=scB&&scB.value!==''?scB.value:'';
   try{
-    toast('⏳ Salvataggio pagelle...');
+    toast('⏳ Salvataggio...');
     await backendCall('saveRatings',{matchId,ratings});
-    toast(`${ratings.length} pagelle salvate!`);
+    // also update score if it changed
+    if(scoreA!==(m.scoreA??'')||scoreB!==(m.scoreB??'')){
+      await backendCall('updateScore',{id:matchId,scoreA,scoreB});
+    }
+    toast(`Salvato: ${ratings.length} pagelle`);
     closeMatchModal();
     loadMatches();
   }catch(e){toast('Errore: '+e.message)}
