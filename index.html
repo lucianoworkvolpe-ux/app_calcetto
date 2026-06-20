@@ -379,26 +379,24 @@ input[type=file]{display:none}
   </div>
 </div>
 
-<!-- ══════════ PARTITE ══════════ -->
+<!-- ══════════ STORICO PARTITE ══════════ -->
 <div id="page-partite" class="page">
-  <div id="partite-status" class="card" style="display:none">
-    <div style="display:flex;align-items:center;gap:9px">
-      <span style="font-size:22px">⚠️</span>
+  <div id="partite-status" class="card" style="display:none;cursor:pointer" onclick="goToBackendSettings()">
+    <div style="display:flex;align-items:center;gap:11px">
+      <span style="font-size:28px">📊</span>
       <div style="flex:1">
-        <div style="font-size:13px;font-weight:700;margin-bottom:3px">Backend non configurato</div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.4">Configura l'URL del foglio Google in <strong>Settings</strong> per gestire partite e pagelle.</div>
+        <div style="font-size:14px;font-weight:800;margin-bottom:3px">Storico non disponibile</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.4">Tocca qui per configurare il foglio Google nei <strong>Settings → Backend</strong>.</div>
       </div>
+      <span style="color:var(--text3);font-size:18px">›</span>
     </div>
   </div>
 
   <div id="partite-content" style="display:none">
-    <!-- New match button -->
     <button class="btn btn-primary btn-full" style="margin-bottom:14px" onclick="newMatch()">📅 Nuova partita</button>
-
-    <!-- Matches list -->
     <div class="card" id="matches-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div class="section-header" style="margin:0">Storico partite</div>
+        <div class="section-header" style="margin:0">📋 Partite registrate</div>
         <button class="btn btn-secondary btn-sm" onclick="loadMatches()">🔄</button>
       </div>
       <div id="matches-list">
@@ -429,10 +427,10 @@ input[type=file]{display:none}
     <span class="bni">👥</span>Rosa
   </button>
   <button class="bnav-item" id="bnav-partita" onclick="showPage('partita')">
-    <span class="bni">⚽</span>Partita
+    <span class="bni">⚽</span>Genera
   </button>
   <button class="bnav-item" id="bnav-partite" onclick="showPage('partite')">
-    <span class="bni">📅</span>Partite
+    <span class="bni">📅</span>Storico
   </button>
   <button class="bnav-item" id="bnav-settings" onclick="showPage('settings')">
     <span class="bni">⚙️</span>Settings
@@ -1781,6 +1779,17 @@ async function deleteMatch(id){
 
 function closeMatchModal(){
   document.getElementById('match-modal').style.display='none';
+}
+
+function goToBackendSettings(){
+  showPage('settings');
+  setTimeout(()=>{
+    const el=document.getElementById('apps-script-url');
+    if(el){
+      el.scrollIntoView({behavior:'smooth',block:'center'});
+      el.focus();
+    }
+  },200);
 }
 </script>
 </body>
