@@ -6,7 +6,7 @@
 <title>CalcioLercio</title>
 <style>
 :root{
-  --green:#1a7a4a;--green-light:#e8f5ee;--green-mid:#2d9e62;
+  --green:#1a4a8f;--green-light:#e8eef8;--green-mid:#2e69c4;
   --blue:#1a5fa8;--blue-light:#deeaf8;
   --amber:#b87000;--amber-light:#fff0cc;
   --red:#c0392b;--red-light:#fdecea;
@@ -20,7 +20,7 @@
   --def:#1278b8;   --def-light:#daeef9; --def-mid:#2a9dd4;
 }
 @media(prefers-color-scheme:dark){:root{
-  --green:#27c46e;--green-light:#0a2218;--green-mid:#22a85a;
+  --green:#4a8ee0;--green-light:#0a1a30;--green-mid:#3a78c8;
   --blue:#4a9eff;--blue-light:#0a1c30;
   --amber:#f0b030;--amber-light:#261800;
   --red:#e05c4e;--red-light:#280d0a;
@@ -36,8 +36,8 @@ html{font-size:16px}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--gray);color:var(--text);min-height:100vh;overflow-x:hidden}
 
 /* ─── header ─── */
-header{background:var(--green);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 14px rgba(0,0,0,0.2)}
-.logo{display:flex;align-items:center;gap:9px;font-size:18px;font-weight:800;letter-spacing:-0.4px}
+header{background:var(--green);color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:flex-start;position:sticky;top:0;z-index:200;box-shadow:0 2px 14px rgba(0,0,0,0.2)}
+.logo{display:flex;align-items:center;gap:11px;font-size:19px;font-weight:800;letter-spacing:-0.4px}
 .logo svg{width:28px;height:28px;flex-shrink:0}
 .hdr-right{display:flex;gap:7px;align-items:center}
 .btn-icon{background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;transition:background var(--tr);white-space:nowrap;min-height:38px}
@@ -54,22 +54,25 @@ header{background:var(--green);color:#fff;padding:14px 16px;display:flex;align-i
 .page{display:none;padding:14px;padding-bottom:20px;max-width:800px;margin:0 auto}
 .page.active{display:block}
 .card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+.card.card-compact{padding:9px 12px;margin-bottom:7px}
 @media(prefers-color-scheme:dark){.card{background:#1e232e}}
 
 /* ─── player card ─── */
-.player-header{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;min-height:48px}
-.avatar{width:40px;height:40px;border-radius:50%;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.player-header{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;min-height:38px}
+.avatar{width:34px;height:34px;border-radius:50%;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .av-att{background:var(--att-light);color:var(--att)}
 .av-mid{background:var(--mid-light);color:var(--mid)}
 .av-def{background:var(--def-light);color:var(--def)}
 .av-multi{background:#f0eaf8;color:#6b3fa0}
 .av-none{background:var(--gray2);color:var(--text3)}
-.player-name-input{flex:1;border:none;background:transparent;font-size:15px;font-weight:700;color:var(--text);padding:0;outline:none;min-width:0;min-height:40px}
+.player-name-input{border:none;background:transparent;font-size:14px;font-weight:700;color:var(--text);padding:0;outline:none;min-width:60px;width:auto;max-width:140px;min-height:34px}
 .player-name-input:focus{border-bottom:2px solid var(--green)}
-.ovr-badge{font-size:12px;font-weight:800;padding:3px 9px;border-radius:99px;background:var(--green-light);color:var(--green);white-space:nowrap;flex-shrink:0}
-.chevron{font-size:14px;color:var(--text3);transition:transform var(--tr);flex-shrink:0}
+.player-spacer{flex:1;min-width:6px}
+.role-pills-display{display:flex;gap:3px;flex-wrap:nowrap;overflow:hidden}
+.ovr-badge{font-size:11px;font-weight:800;padding:2px 7px;border-radius:99px;background:var(--green-light);color:var(--green);white-space:nowrap;flex-shrink:0}
+.chevron{font-size:13px;color:var(--text3);transition:transform var(--tr);flex-shrink:0}
 .chevron.open{transform:rotate(180deg)}
-.del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:6px;line-height:1;flex-shrink:0;min-height:40px;min-width:36px;display:flex;align-items:center;justify-content:center}
+.del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:3px;line-height:1;flex-shrink:0;min-height:32px;min-width:28px;display:flex;align-items:center;justify-content:center}
 .del-btn:active{color:var(--red)}
 
 /* ─── role toggles ─── */
@@ -233,6 +236,14 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 .weight-input{flex:1;accent-color:var(--green);cursor:pointer;height:20px}
 .weight-val{font-size:13px;font-weight:800;width:28px;text-align:right;color:var(--green)}
 
+/* ─── compact weight pills ─── */
+.w-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}
+.w-name{font-size:12px;color:var(--text);width:92px;display:flex;align-items:center;gap:4px;flex-shrink:0;text-transform:capitalize}
+.w-pills{display:flex;gap:3px;flex:1;min-width:0}
+.w-pill{flex:1;min-width:0;padding:5px 2px;border:1.5px solid var(--gray2);background:transparent;color:var(--text3);font-size:11px;font-weight:700;border-radius:6px;cursor:pointer;transition:all var(--tr);text-align:center;line-height:1.1}
+.w-pill:hover{border-color:var(--gray3);color:var(--text2)}
+.w-pill-on{background:var(--green);border-color:var(--green);color:#fff}
+
 /* ─── toast ─── */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);background:#151a22;color:#fff;padding:10px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;opacity:0;transition:all 0.25s;z-index:999;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -248,19 +259,11 @@ input[type=file]{display:none}
 
 <header>
   <div class="logo">
-    <svg viewBox="0 0 28 28" fill="none">
-      <circle cx="14" cy="14" r="13" stroke="white" stroke-width="1.5"/>
-      <path d="M14 1L14 27M1 14L27 14" stroke="white" stroke-width="1" opacity="0.4"/>
-      <path d="M5 5Q14 10 23 5Q18 14 23 23Q14 18 5 23Q10 14 5 5Z" fill="white" opacity="0.9"/>
-    </svg>
+    <img src="data:image/png;base64,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" alt="CalcioLercio" style="width:56px;height:56px;display:block;object-fit:contain">
     CalcioLercio
     <span id="data-source" style="font-size:10px;font-weight:500;opacity:0.7;margin-left:6px"></span>
   </div>
-  <div class="hdr-right">
-    <button class="btn-icon" onclick="exportJSON()">⬇ Salva</button>
-    <button class="btn-icon" onclick="document.getElementById('imp').click()">⬆ Carica</button>
-    <input type="file" id="imp" accept=".json" onchange="importJSON(event)">
-  </div>
+  <input type="file" id="imp" accept=".json" onchange="importJSON(event)" style="display:none">
 </header>
 
 <!-- ══════ PAGES ══════ -->
@@ -416,6 +419,9 @@ input[type=file]{display:none}
     <div id="match-modal-body"></div>
   </div>
 </div>
+
+<!-- ══════════ SETTINGS ══════════ -->
+<div id="page-settings" class="page">
   <div class="card">
     <div id="settings-inner"></div>
   </div>
@@ -703,11 +709,12 @@ function buildRosa(){
     });
     sg+='</div>';
     const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
-    const d=document.createElement('div');d.className='card';
+    const d=document.createElement('div');d.className='card card-compact';
     d.innerHTML=`<div class="player-header" onclick="toggleCard(${i})">
       <div class="avatar ${avCls(p)}" id="av${i}">${ini(p.name)}</div>
       <input class="player-name-input" type="text" value="${p.name}" placeholder="Nome"
         oninput="upName(${i},this.value)" onclick="event.stopPropagation()">
+      <span class="player-spacer"></span>
       <div class="role-pills-display" id="rpills${i}">${pills}</div>
       <span class="ovr-badge" id="ov${i}">OVR ${ovr}</span>
       <button class="del-btn" onclick="delPlayer(${i},event)">✕</button>
@@ -1180,6 +1187,18 @@ function moduleComposition(slots){
 function buildSettings(){
   let html='';
 
+  // ── Backup / Sync ──
+  html+=`<div class="section-header">💾 Backup & Sincronizzazione</div>
+  <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5">Esporta la rosa come <code>rosa_calcetto.json</code> per condividerla via GitHub Pages tra dispositivi.</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">
+    <button class="btn btn-primary" onclick="exportJSON()" style="padding:14px 12px;font-size:14px">
+      ⬇ Salva su file
+    </button>
+    <button class="btn btn-secondary" onclick="document.getElementById('imp').click()" style="padding:14px 12px;font-size:14px;border:2px solid var(--green);color:var(--green)">
+      ⬆ Carica da file
+    </button>
+  </div>`;
+
   // ── Auto info banner ──
   html+=`<div class="section-header">Moduli di gioco</div>
   <div style="background:var(--green-light);border-radius:var(--radius-sm);padding:11px 13px;margin-bottom:16px;border:1px solid var(--green-mid)">
@@ -1198,50 +1217,54 @@ function buildSettings(){
           <span style="font-size:11px;font-weight:500;color:var(--text3);margin-left:4px">${n} giocatori per squadra</span>
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:7px" id="mod-list-${n}">`;
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="mod-list-${n}">`;
 
     MODULES[n].forEach((m,idx)=>{
       const c=moduleComposition(m.slots);
-      html+=`<div style="display:flex;align-items:center;gap:10px;background:var(--gray);border-radius:var(--radius-sm);padding:10px 12px">
+      html+=`<div style="display:flex;align-items:flex-start;gap:6px;background:var(--gray);border-radius:var(--radius-sm);padding:8px 10px;min-width:0">
         <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:3px">${m.notation}</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-            <span style="font-size:11px;color:var(--text2)">🧤 Por: <strong>${c.por}</strong></span>
-            <span style="font-size:11px;color:var(--def)">🛡️ Dif: <strong>${c.def}</strong></span>
-            <span style="font-size:11px;color:var(--mid)">🔀 Med: <strong>${c.med}</strong></span>
-            <span style="font-size:11px;color:var(--att)">⚔️ Att: <strong>${c.att}</strong></span>
+          <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px">${m.notation}</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;font-size:10px;line-height:1.3">
+            <span style="color:var(--text2)">🧤<strong>${c.por}</strong></span>
+            <span style="color:var(--def)">🛡️<strong>${c.def}</strong></span>
+            <span style="color:var(--mid)">🔀<strong>${c.med}</strong></span>
+            <span style="color:var(--att)">⚔️<strong>${c.att}</strong></span>
           </div>
-          ${m.desc?`<div style="font-size:11px;color:var(--text3);margin-top:3px;font-style:italic">${m.desc}</div>`:''}
+          ${m.desc?`<div style="font-size:10px;color:var(--text3);margin-top:3px;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.desc}</div>`:''}
         </div>
-        ${MODULES[n].length>1?`<button onclick="deleteModule(${n},${idx})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:4px;flex-shrink:0" title="Rimuovi">🗑️</button>`:''}
+        ${MODULES[n].length>1?`<button onclick="deleteModule(${n},${idx})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:2px;flex-shrink:0;line-height:1" title="Rimuovi">🗑️</button>`:''}
       </div>`;
     });
 
     html+='</div>';
 
-    // ── Add module form ──
-    html+=`<div style="margin-top:8px;background:var(--gray2);border-radius:var(--radius-sm);padding:11px 12px">
-      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:9px">➕ Aggiungi formazione ${n}vs${n}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px">
-        <div>
-          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">🛡️ Difensori</label>
-          <input type="number" min="0" max="6" value="2" id="new-def-${n}" style="width:100%;padding:7px 8px;border:1.5px solid var(--gray3);border-radius:7px;background:var(--gray);color:var(--text);font-size:14px;font-weight:700;text-align:center">
+    // ── Add module link (collapsed by default) ──
+    html+=`<div style="margin-top:8px">
+      <button onclick="toggleAddModule(${n})" id="add-toggle-${n}" style="background:none;border:1px dashed var(--gray3);color:var(--text2);font-size:11px;font-weight:600;padding:6px 10px;border-radius:var(--radius-sm);cursor:pointer;width:100%;text-align:center">
+        ➕ Aggiungi formazione ${n}vs${n}
+      </button>
+      <div id="add-form-${n}" style="display:none;margin-top:7px;background:var(--gray2);border-radius:var(--radius-sm);padding:9px 10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:7px">
+          <div>
+            <label style="font-size:10px;color:var(--def);display:block;margin-bottom:2px;font-weight:700">🛡️ Dif</label>
+            <input type="number" min="0" max="6" value="2" id="new-def-${n}" style="width:100%;padding:5px;border:1.5px solid var(--gray3);border-radius:6px;background:var(--gray);color:var(--text);font-size:13px;font-weight:700;text-align:center">
+          </div>
+          <div>
+            <label style="font-size:10px;color:var(--mid);display:block;margin-bottom:2px;font-weight:700">🔀 Med</label>
+            <input type="number" min="0" max="6" value="2" id="new-mid-${n}" style="width:100%;padding:5px;border:1.5px solid var(--gray3);border-radius:6px;background:var(--gray);color:var(--text);font-size:13px;font-weight:700;text-align:center">
+          </div>
+          <div>
+            <label style="font-size:10px;color:var(--att);display:block;margin-bottom:2px;font-weight:700">⚔️ Att</label>
+            <input type="number" min="0" max="6" value="1" id="new-att-${n}" style="width:100%;padding:5px;border:1.5px solid var(--gray3);border-radius:6px;background:var(--gray);color:var(--text);font-size:13px;font-weight:700;text-align:center">
+          </div>
         </div>
-        <div>
-          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">🔀 Centrocampisti</label>
-          <input type="number" min="0" max="6" value="2" id="new-mid-${n}" style="width:100%;padding:7px 8px;border:1.5px solid var(--gray3);border-radius:7px;background:var(--gray);color:var(--text);font-size:14px;font-weight:700;text-align:center">
-        </div>
-        <div>
-          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">⚔️ Attaccanti</label>
-          <input type="number" min="0" max="6" value="1" id="new-att-${n}" style="width:100%;padding:7px 8px;border:1.5px solid var(--gray3);border-radius:7px;background:var(--gray);color:var(--text);font-size:14px;font-weight:700;text-align:center">
-        </div>
-        <div>
-          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:3px">📝 Descrizione (opz.)</label>
-          <input type="text" placeholder="es. offensivo" id="new-desc-${n}" style="width:100%;padding:7px 8px;border:1.5px solid var(--gray3);border-radius:7px;background:var(--gray);color:var(--text);font-size:12px">
+        <input type="text" placeholder="descrizione opz." id="new-desc-${n}" style="width:100%;padding:5px 8px;border:1.5px solid var(--gray3);border-radius:6px;background:var(--gray);color:var(--text);font-size:11px;margin-bottom:7px">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:6px;text-align:center">somma deve fare ${n-1}</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-secondary btn-sm" style="flex:1" onclick="toggleAddModule(${n})">Annulla</button>
+          <button class="btn btn-primary btn-sm" style="flex:1" onclick="addModule(${n})">Aggiungi</button>
         </div>
       </div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:8px" id="new-preview-${n}">POR fissa (1) + i valori sopra devono sommare ${n-1}</div>
-      <button class="btn btn-primary btn-full btn-sm" onclick="addModule(${n})">Aggiungi formazione</button>
     </div>`;
 
     html+='</div>';
@@ -1261,19 +1284,32 @@ function buildSettings(){
       <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5">💡 Salva l'URL, poi premi <strong>⬇ Salva</strong> in alto per esportare <code>rosa_calcetto.json</code> con l'URL incluso. Caricalo su GitHub e l'URL sarà disponibile su tutti i dispositivi.</div>
     </div>`;
 
-  // ── Weights ──
+  // ── Weights (compact pill selector) ──
   html+=`<div class="section-header" style="margin-top:4px">Peso statistiche</div>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:14px">Imposta a 0 per escludere una statistica dal bilanciamento.</p>`;
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.4">Tocca un valore per impostarlo. <strong>0</strong> = escluso dal bilanciamento, <strong>3</strong> = peso massimo.</p>`;
   STATS.forEach((s,i)=>{
-    html+=`<div class="weight-row">
-      <span class="weight-label">${ICONS[i]} ${s}</span>
-      <input class="weight-input" type="range" min="0" max="3" step="0.5" value="${weights[i]}" oninput="upW(${i},this.value)">
-      <span class="weight-val" id="wv${i}">${parseFloat(weights[i]).toFixed(1)}</span>
+    const cur=parseFloat(weights[i]);
+    const pills=[0,0.5,1,1.5,2,2.5,3].map(v=>{
+      const active=Math.abs(v-cur)<0.01;
+      return `<button class="w-pill${active?' w-pill-on':''}" onclick="setW(${i},${v})">${v===0?'0':v}</button>`;
+    }).join('');
+    html+=`<div class="w-row" id="wr${i}">
+      <span class="w-name">${ICONS[i]} ${s}</span>
+      <div class="w-pills">${pills}</div>
     </div>`;
   });
 
   const c=document.getElementById('settings-inner');
   if(c)c.innerHTML=html;
+}
+
+function toggleAddModule(n){
+  const f=document.getElementById('add-form-'+n);
+  const t=document.getElementById('add-toggle-'+n);
+  if(!f)return;
+  const open=f.style.display!=='none';
+  f.style.display=open?'none':'block';
+  t.style.display=open?'block':'none';
 }
 
 function addModule(n){
@@ -1331,7 +1367,21 @@ function loadModules(){
   }catch(e){}
 }
 
-function upW(i,v){weights[i]=parseFloat(v);document.getElementById('wv'+i).textContent=weights[i].toFixed(1);save()}
+function upW(i,v){weights[i]=parseFloat(v);save()}
+function setW(i,v){
+  weights[i]=v;
+  save();
+  // re-render the row to update pill highlights
+  const row=document.getElementById('wr'+i);
+  if(row){
+    const s=STATS[i];
+    const pills=[0,0.5,1,1.5,2,2.5,3].map(val=>{
+      const active=Math.abs(val-v)<0.01;
+      return `<button class="w-pill${active?' w-pill-on':''}" onclick="setW(${i},${val})">${val===0?'0':val}</button>`;
+    }).join('');
+    row.innerHTML=`<span class="w-name">${ICONS[i]} ${s}</span><div class="w-pills">${pills}</div>`;
+  }
+}
 
 /* ════════════════════════════════════
    NAV
@@ -1351,44 +1401,6 @@ function showPage(name){
    TOAST
 ════════════════════════════════════ */
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
-
-/* ════════════════════════════════════
-   IO
-════════════════════════════════════ */
-function exportJSON(){
-  const data={players,weights,sizeA,sizeB,asymMode,version:5,exported:new Date().toISOString()};
-  const b=new Blob([JSON.stringify(data,null,2)],{type:'application/octet-stream'});
-  const url=URL.createObjectURL(b);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download='rosa_calcetto.json';
-  a.style.display='none';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},200);
-  toast('File salvato!');
-}
-function importJSON(e){
-  const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    try{
-      const d=JSON.parse(ev.target.result);
-      if(d.players&&Array.isArray(d.players)){
-        players=d.players;
-        players.forEach(p=>{if(!p.roles){p.roles=p.role?[p.role]:['MED'];delete p.role;}if(!Array.isArray(p.roles))p.roles=[p.roles];if(p.roles.length===0)p.roles=['MED'];while(p.stats.length<STATS.length)p.stats.push(5);});
-        if(d.weights)weights=d.weights;
-        if(d.sizeA)sizeA=d.sizeA;if(d.sizeB)sizeB=d.sizeB;if(d.asymMode!==undefined)asymMode=d.asymMode;
-        // backcompat
-        if(d.matchFormat&&!d.sizeA){sizeA=d.matchFormat;sizeB=d.matchFormat;}
-        selected.clear();save();buildRosa();buildConvList();buildSettings();updateFormatUI();
-        toast('Giocatori caricati!');
-      }else toast('File non valido');
-    }catch(err){toast('Errore nel file JSON')}
-    e.target.value='';
-  };
-  r.readAsText(f);
-}
 
 /* ════════════════════════════════════
    BACKEND (Google Sheets via Apps Script)
