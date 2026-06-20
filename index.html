@@ -70,6 +70,11 @@ header{background:var(--green);color:#fff;padding:10px 16px;display:flex;align-i
 .player-spacer{flex:1;min-width:6px}
 .role-pills-display{display:flex;gap:3px;flex-wrap:nowrap;overflow:hidden}
 .ovr-badge{font-size:11px;font-weight:800;padding:2px 7px;border-radius:99px;background:var(--green-light);color:var(--green);white-space:nowrap;flex-shrink:0}
+.pag-badge{font-size:11px;font-weight:800;padding:2px 7px;border-radius:99px;white-space:nowrap;flex-shrink:0}
+.pag-good{background:#e4f7ec;color:#1a5a2a}
+.pag-mid{background:#fff4d6;color:#7a4a00}
+.pag-bad{background:#fde8e8;color:#a82020}
+.pag-none{background:var(--gray2);color:var(--text3)}
 .chevron{font-size:13px;color:var(--text3);transition:transform var(--tr);flex-shrink:0}
 .chevron.open{transform:rotate(180deg)}
 .del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:3px;line-height:1;flex-shrink:0;min-height:32px;min-width:28px;display:flex;align-items:center;justify-content:center}
@@ -679,6 +684,8 @@ function importJSON(e){
   updateAsymDisplay();
   updateFormatUI();
   if(!asymMode)[5,6,7].forEach(x=>document.getElementById('fmt-'+x).classList.toggle('active',x===sizeA));
+  // background-load matches so the PAG badges populate on Rosa
+  if(typeof ensureMatchesCachedForRosa==='function') ensureMatchesCachedForRosa();
 })();
 function ini(n){return(n||'?').substring(0,2).toUpperCase()}
 function primaryRole(p){return p.roles[0]||'MED'}
@@ -690,6 +697,22 @@ function avCls(p){
 }
 function calcOvr(stats){const tot=weights.reduce((a,b)=>a+b,0)||1;return stats.reduce((s,v,i)=>s+v*weights[i],0)/tot}
 function wScore(p){return calcOvr(p.stats)}
+
+// Returns {label, cls, avg} for a player based on their average ratings from cached matches
+function getPlayerPagInfo(playerName){
+  if(!matchesCache.data || !matchesCache.data.ratings){
+    return {label:'PAG —', cls:'pag-none', avg:null};
+  }
+  const ratings=matchesCache.data.ratings.filter(r=>r.player===playerName);
+  if(!ratings.length){
+    return {label:'PAG —', cls:'pag-none', avg:null};
+  }
+  const avg=ratings.reduce((s,r)=>s+r.rating,0)/ratings.length;
+  let cls='pag-mid';
+  if(avg>=6.5) cls='pag-good';
+  else if(avg<5.5) cls='pag-bad';
+  return {label:`PAG ${avg.toFixed(1)}`, cls, avg};
+}
 function neededTotal(){return sizeA+sizeB}
 
 /* ════════════════════════════════════
@@ -720,6 +743,7 @@ function buildRosa(){
     });
     sg+='</div>';
     const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
+    const pagInfo=getPlayerPagInfo(p.name);
     const d=document.createElement('div');d.className='card card-compact';
     d.innerHTML=`<div class="player-header" onclick="toggleCard(${i})">
       <div class="avatar ${avCls(p)}" id="av${i}">${ini(p.name)}</div>
@@ -728,6 +752,7 @@ function buildRosa(){
       <span class="player-spacer"></span>
       <div class="role-pills-display" id="rpills${i}">${pills}</div>
       <span class="ovr-badge" id="ov${i}">OVR ${ovr}</span>
+      <span class="pag-badge ${pagInfo.cls}" id="pag${i}" title="Media pagelle">${pagInfo.label}</span>
       <button class="del-btn" onclick="delPlayer(${i},event)">✕</button>
       <span class="chevron" id="ch${i}">▾</span>
     </div>
@@ -1402,10 +1427,34 @@ function showPage(name){
   document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
   document.getElementById('bnav-'+name).classList.add('active');
+  if(name==='rosa') ensureMatchesCachedForRosa();
   if(name==='partita'){buildConvList();updateFormatUI();}
   if(name==='partite')buildPartitePage();
   if(name==='settings')buildSettings();
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Background-load match ratings once, so the PAG badges in Rosa populate without manual trigger
+async function ensureMatchesCachedForRosa(){
+  if(!backendUrl)return;
+  if(matchesCache.data && (Date.now()-matchesCache.timestamp < 60000))return; // cache 1 min
+  try{
+    const data=await backendCall('matches');
+    if(data.ok){
+      matches=data.matches||[];
+      matchesCache.data={matches,ratings:data.ratings||[]};
+      matchesCache.timestamp=Date.now();
+      // refresh all pag badges on Rosa
+      players.forEach((p,i)=>{
+        const el=document.getElementById('pag'+i);
+        if(el){
+          const info=getPlayerPagInfo(p.name);
+          el.textContent=info.label;
+          el.className='pag-badge '+info.cls;
+        }
+      });
+    }
+  }catch(e){/* silent */}
 }
 
 /* ════════════════════════════════════
