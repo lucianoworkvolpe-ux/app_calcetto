@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Calcetto</title>
+<title>CalcioLercio</title>
 <style>
 :root{
   --green:#1a7a4a;--green-light:#e8f5ee;--green-mid:#2d9e62;
@@ -253,7 +253,7 @@ input[type=file]{display:none}
       <path d="M14 1L14 27M1 14L27 14" stroke="white" stroke-width="1" opacity="0.4"/>
       <path d="M5 5Q14 10 23 5Q18 14 23 23Q14 18 5 23Q10 14 5 5Z" fill="white" opacity="0.9"/>
     </svg>
-    Calcetto
+    CalcioLercio
   </div>
   <div class="hdr-right">
     <button class="btn-icon" onclick="exportJSON()">⬇ Salva</button>
@@ -489,31 +489,123 @@ function defaultPlayers(){
 /* ════════════════════════════════════
    STORAGE
 ════════════════════════════════════ */
-function save(){
-  localStorage.setItem('calc5_p',JSON.stringify(players));
-  localStorage.setItem('calc5_w',JSON.stringify(weights));
-  localStorage.setItem('calc5_fmt',JSON.stringify({sizeA,sizeB,asymMode}));
+function migratePlayer(p){
+  if(!p.roles){p.roles=p.role?[p.role]:['MED'];delete p.role;}
+  if(!Array.isArray(p.roles))p.roles=[p.roles];
+  if(p.roles.length===0)p.roles=['MED'];
+  while(p.stats.length<STATS.length)p.stats.push(5);
 }
-function load(){
+
+function applyData(d){
+  if(d.players&&Array.isArray(d.players)){
+    players=d.players;
+    players.forEach(migratePlayer);
+  }
+  if(d.weights)weights=d.weights;
+  if(d.sizeA){sizeA=d.sizeA;sizeB=d.sizeB;}
+  if(d.matchFormat&&!d.sizeA){sizeA=d.matchFormat;sizeB=d.matchFormat;}
+  if(d.asymMode!==undefined)asymMode=d.asymMode;
+}
+
+// localStorage backup (saves every edit)
+function save(){
+  localStorage.setItem('calcio_p',JSON.stringify(players));
+  localStorage.setItem('calcio_w',JSON.stringify(weights));
+  localStorage.setItem('calcio_fmt',JSON.stringify({sizeA,sizeB,asymMode}));
+}
+
+// async init: 1) try fetch rosa_calcetto.json from same origin
+//              2) fallback to localStorage
+//              3) fallback to hardcoded defaults
+async function loadData(){
+  // 1 — try to fetch the JSON file from the same folder as the HTML
   try{
-    const rp=localStorage.getItem('calc5_p');
-    players=rp?JSON.parse(rp):defaultPlayers();
-    players.forEach(p=>{
-      if(!p.roles){p.roles=p.role?[p.role]:['MED'];delete p.role;}
-      if(!Array.isArray(p.roles))p.roles=[p.roles];
-      if(p.roles.length===0)p.roles=['MED'];
-      // migrate old players with fewer stats — pad with 5
-      while(p.stats.length<STATS.length)p.stats.push(5);
-    });
-    const rw=localStorage.getItem('calc5_w');if(rw)weights=JSON.parse(rw);
-    const rf=localStorage.getItem('calc5_fmt');
-    if(rf){const f=JSON.parse(rf);sizeA=f.sizeA||5;sizeB=f.sizeB||5;asymMode=!!f.asymMode;}
-  }catch(e){players=defaultPlayers();}
+    const res=await fetch('rosa_calcetto.json?_='+Date.now());
+    if(res.ok){
+      const d=await res.json();
+      applyData(d);
+      console.log('✅ Dati caricati da rosa_calcetto.json');
+      return;
+    }
+  }catch(e){/* file not found or CORS in local file:// — continue */}
+
+  // 2 — fallback to localStorage
+  try{
+    const rp=localStorage.getItem('calcio_p');
+    if(rp){
+      const d={
+        players:JSON.parse(rp),
+        weights:JSON.parse(localStorage.getItem('calcio_w')||'null'),
+        ...JSON.parse(localStorage.getItem('calcio_fmt')||'{}')
+      };
+      applyData(d);
+      console.log('💾 Dati caricati da localStorage');
+      return;
+    }
+  }catch(e){}
+
+  // 3 — defaults
+  players=defaultPlayers();
+  console.log('📋 Dati di default caricati');
 }
 
 /* ════════════════════════════════════
-   HELPERS
+   TOAST
 ════════════════════════════════════ */
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+
+/* ════════════════════════════════════
+   IO
+════════════════════════════════════ */
+function exportJSON(){
+  const data={players,weights,sizeA,sizeB,asymMode,version:6,exported:new Date().toISOString()};
+  const b=new Blob([JSON.stringify(data,null,2)],{type:'application/octet-stream'});
+  const url=URL.createObjectURL(b);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='rosa_calcetto.json';
+  a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},200);
+  toast('rosa_calcetto.json salvato — caricalo su GitHub!');
+}
+function importJSON(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(d.players&&Array.isArray(d.players)){
+        applyData(d);
+        selected.clear();save();buildRosa();buildConvList();buildSettings();updateFormatUI();
+        toast('Giocatori caricati!');
+      }else toast('File non valido');
+    }catch(err){toast('Errore nel file JSON')}
+    e.target.value='';
+  };
+  r.readAsText(f);
+}
+
+/* ════════════════════════════════════
+   INIT
+════════════════════════════════════ */
+(async()=>{
+  // show loading state
+  document.getElementById('players-list').innerHTML=
+    '<div style="text-align:center;padding:40px;color:var(--text3);font-size:14px">⏳ Caricamento rosa...</div>';
+
+  await loadData();
+  loadModules();
+  buildRosa();
+  buildSettings();
+
+  const asymEl=document.getElementById('asym-check');
+  if(asymMode){asymEl.checked=true;document.getElementById('asym-controls').style.display='flex';}
+  updateAsymDisplay();
+  updateFormatUI();
+  if(!asymMode)[5,6,7].forEach(x=>document.getElementById('fmt-'+x).classList.toggle('active',x===sizeA));
+})();
 function ini(n){return(n||'?').substring(0,2).toUpperCase()}
 function primaryRole(p){return p.roles[0]||'MED'}
 function avCls(p){
@@ -1130,21 +1222,6 @@ function importJSON(e){
   };
   r.readAsText(f);
 }
-
-/* ════════════════════════════════════
-   INIT
-════════════════════════════════════ */
-load();
-loadModules();
-buildRosa();
-buildSettings();
-// restore UI state for format
-const asymEl=document.getElementById('asym-check');
-if(asymMode){asymEl.checked=true;document.getElementById('asym-controls').style.display='flex';}
-updateAsymDisplay();
-updateFormatUI();
-// highlight correct base format button
-if(!asymMode)[5,6,7].forEach(x=>document.getElementById('fmt-'+x).classList.toggle('active',x===sizeA));
 </script>
 </body>
 </html>
