@@ -947,14 +947,14 @@ function updateFormatUI(){
 ════════════════════════════════════ */
 function buildConvList(){
   const c=document.getElementById('conv-list');if(!c)return;
-  c.innerHTML='';
+  // drop stale selections (deleted players)
   selected.forEach(i=>{if(i>=players.length)selected.delete(i)});
-  players.forEach((p,i)=>{
+  c.innerHTML=players.map((p,i)=>{
     const sel=selected.has(i);
     const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
     const selCls=sel?' sel':'';
     const ovr=calcOvr(p.stats).toFixed(1);
-    c.innerHTML+=`<div class="conv-item${selCls}" onclick="toggleConv(${i})">
+    return `<div class="conv-item${selCls}" onclick="toggleConv(${i})">
       <div class="conv-avatar ${avCls(p)}">${ini(p.name)}<span class="ovr-dot">${ovr}</span></div>
       <div class="conv-info">
         <span class="conv-name">${p.name}</span>
@@ -962,7 +962,7 @@ function buildConvList(){
       </div>
       <div class="conv-check">${sel?'✓':''}</div>
     </div>`;
-  });
+  }).join('');
   updateCnt();
 }
 function toggleConv(i){selected.has(i)?selected.delete(i):selected.add(i);buildConvList()}
@@ -993,15 +993,28 @@ function generateTeams(){
   // For each role needed by the module's outfield slots, credit = min(have, need) / need.
   // GK slot (x<0.15) excluded — goalkeeper rotates among all players.
   function roleFitScore(team, slots){
+    // GK slot (leftmost DIF) excluded — goalkeeper rotates among all players
     const outfield=slots.filter(s=>!(s.role==='DIF'&&s.x<0.15));
     if(!outfield.length)return 1;
-    const need={ATT:0,MED:0,DIF:0};
-    outfield.forEach(s=>{if(need[s.role]!==undefined)need[s.role]++;});
-    const have={ATT:0,MED:0,DIF:0};
-    // a multi-role player contributes to each of their roles
-    team.forEach(i=>players[i].roles.forEach(r=>{if(have[r]!==undefined)have[r]++;}));
+
+    // Greedy assignment: each player can fill at most ONE slot.
+    // Process slots whose role is rarest in the squad first, so a scarce
+    // specialist isn't wasted before a slot that only they could fill.
+    const supply={ATT:0,MED:0,DIF:0};
+    team.forEach(i=>players[i].roles.forEach(r=>{if(supply[r]!==undefined)supply[r]++;}));
+
+    const ordered=[...outfield].sort((a,b)=>(supply[a.role]||0)-(supply[b.role]||0));
+    const used=new Set();
     let filled=0;
-    ['ATT','MED','DIF'].forEach(r=>{filled+=Math.min(need[r],have[r]);});
+    ordered.forEach(slot=>{
+      let found=-1;
+      for(let k=0;k<team.length;k++){
+        const pi=team[k];
+        if(used.has(pi))continue;
+        if(players[pi].roles.includes(slot.role)){found=pi;break;}
+      }
+      if(found!==-1){used.add(found);filled++;}
+    });
     return filled/outfield.length; // 0..1
   }
 
