@@ -39,7 +39,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 header{background:var(--green);color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:flex-start;position:sticky;top:0;z-index:200;box-shadow:0 2px 14px rgba(0,0,0,0.2)}
 .logo{display:flex;align-items:center;gap:11px;font-size:19px;font-weight:800;letter-spacing:-0.4px}
 .logo svg{width:28px;height:28px;flex-shrink:0}
-.hdr-right{display:flex;gap:7px;align-items:center}
 .btn-icon{background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;transition:background var(--tr);white-space:nowrap;min-height:38px}
 .btn-icon:active{background:rgba(255,255,255,0.35)}
 
@@ -209,7 +208,6 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 .pchip{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;margin-bottom:4px;font-size:13px;font-weight:600;min-height:36px}
 .pc-bl{background:rgba(26,95,168,0.13);color:var(--blue)}
 .pc-am{background:rgba(184,112,0,0.13);color:var(--amber)}
-.role-divider{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;opacity:.5;margin:7px 0 3px 2px}
 .cmp-row{display:flex;align-items:center;gap:5px;margin-bottom:5px;font-size:12px}
 .cmp-v{width:28px;text-align:right;font-weight:800}
 .cmp-v.bl{color:var(--blue)}
@@ -226,20 +224,8 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 .combo-idx{font-size:13px;color:var(--text2);font-weight:600}
 
 /* ─── module picker ─── */
-.module-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-bottom:4px}
-.mod-btn{background:rgba(255,255,255,0.06);border:2px solid var(--gray2);border-radius:var(--radius-sm);padding:6px;cursor:pointer;transition:all var(--tr);display:flex;flex-direction:column;align-items:center;gap:5px}
-@media(prefers-color-scheme:dark){.mod-btn{background:rgba(255,255,255,0.04)}}
-.mod-btn:active{transform:scale(0.95)}
-.mod-btn.mod-active{border-color:var(--green);background:var(--green-light)}
-.mod-preview{width:100%;aspect-ratio:90/58}
-.mod-label{font-size:11px;font-weight:800;color:var(--text2);letter-spacing:.2px}
-.mod-btn.mod-active .mod-label{color:var(--green)}
 
 /* ─── settings ─── */
-.weight-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.weight-label{font-size:13px;color:var(--text);width:96px;display:flex;align-items:center;gap:5px;flex-shrink:0}
-.weight-input{flex:1;accent-color:var(--green);cursor:pointer;height:20px}
-.weight-val{font-size:13px;font-weight:800;width:28px;text-align:right;color:var(--green)}
 
 /* ─── rate stepper ─── */
 .rate-stepper{display:flex;align-items:center;gap:2px;flex-shrink:0;background:rgba(0,0,0,0.05);border-radius:8px;padding:1px}
@@ -266,9 +252,6 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 input[type=file]{display:none}
 
 /* ─── empty state ─── */
-.empty-state{text-align:center;padding:40px 20px;color:var(--text2)}
-.empty-icon{font-size:48px;margin-bottom:12px}
-.empty-text{font-size:14px}
 </style>
 </head>
 <body>
@@ -886,7 +869,6 @@ function delPlayer(i,e){
   if(confirm('Rimuovere '+players[i].name+'?')){players.splice(i,1);selected.clear();save();buildRosa();buildConvList();}
 }
 function addPlayer(){players.push({name:'Giocatore '+(players.length+1),roles:['MED'],stats:STATS.map(()=>5)});save();buildRosa();buildConvList();toast('Giocatore aggiunto')}
-function confirmReset(){if(confirm('Resettare la rosa?')){players=defaultPlayers();selected.clear();save();buildRosa();buildConvList();toast('Reset effettuato')}}
 
 /* ════════════════════════════════════
    FORMAT PICKER
@@ -1403,7 +1385,6 @@ function loadModules(){
   }catch(e){}
 }
 
-function upW(i,v){weights[i]=parseFloat(v);save()}
 function setW(i,v){
   weights[i]=v;
   save();
@@ -1456,11 +1437,6 @@ async function ensureMatchesCachedForRosa(){
     }
   }catch(e){/* silent */}
 }
-
-/* ════════════════════════════════════
-   TOAST
-════════════════════════════════════ */
-function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 
 /* ════════════════════════════════════
    BACKEND (Google Sheets via Apps Script)
