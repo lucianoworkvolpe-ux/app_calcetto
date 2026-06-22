@@ -414,6 +414,12 @@ input[type=file]{display:none}
 
   <div id="partite-content" style="display:none">
     <button class="btn btn-primary btn-full" style="margin-bottom:14px" onclick="newMatch()">📅 Nuova partita</button>
+    <div class="card" id="scorers-card">
+      <div class="section-header" style="margin:0 0 10px">⚽ Classifica marcatori</div>
+      <div id="scorers-list">
+        <div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">⏳ Caricamento...</div>
+      </div>
+    </div>
     <div class="card" id="matches-card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div class="section-header" style="margin:0">📋 Partite registrate</div>
@@ -466,6 +472,7 @@ input[type=file]{display:none}
 /* ════════════════════════════════════
    CONSTANTS
 ════════════════════════════════════ */
+const BUILD_DATE='22/06/2026 08:54';
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤'];
 const ROLES=['ATT','MED','DIF'];
@@ -1453,6 +1460,11 @@ function moduleComposition(slots){
 function buildSettings(){
   let html='';
 
+  // ── Build date (top-right) ──
+  html+=`<div style="display:flex;justify-content:flex-end;margin-bottom:4px">
+    <span style="font-size:10px;color:var(--text3)">📅 versione del ${BUILD_DATE}</span>
+  </div>`;
+
   // ── Backup / Sync ──
   html+=`<div class="section-header">💾 Backup & Sincronizzazione</div>
   <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5">Esporta la rosa come <code>rosa_calcetto.json</code> per condividerla via GitHub Pages tra dispositivi.</p>
@@ -1934,6 +1946,47 @@ function renderMatchesList(){
       <span style="color:var(--text3);font-size:16px">›</span>
     </div>`;
   }).join('');
+
+  renderScorers();
+}
+
+// Top-scorers ranking aggregated from all ratings (goals column)
+function renderScorers(){
+  const el=document.getElementById('scorers-list');
+  if(!el)return;
+  const ratings=matchesCache.data?.ratings||[];
+
+  // aggregate goals by player — prefer id, fall back to name
+  const tally={}; // key → {name, goals, games}
+  ratings.forEach(r=>{
+    const g=parseInt(r.goals)||0;
+    if(g<=0)return;
+    // resolve a stable key: matching roster player by id or name, else the raw name
+    let key=r.playerId||('name:'+r.player);
+    let name=r.player;
+    // try to map to current roster for the up-to-date name
+    const rp=players.find(p=>(r.playerId&&p.id===r.playerId)||(!r.playerId&&p.name===r.player));
+    if(rp){key=rp.id; name=rp.name;}
+    if(!tally[key]) tally[key]={name, goals:0, games:0};
+    tally[key].goals+=g;
+    tally[key].games++;
+  });
+
+  const ranked=Object.values(tally).sort((a,b)=>b.goals-a.goals||a.name.localeCompare(b.name));
+
+  if(!ranked.length){
+    el.innerHTML='<div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">Nessun gol registrato ancora</div>';
+    return;
+  }
+
+  const medal=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span style="display:inline-block;width:20px;text-align:center;font-weight:800;color:var(--text3);font-size:12px">${i+1}</span>`;
+  el.innerHTML=ranked.map((s,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);background:${i<3?'var(--green-light)':'var(--gray)'};margin-bottom:6px">
+      <span style="font-size:16px;width:24px;text-align:center">${medal(i)}</span>
+      <span style="flex:1;min-width:0;font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</span>
+      <span style="font-size:11px;color:var(--text3)">${s.games} ${s.games===1?'partita':'partite'}</span>
+      <span style="font-size:15px;font-weight:800;color:var(--green)">${s.goals} ⚽</span>
+    </div>`).join('');
 }
 
 function formatDate(d){
