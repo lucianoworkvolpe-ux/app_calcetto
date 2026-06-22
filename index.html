@@ -249,6 +249,11 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 .score-stepper input{width:38px;padding:6px 2px;border:1.5px solid var(--gray3);border-radius:5px;background:var(--gray);color:var(--text);font-size:16px;font-weight:800;text-align:center;-moz-appearance:textfield}
 .score-stepper input::-webkit-outer-spin-button,
 .score-stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.goal-stepper{display:flex;align-items:center;gap:2px;flex-shrink:0;background:rgba(0,0,0,0.05);border-radius:8px;padding:1px}
+@media(prefers-color-scheme:dark){.goal-stepper{background:rgba(255,255,255,0.06)}}
+.goal-stepper input{width:30px;padding:5px 2px;border:1.5px solid var(--gray3);border-radius:5px;background:var(--gray);color:var(--text);font-size:13px;font-weight:800;text-align:center;-moz-appearance:textfield}
+.goal-stepper input::-webkit-outer-spin-button,
+.goal-stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
 /* ─── compact weight pills ─── */
 .w-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}
@@ -838,15 +843,48 @@ async function loadAndRefreshPagelle(i){
 }
 
 function drawPagelle(i,player,container){
-  const ratings=ratingsForPlayer(player);
-  // join with match dates
-  const dated=ratings.map(r=>{
+  // all appearances (rows with a date), carrying both rating and goals
+  const raw=ratingsForPlayer(player).map(r=>{
     const m=matches.find(x=>x.id===r.matchId);
-    return{date:m?m.date:'',rating:r.rating,matchId:r.matchId};
+    return{date:m?m.date:'',rating:r.rating,goals:r.goals||0,matchId:r.matchId};
   }).filter(r=>r.date).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
 
-  if(!dated.length){
+  if(!raw.length){
     container.innerHTML=`<div style="font-size:12px;color:var(--text3);text-align:center">📊 Nessuna pagella ancora</div>`;
+    return;
+  }
+
+  // ── goals: computed over ALL appearances ──
+  const totGoals=raw.reduce((s,r)=>s+(r.goals||0),0);
+  const matchesPlayed=raw.length;
+  const goalsPerMatch=matchesPlayed?totGoals/matchesPlayed:0;
+
+  // ── rating series: only rows with a real vote (>=1) ──
+  const dated=raw.filter(r=>r.rating>=1);
+
+  if(!dated.length){
+    // player has appearances/goals but no votes yet
+    container.innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+        <span style="font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">📊 Andamento pagelle</span>
+      </div>
+      <div style="font-size:9px;color:var(--text3);font-style:italic;opacity:.65;margin-bottom:9px">✒️ a cura della Redazione Avv. Peppe Rella</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+        <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Partite</div>
+          <div style="font-size:15px;font-weight:800;color:var(--text)">${matchesPlayed}</div>
+        </div>
+        <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol</div>
+          <div style="font-size:15px;font-weight:800;color:var(--green)">${totGoals}</div>
+        </div>
+        <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol/P</div>
+          <div style="font-size:15px;font-weight:800;color:var(--green)">${goalsPerMatch.toFixed(2)}</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:9px">Nessun voto ancora registrato</div>
+    `;
     return;
   }
 
@@ -920,22 +958,30 @@ function drawPagelle(i,player,container){
       <span style="font-size:11px;font-weight:800;color:${trendCol}">${trendArrow} ${trendLabel}</span>
     </div>
     <div style="font-size:9px;color:var(--text3);font-style:italic;opacity:.65;margin-bottom:9px">✒️ a cura della Redazione Avv. Peppe Rella</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
       <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Media</div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Media voto</div>
         <div style="font-size:15px;font-weight:800;color:var(--text)">${avg.toFixed(2)}</div>
       </div>
       <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Partite</div>
-        <div style="font-size:15px;font-weight:800;color:var(--text)">${dated.length}</div>
+        <div style="font-size:15px;font-weight:800;color:var(--text)">${matchesPlayed}</div>
+      </div>
+      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">vs OVR</div>
+        <div style="font-size:14px;font-weight:800;color:${deltaCol}">${deltaSym} ${delta.toFixed(1)}</div>
       </div>
       <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Min · Max</div>
         <div style="font-size:13px;font-weight:800;color:var(--text)">${min} · ${max}</div>
       </div>
       <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">vs OVR</div>
-        <div style="font-size:14px;font-weight:800;color:${deltaCol}">${deltaSym} ${delta.toFixed(1)}</div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol</div>
+        <div style="font-size:15px;font-weight:800;color:var(--green)">${totGoals}</div>
+      </div>
+      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol/P</div>
+        <div style="font-size:15px;font-weight:800;color:var(--green)">${goalsPerMatch.toFixed(2)}</div>
       </div>
     </div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:var(--gray);border-radius:8px;display:block">
@@ -1770,11 +1816,11 @@ function getMatches() {
 }
 
 function getRatings() {
-  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId']);
+  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals']);
   const data = sh.getDataRange().getValues();
   if (data.length < 2) return [];
   return data.slice(1).map(r => ({
-    matchId: r[0], player: r[1], rating: parseFloat(r[2]) || 0, notes: r[3] || '', playerId: r[4] || ''
+    matchId: r[0], player: r[1], rating: parseFloat(r[2]) || 0, notes: r[3] || '', playerId: r[4] || '', goals: parseInt(r[5]) || 0
   })).filter(r => r.matchId && (r.player || r.playerId));
 }
 
@@ -1795,7 +1841,7 @@ function deleteMatch(id) {
     if (data[i][0] === id) sh.deleteRow(i + 1);
   }
   // delete ratings too
-  const rs = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId']);
+  const rs = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals']);
   const rd = rs.getDataRange().getValues();
   for (let i = rd.length - 1; i >= 1; i--) {
     if (rd[i][0] === id) rs.deleteRow(i + 1);
@@ -1804,7 +1850,7 @@ function deleteMatch(id) {
 }
 
 function saveRatings(payload) {
-  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId']);
+  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals']);
   const data = sh.getDataRange().getValues();
   // remove old ratings for this match
   for (let i = data.length - 1; i >= 1; i--) {
@@ -1812,7 +1858,7 @@ function saveRatings(payload) {
   }
   // append new ones
   (payload.ratings || []).forEach(r => {
-    sh.appendRow([payload.matchId, r.player, r.rating, r.notes || '', r.playerId || '']);
+    sh.appendRow([payload.matchId, r.player, r.rating, r.notes || '', r.playerId || '', r.goals || 0]);
   });
   return (payload.ratings || []).length;
 }
@@ -1989,13 +2035,27 @@ function openMatch(id){
       ${team.map(pl=>{
         const r=getRating(pl);
         const val=r?r.rating:'';
+        const goals=r&&r.goals?r.goals:'';
         const localIdx=allPlayers.indexOf(pl);
-        return `<div style="display:flex;align-items:center;gap:6px;padding:6px 0;font-size:12px">
-          <span style="flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pl.name}</span>
-          <div class="rate-stepper">
-            <button type="button" onclick="rateStep('rate-${cls}-${localIdx}',-1)" class="rate-btn rate-btn-minus">−</button>
-            <input type="number" min="1" max="10" step="0.5" placeholder="—" value="${val}" id="rate-${cls}-${localIdx}" inputmode="decimal" oninput="rateColor(this)">
-            <button type="button" onclick="rateStep('rate-${cls}-${localIdx}',1)" class="rate-btn rate-btn-plus">+</button>
+        return `<div style="padding:7px 0;border-bottom:1px solid rgba(128,128,128,0.12)">
+          <div style="font-size:12px;font-weight:700;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pl.name}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:10px;color:var(--text2);font-weight:700">VOTO</span>
+              <div class="rate-stepper">
+                <button type="button" onclick="rateStep('rate-${cls}-${localIdx}',-1)" class="rate-btn rate-btn-minus">−</button>
+                <input type="number" min="1" max="10" step="0.5" placeholder="—" value="${val}" id="rate-${cls}-${localIdx}" inputmode="decimal" oninput="rateColor(this)">
+                <button type="button" onclick="rateStep('rate-${cls}-${localIdx}',1)" class="rate-btn rate-btn-plus">+</button>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:12px">⚽</span>
+              <div class="goal-stepper">
+                <button type="button" onclick="goalStep('goal-${cls}-${localIdx}',-1)" class="rate-btn rate-btn-minus">−</button>
+                <input type="number" min="0" max="20" step="1" placeholder="0" value="${goals}" id="goal-${cls}-${localIdx}" inputmode="numeric">
+                <button type="button" onclick="goalStep('goal-${cls}-${localIdx}',1)" class="rate-btn rate-btn-plus">+</button>
+              </div>
+            </div>
           </div>
         </div>`;
       }).join('')}
@@ -2062,6 +2122,16 @@ function rateStep(id, delta){
   rateColor(el);
 }
 
+function goalStep(id, delta){
+  const el=document.getElementById(id);
+  if(!el)return;
+  let v=parseInt(el.value);
+  if(isNaN(v)) v = delta>0 ? 1 : 0;
+  else v += delta;
+  v = Math.max(0, Math.min(20, v));
+  el.value = v===0 ? '' : v;  // keep empty look at zero
+}
+
 function rateColor(el){
   const v=parseFloat(el.value);
   let bg='var(--gray)', color='var(--text)', border='var(--gray3)';
@@ -2085,9 +2155,19 @@ async function saveRatings(matchId){
   all.forEach((pl,i)=>{
     const teamCls=i<teamA.length?'bl':'am';
     const el=document.getElementById('rate-'+teamCls+'-'+i);
-    if(el && el.value!==''){
-      const v=parseFloat(el.value);
-      if(v>=1&&v<=10) ratings.push({playerId:pl.id||'', player:pl.name, rating:v, notes:''});
+    const gEl=document.getElementById('goal-'+teamCls+'-'+i);
+    const v=el&&el.value!==''?parseFloat(el.value):null;
+    const g=gEl&&gEl.value!==''?parseInt(gEl.value):0;
+    const hasRating=(v!==null&&v>=1&&v<=10);
+    // save the row if there's a valid rating OR at least one goal
+    if(hasRating || g>0){
+      ratings.push({
+        playerId:pl.id||'',
+        player:pl.name,
+        rating:hasRating?v:'',
+        notes:'',
+        goals:g>0?g:0
+      });
     }
   });
   // read possibly-edited score
