@@ -58,13 +58,13 @@ header{background:var(--green);color:#fff;padding:2px 14px;display:flex;align-it
 
 /* rosa 2-column grid */
 #players-list{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:start}
-@media(max-width:360px){#players-list{grid-template-columns:1fr}}
+@media(max-width:340px){#players-list{grid-template-columns:1fr}}
 #players-list .card{margin-bottom:0}
 #players-list .card.expanded{grid-column:1 / -1 !important}
 
 /* ─── player card ─── */
 .player-header{display:flex;cursor:pointer;user-select:none}
-.ph-top{display:flex;align-items:center;gap:6px;width:100%}
+.ph-top{display:flex;align-items:center;gap:7px;width:100%}
 .avatar-stack{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0}
 .ph-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .ph-name-row{display:flex;align-items:center;gap:3px}
@@ -83,8 +83,6 @@ header{background:var(--green);color:#fff;padding:2px 14px;display:flex;align-it
 .pag-mid{background:#fff4d6;color:#7a4a00}
 .pag-bad{background:#fde8e8;color:#a82020}
 .pag-none{background:var(--gray2);color:var(--text3)}
-.chevron{font-size:12px;color:var(--text3);transition:transform var(--tr);flex-shrink:0}
-.chevron.open{transform:rotate(180deg)}
 .del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:1px;line-height:1;flex-shrink:0;min-height:22px;min-width:20px;display:flex;align-items:center;justify-content:center}
 .del-btn:active{color:var(--red)}
 
@@ -856,7 +854,6 @@ function buildRosa(){
           <div class="ph-name-row">
             <span class="player-name-display">${esc(p.name)}</span>
             <button class="del-btn" onclick="delPlayer(${i},event)">✕</button>
-            <span class="chevron" id="ch${i}">▾</span>
           </div>
           <div class="role-pills-display" id="rpills${i}">${pills}</div>
         </div>
@@ -873,18 +870,16 @@ function buildRosa(){
   });
 }
 function toggleCard(i){
-  const e=document.getElementById('cd'+i),ch=document.getElementById('ch'+i),o=e.style.display!=='none';
+  const e=document.getElementById('cd'+i),o=e.style.display!=='none';
   // accordion: when opening this card, close any other open one for a clean grid
   if(!o){
     document.querySelectorAll('#players-list .card.expanded').forEach(card=>{
       card.classList.remove('expanded');
       const body=card.querySelector('[id^="cd"]');
-      const chev=card.querySelector('.chevron');
       if(body)body.style.display='none';
-      if(chev)chev.className='chevron';
     });
   }
-  e.style.display=o?'none':'block';ch.className=o?'chevron':'chevron open';
+  e.style.display=o?'none':'block';
   // expand card to full width of the grid while open
   const card=e.closest('.card');
   if(card) card.classList.toggle('expanded', !o);
@@ -1086,7 +1081,8 @@ function toggleRole(i,r,e){
   if(idx>=0){if(players[i].roles.length===1){toast('Almeno un ruolo è richiesto');return}players[i].roles.splice(idx,1);}
   else players[i].roles.push(r);
   save();buildRosa();buildConvList();
-  const cd=document.getElementById('cd'+i);if(cd){cd.style.display='block';document.getElementById('ch'+i).className='chevron open';}
+  const cd=document.getElementById('cd'+i);
+  if(cd){cd.style.display='block';const card=cd.closest('.card');if(card)card.classList.add('expanded');}
 }
 function delPlayer(i,e){
   e.stopPropagation();
