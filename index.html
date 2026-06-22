@@ -69,6 +69,9 @@ header{background:var(--green);color:#fff;padding:2px 14px;display:flex;align-it
 .ph-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .ph-name-row{display:flex;align-items:center;gap:3px}
 .avatar{width:26px;height:26px;border-radius:50%;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.avatar.has-photo,.conv-avatar.has-photo{background-size:cover;background-position:center;color:transparent}
+.avatar-lg{width:64px;height:64px;font-size:20px}
+.photo-row{display:flex;align-items:center;gap:12px;margin:12px 0 4px}
 .av-att{background:var(--att-light);color:var(--att)}
 .av-mid{background:var(--mid-light);color:var(--mid)}
 .av-def{background:var(--def-light);color:var(--def)}
@@ -476,6 +479,7 @@ input[type=file]{display:none}
 </nav>
 
 <div id="toast" class="toast"></div>
+<input type="file" id="photo-input" accept="image/*" style="display:none" onchange="onPhotoSelected(event)">
 
 <script>
 /* ════════════════════════════════════
@@ -734,6 +738,17 @@ function exportJSON(){
   toast('rosa_calcetto.json salvato — caricalo su GitHub!');
 }
 
+// Estimate the backup JSON size + photo count, with a 1 MB warning flag
+function getBackupSizeInfo(){
+  const data={players,weights,sizeA,sizeB,asymMode,backendUrl,version:6,exported:''};
+  const bytes=new Blob([JSON.stringify(data,null,2)]).size;
+  const photos=players.filter(p=>p.photo).length;
+  const label=bytes<1024 ? bytes+' B'
+    : bytes<1048576 ? (bytes/1024).toFixed(0)+' KB'
+    : (bytes/1048576).toFixed(2)+' MB';
+  return {bytes, label, photos, warn:bytes>1048576};
+}
+
 /* ════════════════════════════════════
    INIT
 ════════════════════════════════════ */
@@ -765,6 +780,14 @@ function avCls(p){
   if(!r||r.length===0)return 'av-none';
   if(r.length>1)return 'av-multi';
   return r[0]==='ATT'?'av-att':r[0]==='DIF'?'av-def':'av-mid';
+}
+// Avatar markup: photo if available, otherwise coloured initials. baseCls = 'avatar' | 'conv-avatar'
+function avatarHTML(p, baseCls, idAttr){
+  const id=idAttr?`id="${idAttr}"`:'';
+  if(p.photo){
+    return `<div class="${baseCls} has-photo" ${id} style="background-image:url('${p.photo}')"></div>`;
+  }
+  return `<div class="${baseCls} ${avCls(p)}" ${id}>${ini(p.name)}</div>`;
 }
 function calcOvr(stats){const tot=weights.reduce((a,b)=>a+b,0)||1;return stats.reduce((s,v,i)=>s+v*weights[i],0)/tot}
 function wScore(p){return calcOvr(p.stats)}
@@ -816,6 +839,7 @@ function neededTotal(){return sizeA+sizeB}
 function buildRosa(){
   const c=document.getElementById('players-list');c.innerHTML='';
   players.forEach((p,i)=>{
+    if(p.archived)return;   // archived players hidden from active roster
     const ovr=calcOvr(p.stats).toFixed(1);
     const roleMap={ATT:'att',MED:'mid',DIF:'def'};
     const toggles=ROLES.map(r=>{
@@ -844,7 +868,7 @@ function buildRosa(){
       <div class="ph-top">
         <div class="avatar-stack">
           <span class="pag-badge ${pagInfo.cls}" id="pag${i}" title="Media pagelle">${pagInfo.label}</span>
-          <div class="avatar ${avCls(p)}" id="av${i}">${ini(p.name)}</div>
+          ${avatarHTML(p,'avatar','av'+i)}
           <span class="ovr-badge" id="ov${i}">OVR ${ovr}</span>
         </div>
         <div class="ph-info">
@@ -857,6 +881,13 @@ function buildRosa(){
       </div>
     </div>
     <div id="cd${i}" style="display:none">
+      <div class="photo-row">
+        ${avatarHTML(p,'avatar avatar-lg','')}
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-secondary btn-sm" onclick="choosePhoto(${i})">📷 ${p.photo?'Cambia foto':'Carica foto'}</button>
+          ${p.photo?`<button class="btn btn-secondary btn-sm" onclick="removePhoto(${i})" style="color:var(--red)">🗑</button>`:''}
+        </div>
+      </div>
       <div class="role-section">
         <div class="role-section-label">Ruoli (anche più di uno)</div>
         <div class="role-toggles">${toggles}</div>
@@ -927,9 +958,14 @@ function drawPagelle(i,player,container){
     return;
   }
 
-  // ── goals: computed over ALL appearances ──
+  // ── goals: computed over rating rows; presenze: dalle squadre salvate ──
   const totGoals=raw.reduce((s,r)=>s+(r.goals||0),0);
-  const matchesPlayed=raw.length;
+  // count matches where the player actually appears in a saved team
+  const matchP=p=>(player.id&&p.id===player.id)||(p.name===player.name);
+  const matchesPlayed=(matches||[]).filter(m=>{
+    const team=[...normalizeTeam(m.teamA),...normalizeTeam(m.teamB)];
+    return team.some(matchP);
+  }).length || raw.length;   // fallback to rating rows if teams missing
   const goalsPerMatch=matchesPlayed?totGoals/matchesPlayed:0;
 
   // ── rating series: only rows with a real vote (>=1) ──
@@ -1083,8 +1119,17 @@ function toggleRole(i,r,e){
 }
 function delPlayer(i,e){
   e.stopPropagation();
-  if(players.length<=2){toast('Minimo 2 giocatori');return}
-  if(confirm('Rimuovere '+players[i].name+'?')){players.splice(i,1);selected.clear();save();buildRosa();buildConvList();}
+  const active=players.filter(p=>!p.archived).length;
+  if(active<=2){toast('Minimo 2 giocatori attivi');return}
+  if(confirm('Rimuovere '+players[i].name+' dalla rosa attiva?\nLo storico e le statistiche resteranno salvati.')){
+    players[i].archived=true;
+    selected.delete(i);
+    save();buildRosa();buildConvList();
+    toast('Giocatore archiviato');
+  }
+}
+function unarchivePlayer(i){
+  if(players[i]){players[i].archived=false;save();buildRosa();buildConvList();buildSettings();toast('Giocatore ripristinato');}
 }
 function addPlayer(){
   let nome=prompt('Nome del nuovo giocatore:');
@@ -1093,6 +1138,52 @@ function addPlayer(){
   if(!nome){toast('Nome non valido');return}
   players.push({id:uid(),name:nome,roles:['MED'],stats:STATS.map(()=>5)});
   save();buildRosa();buildConvList();toast('Giocatore aggiunto');
+}
+
+/* ─── foto giocatore (salvata come thumbnail base64 nel JSON) ─── */
+let photoTargetIdx=-1;
+function choosePhoto(i){
+  photoTargetIdx=i;
+  document.getElementById('photo-input').click();
+}
+function reopenCard(i){
+  const cd=document.getElementById('cd'+i);
+  if(cd){cd.style.display='block';const c=cd.closest('.card');if(c)c.classList.add('expanded');renderPlayerPagelle(i);}
+}
+function onPhotoSelected(e){
+  const f=e.target.files[0];
+  e.target.value='';
+  const i=photoTargetIdx; photoTargetIdx=-1;
+  if(!f||i<0)return;
+  if(!f.type.startsWith('image/')){toast('Seleziona un\'immagine');return}
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      // square center-crop, resize to 96px, JPEG q0.8 → ~3-6KB
+      const size=96;
+      const canvas=document.createElement('canvas');
+      canvas.width=size;canvas.height=size;
+      const ctx=canvas.getContext('2d');
+      const scale=Math.max(size/img.width,size/img.height);
+      const w=img.width*scale,h=img.height*scale;
+      ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);
+      try{
+        players[i].photo=canvas.toDataURL('image/jpeg',0.65);
+        save();buildRosa();buildConvList();reopenCard(i);
+        toast('Foto aggiornata');
+      }catch(err){toast('Errore foto: '+err.message)}
+    };
+    img.onerror=()=>toast('Immagine non valida');
+    img.src=ev.target.result;
+  };
+  reader.onerror=()=>toast('Errore lettura file');
+  reader.readAsDataURL(f);
+}
+function removePhoto(i){
+  delete players[i].photo;
+  save();buildRosa();buildConvList();reopenCard(i);
+  toast('Foto rimossa');
 }
 
 /* ════════════════════════════════════
@@ -1142,6 +1233,7 @@ function buildConvList(){
   // drop stale selections (deleted players)
   selected.forEach(i=>{if(i>=players.length)selected.delete(i)});
   c.innerHTML=players.map((p,i)=>{
+    if(p.archived)return '';   // archived players hidden from convocati
     const sel=selected.has(i);
     const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
     const selCls=sel?' sel':'';
@@ -1150,7 +1242,7 @@ function buildConvList(){
     return `<div class="conv-item${selCls}" onclick="toggleConv(${i})">
       <div class="conv-avatar-stack">
         <span class="pag-badge ${pagInfo.cls}" title="Media pagelle">${pagInfo.label}</span>
-        <div class="conv-avatar ${avCls(p)}">${ini(p.name)}</div>
+        ${avatarHTML(p,'conv-avatar','')}
         <span class="ovr-badge">OVR ${ovr}</span>
       </div>
       <div class="conv-info">
@@ -1544,13 +1636,18 @@ function buildSettings(){
   </div>`;
 
   // ── Backup / Sync ──
+  const backupInfo=getBackupSizeInfo();
   html+=`<div class="section-header">💾 Backup & Sincronizzazione</div>
   <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5">Esporta la rosa come <code>rosa_calcetto.json</code> e caricala su GitHub Pages per sincronizzarla.</p>
-  <div style="margin-bottom:20px">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
     <button class="btn btn-primary btn-sm" onclick="exportJSON()" style="display:inline-flex;width:auto;padding:8px 16px;font-size:13px">
       ⬇ Salva su file
     </button>
-  </div>`;
+    <span style="font-size:12px;color:${backupInfo.warn?'var(--red)':'var(--text3)'};font-weight:${backupInfo.warn?'700':'400'}">
+      ${backupInfo.warn?'⚠️ ':'📦 '}${backupInfo.label}${backupInfo.photos?` · ${backupInfo.photos} foto`:''}
+    </span>
+  </div>
+  ${backupInfo.warn?`<p style="font-size:11px;color:var(--red);margin:-12px 0 16px;line-height:1.5">Il backup supera 1 MB: può diventare scomodo da caricare su GitHub. Valuta di rimuovere qualche foto.</p>`:''}`;
 
   // ── Auto info banner ──
   html+=`<div class="section-header">Moduli di gioco</div>
@@ -1636,6 +1733,19 @@ function buildSettings(){
       <div id="backend-status" style="font-size:11px;margin-top:6px;color:var(--text3)"></div>
       <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5">💡 Salva l'URL, poi premi <strong>⬇ Salva</strong> in alto per esportare <code>rosa_calcetto.json</code> con l'URL incluso. Caricalo su GitHub e l'URL sarà disponibile su tutti i dispositivi.</div>
     </div>`;
+
+  // ── Archived players ──
+  const archived=players.map((p,i)=>({p,i})).filter(x=>x.p.archived);
+  if(archived.length){
+    html+=`<div class="section-header" style="margin-top:4px">🗄️ Giocatori archiviati</div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.4">Rimossi dalla rosa attiva ma mantenuti nello storico. Puoi ripristinarli.</p>
+    <div style="margin-bottom:20px">
+      ${archived.map(x=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);background:var(--gray);margin-bottom:6px">
+        <span style="flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.p.name)}</span>
+        <button class="btn btn-secondary btn-sm" onclick="unarchivePlayer(${x.i})" style="padding:5px 12px;font-size:12px">↩️ Ripristina</button>
+      </div>`).join('')}
+    </div>`;
+  }
 
   // ── Weights (compact pill selector) ──
   html+=`<div class="section-header" style="margin-top:4px">Peso statistiche</div>
@@ -2048,36 +2158,53 @@ function renderScorers(){
   const el=document.getElementById('scorers-list');
   if(!el)return;
   const ratings=matchesCache.data?.ratings||[];
+  const allMatches=matches||[];
 
-  // aggregate goals by player — prefer id, fall back to name
-  const tally={}; // key → {name, goals, games}
+  // helper: stable key + display name (id first, name fallback)
+  const keyFor=(pid,pname)=>{
+    const rp=players.find(p=>(pid&&p.id===pid)||(!pid&&p.name===pname));
+    return rp ? {key:rp.id, name:rp.name} : {key:pid||('name:'+pname), name:pname};
+  };
+
+  const tally={}; // key → {name, goals, pres}
+  const ensure=(key,name)=>{ if(!tally[key])tally[key]={name,goals:0,pres:0}; return tally[key]; };
+
+  // presenze → dalle squadre salvate (una volta per partita)
+  const seen=new Set();
+  allMatches.forEach(m=>{
+    [...normalizeTeam(m.teamA),...normalizeTeam(m.teamB)].forEach(pl=>{
+      const {key,name}=keyFor(pl.id, pl.name);
+      const tag=m.id+'|'+key;
+      if(seen.has(tag))return;
+      seen.add(tag);
+      ensure(key,name).pres++;
+    });
+  });
+  // gol → dalle righe pagelle
   ratings.forEach(r=>{
-    const g=parseInt(r.goals)||0;
-    if(g<=0)return;
-    // resolve a stable key: matching roster player by id or name, else the raw name
-    let key=r.playerId||('name:'+r.player);
-    let name=r.player;
-    // try to map to current roster for the up-to-date name
-    const rp=players.find(p=>(r.playerId&&p.id===r.playerId)||(!r.playerId&&p.name===r.player));
-    if(rp){key=rp.id; name=rp.name;}
-    if(!tally[key]) tally[key]={name, goals:0, games:0};
-    tally[key].goals+=g;
-    tally[key].games++;
+    const {key,name}=keyFor(r.playerId, r.player);
+    ensure(key,name).goals+=parseInt(r.goals)||0;
   });
 
-  const ranked=Object.values(tally).sort((a,b)=>b.goals-a.goals||a.name.localeCompare(b.name));
+  // only players who actually scored appear in the marcatori ranking
+  const ranked=Object.values(tally).filter(s=>s.goals>0)
+    .sort((a,b)=>b.goals-a.goals||a.name.localeCompare(b.name));
 
   if(!ranked.length){
     el.innerHTML='<div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">Nessun gol registrato ancora</div>';
   }else{
     const medal=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span style="display:inline-block;width:20px;text-align:center;font-weight:800;color:var(--text3);font-size:12px">${i+1}</span>`;
-    el.innerHTML=ranked.map((s,i)=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);background:${i<3?'var(--green-light)':'var(--gray)'};margin-bottom:6px">
+    el.innerHTML=ranked.map((s,i)=>{
+      const perMatch=s.pres?(s.goals/s.pres).toFixed(2):'0.00';
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);background:${i<3?'var(--green-light)':'var(--gray)'};margin-bottom:6px">
         <span style="font-size:16px;width:24px;text-align:center">${medal(i)}</span>
-        <span style="flex:1;min-width:0;font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}</span>
-        <span style="font-size:11px;color:var(--text3)">${s.games} ${s.games===1?'partita':'partite'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}</div>
+          <div style="font-size:11px;color:var(--text3)">${s.pres} ${s.pres===1?'presenza':'presenze'} · ${perMatch} gol/partita</div>
+        </div>
         <span style="font-size:15px;font-weight:800;color:var(--green)">${s.goals} ⚽</span>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   // always render the stats table (independent of goals)
@@ -2106,27 +2233,40 @@ function renderStatsTable(){
   const ratings=matchesCache.data?.ratings||[];
   const allMatches=matches||[];
 
-  // aggregate per player (id-keyed, name fallback)
-  const agg={}; // key → {name, pres, w, d, l, goals, ratingSum, ratingCount}
+  // stable key + display name for a player (id first, name fallback)
   const keyFor=(pid,pname)=>{
     const rp=players.find(p=>(pid&&p.id===pid)||(!pid&&p.name===pname));
     return rp ? {key:rp.id, name:rp.name} : {key:pid||('name:'+pname), name:pname};
   };
+  const agg={}; // key → {name, pres, w, d, l, goals, ratingSum, ratingCount}
+  const ensure=(key,name)=>{
+    if(!agg[key]) agg[key]={name, pres:0, w:0, d:0, l:0, goals:0, ratingSum:0, ratingCount:0};
+    return agg[key];
+  };
 
+  // 1) PRESENZE + V/N/P → dalle squadre salvate nella partita (fonte di verità)
+  const seen=new Set(); // "matchId|key" so a player counts once per match
+  allMatches.forEach(m=>{
+    const team=[...normalizeTeam(m.teamA),...normalizeTeam(m.teamB)];
+    team.forEach(pl=>{
+      const {key,name}=keyFor(pl.id, pl.name);
+      const tag=m.id+'|'+key;
+      if(seen.has(tag))return;
+      seen.add(tag);
+      const a=ensure(key,name);
+      a.pres++;
+      const res=getPlayerMatchResult(m, pl.id, pl.name);
+      if(res==='W')a.w++; else if(res==='D')a.d++; else if(res==='L')a.l++;
+    });
+  });
+
+  // 2) VOTI + GOL → dalle righe pagelle
   ratings.forEach(r=>{
     const {key,name}=keyFor(r.playerId, r.player);
-    if(!agg[key]) agg[key]={name, pres:0, w:0, d:0, l:0, goals:0, ratingSum:0, ratingCount:0};
-    const a=agg[key];
-    a.pres++;
+    const a=ensure(key,name);
     a.goals+=parseInt(r.goals)||0;
     const rt=parseFloat(r.rating);
     if(!isNaN(rt)&&rt>=1){a.ratingSum+=rt; a.ratingCount++;}
-    // W/D/L from the match this rating belongs to
-    const m=allMatches.find(x=>x.id===r.matchId);
-    if(m){
-      const res=getPlayerMatchResult(m, r.playerId, r.player);
-      if(res==='W')a.w++; else if(res==='D')a.d++; else if(res==='L')a.l++;
-    }
   });
 
   const rows=Object.values(agg);
