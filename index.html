@@ -412,7 +412,10 @@ input[type=file]{display:none}
   </div>
 
   <div id="partite-content" style="display:none">
-    <button class="btn btn-primary btn-full" style="margin-bottom:14px" onclick="newMatch()">📅 Nuova partita</button>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="btn btn-primary" style="flex:1" onclick="newMatch()">📅 Nuova partita</button>
+      <button class="btn btn-secondary" style="flex:1;border:2px solid var(--green);color:var(--green)" onclick="loadMatches()">🔄 Aggiorna dati</button>
+    </div>
     <div class="card" id="scorers-card">
       <div class="section-header" style="margin:0 0 10px">⚽ Classifica marcatori</div>
       <div id="scorers-list">
@@ -420,10 +423,7 @@ input[type=file]{display:none}
       </div>
     </div>
     <div class="card" id="matches-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div class="section-header" style="margin:0">📋 Partite registrate</div>
-        <button class="btn btn-secondary btn-sm" onclick="loadMatches()">🔄</button>
-      </div>
+      <div class="section-header" style="margin:0 0 10px">📋 Partite registrate</div>
       <div id="matches-list">
         <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">⏳ Caricamento...</div>
       </div>
@@ -471,7 +471,7 @@ input[type=file]{display:none}
 /* ════════════════════════════════════
    CONSTANTS
 ════════════════════════════════════ */
-const BUILD_DATE='22/06/2026 08:54';
+let BUILD_DATE='—'; // popolata da fetchBuildDate() leggendo l'header Last-Modified di index.html
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤'];
 const ROLES=['ATT','MED','DIF'];
@@ -647,6 +647,35 @@ function setDataSource(msg){
   if(el)el.textContent=msg;
 }
 
+// Read the real upload date of index.html from GitHub Pages (Last-Modified header).
+// Works on HTTP/HTTPS (GitHub Pages); on file:// it can't, so shows a fallback.
+async function fetchBuildDate(){
+  if(location.protocol==='http:'||location.protocol==='https:'){
+    try{
+      const res=await fetch(location.pathname+'?_v='+Date.now(),{method:'HEAD'});
+      const lm=res.headers.get('Last-Modified');
+      if(lm){
+        const d=new Date(lm);
+        if(!isNaN(d)){
+          const pad=x=>String(x).padStart(2,'0');
+          BUILD_DATE=`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+          updateBuildDateLabel();
+          return;
+        }
+      }
+    }catch(e){/* header non disponibile */}
+    BUILD_DATE='data non disponibile';
+  }else{
+    BUILD_DATE='locale (file://)';
+  }
+  updateBuildDateLabel();
+}
+
+function updateBuildDateLabel(){
+  const el=document.getElementById('build-date');
+  if(el)el.textContent='📅 '+BUILD_DATE;
+}
+
 /* ════════════════════════════════════
    TOAST
 ════════════════════════════════════ */
@@ -690,6 +719,8 @@ function exportJSON(){
   if(!asymMode)[5,6,7].forEach(x=>document.getElementById('fmt-'+x).classList.toggle('active',x===sizeA));
   // background-load matches so the PAG badges populate on Rosa
   if(typeof ensureMatchesCachedForRosa==='function') ensureMatchesCachedForRosa();
+  // read real upload date of index.html from GitHub Pages
+  fetchBuildDate();
 })();
 function ini(n){return(n||'?').substring(0,2).toUpperCase()}
 function primaryRole(p){return p.roles[0]||'MED'}
@@ -1445,7 +1476,7 @@ function buildSettings(){
 
   // ── Build date (top-right) ──
   html+=`<div style="display:flex;justify-content:flex-end;margin-bottom:4px">
-    <span style="font-size:10px;color:var(--text3)">📅 versione del ${BUILD_DATE}</span>
+    <span style="font-size:10px;color:var(--text3)" id="build-date">📅 ${BUILD_DATE}</span>
   </div>`;
 
   // ── Backup / Sync ──
