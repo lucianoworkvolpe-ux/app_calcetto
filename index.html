@@ -60,7 +60,7 @@ header{background:var(--green);color:#fff;padding:2px 14px;display:flex;align-it
 #players-list{display:grid;grid-template-columns:1fr 1fr;gap:7px;align-items:start}
 @media(max-width:430px){#players-list{grid-template-columns:1fr}}
 #players-list .card{margin-bottom:0}
-#players-list .card.expanded{grid-column:1/-1}
+#players-list .card.expanded{grid-column:1 / -1 !important}
 
 /* ─── player card ─── */
 .player-header{display:flex;cursor:pointer;user-select:none}
@@ -169,9 +169,8 @@ header{background:var(--green);color:#fff;padding:2px 14px;display:flex;align-it
 /* selected: unico colore verde per tutti */
 .conv-item.sel{border-color:var(--green);box-shadow:inset 0 0 0 1px var(--green)}
 .conv-item.sel .conv-check{background:var(--green);border-color:var(--green);color:#fff}
-.conv-avatar{width:42px;height:42px;border-radius:50%;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative}
-.conv-avatar .ovr-dot{position:absolute;bottom:-3px;right:-3px;background:#1a1d23;color:#fff;font-size:9px;font-weight:800;border-radius:99px;padding:1px 4px;line-height:1.4;border:1.5px solid #fff;white-space:nowrap}
-@media(prefers-color-scheme:dark){.conv-avatar .ovr-dot{background:#e8eaf0;color:#1a1d23;border-color:var(--gray2)}}
+.conv-avatar-stack{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0}
+.conv-avatar{width:30px;height:30px;border-radius:50%;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .conv-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .conv-name{font-size:14px;font-weight:700;color:var(--text);white-space:normal;word-break:break-word;line-height:1.2}
 .conv-roles{display:flex;gap:3px;flex-wrap:wrap}
@@ -471,7 +470,7 @@ input[type=file]{display:none}
     <span class="bni">👥</span>Rosa
   </button>
   <button class="bnav-item" id="bnav-partita" onclick="showPage('partita')">
-    <span class="bni">⚽</span>Genera
+    <span class="bni">⚽</span>Gioca
   </button>
   <button class="bnav-item" id="bnav-partite" onclick="showPage('partite')">
     <span class="bni">📅</span>Storico
@@ -875,6 +874,16 @@ function buildRosa(){
 }
 function toggleCard(i){
   const e=document.getElementById('cd'+i),ch=document.getElementById('ch'+i),o=e.style.display!=='none';
+  // accordion: when opening this card, close any other open one for a clean grid
+  if(!o){
+    document.querySelectorAll('#players-list .card.expanded').forEach(card=>{
+      card.classList.remove('expanded');
+      const body=card.querySelector('[id^="cd"]');
+      const chev=card.querySelector('.chevron');
+      if(body)body.style.display='none';
+      if(chev)chev.className='chevron';
+    });
+  }
   e.style.display=o?'none':'block';ch.className=o?'chevron':'chevron open';
   // expand card to full width of the grid while open
   const card=e.closest('.card');
@@ -1137,8 +1146,13 @@ function buildConvList(){
     const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
     const selCls=sel?' sel':'';
     const ovr=calcOvr(p.stats).toFixed(1);
+    const pagInfo=getPlayerPagInfo(p);
     return `<div class="conv-item${selCls}" onclick="toggleConv(${i})">
-      <div class="conv-avatar ${avCls(p)}">${ini(p.name)}<span class="ovr-dot">${ovr}</span></div>
+      <div class="conv-avatar-stack">
+        <span class="pag-badge ${pagInfo.cls}" title="Media pagelle">${pagInfo.label}</span>
+        <div class="conv-avatar ${avCls(p)}">${ini(p.name)}</div>
+        <span class="ovr-badge">OVR ${ovr}</span>
+      </div>
       <div class="conv-info">
         <span class="conv-name">${esc(p.name)}</span>
         <div class="conv-roles">${pills}</div>
