@@ -279,7 +279,6 @@ input[type=file]{display:none}
     CalcioLercio
     <span id="data-source" style="font-size:10px;font-weight:500;opacity:0.7;margin-left:6px"></span>
   </div>
-  <input type="file" id="imp" accept=".json" onchange="importJSON(event)" style="display:none">
 </header>
 
 <!-- ══════ PAGES ══════ -->
@@ -668,22 +667,6 @@ function exportJSON(){
   a.click();
   setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},200);
   toast('rosa_calcetto.json salvato — caricalo su GitHub!');
-}
-function importJSON(e){
-  const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    try{
-      const d=JSON.parse(ev.target.result);
-      if(d.players&&Array.isArray(d.players)){
-        applyData(d);
-        selected.clear();save();buildRosa();buildConvList();buildSettings();updateFormatUI();
-        toast('Giocatori caricati!');
-      }else toast('File non valido');
-    }catch(err){toast('Errore nel file JSON')}
-    e.target.value='';
-  };
-  r.readAsText(f);
 }
 
 /* ════════════════════════════════════
@@ -1467,13 +1450,10 @@ function buildSettings(){
 
   // ── Backup / Sync ──
   html+=`<div class="section-header">💾 Backup & Sincronizzazione</div>
-  <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5">Esporta la rosa come <code>rosa_calcetto.json</code> per condividerla via GitHub Pages tra dispositivi.</p>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px">
-    <button class="btn btn-primary" onclick="exportJSON()" style="padding:14px 12px;font-size:14px">
+  <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5">Esporta la rosa come <code>rosa_calcetto.json</code> e caricala su GitHub Pages per sincronizzarla.</p>
+  <div style="margin-bottom:20px">
+    <button class="btn btn-primary btn-sm" onclick="exportJSON()" style="display:inline-flex;width:auto;padding:8px 16px;font-size:13px">
       ⬇ Salva su file
-    </button>
-    <button class="btn btn-secondary" onclick="document.getElementById('imp').click()" style="padding:14px 12px;font-size:14px;border:2px solid var(--green);color:var(--green)">
-      ⬆ Carica da file
     </button>
   </div>`;
 
