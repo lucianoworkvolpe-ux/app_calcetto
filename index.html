@@ -850,17 +850,66 @@ function drawPagelle(i,player,container){
   const deltaCol=delta>0.5?'var(--green)':delta<-0.5?'var(--red)':'var(--amber)';
   const deltaSym=delta>0.3?'↑':delta<-0.3?'↓':'≈';
 
-  // SVG line chart
-  const W=300,H=80,M=18;
-  const fw=W-2*M, fh=H-2*M;
-  const xs=dated.map((_,j)=>dated.length===1?W/2:M+(j/(dated.length-1))*fw);
-  // y: rating 1..10 maps to fh..0
-  const ys=dated.map(r=>M+fh-((r.rating-1)/9)*fh);
-  const path=xs.map((x,j)=>`${j===0?'M':'L'}${x.toFixed(1)},${ys[j].toFixed(1)}`).join(' ');
-  const avgY=M+fh-((avg-1)/9)*fh;
+  // ── colour helper per rating ──
+  const barColor=v=> v>=6.5?'#3aad5e' : v>=5.5?'#d9a300' : '#d9483b';
+
+  // ── linear regression (least squares) over rating series for the trend line ──
+  const n=dated.length;
+  const xsIdx=dated.map((_,j)=>j);
+  const meanX=xsIdx.reduce((s,v)=>s+v,0)/n;
+  const meanY=avg;
+  let num=0, den=0;
+  xsIdx.forEach((x,j)=>{num+=(x-meanX)*(dated[j].rating-meanY); den+=(x-meanX)*(x-meanX);});
+  const slope=den===0?0:num/den;
+  const intercept=meanY-slope*meanX;
+  const trendStart=intercept;                 // value at first match
+  const trendEnd=intercept+slope*(n-1);       // value at last match
+  // trend verdict
+  const totalChange=trendEnd-trendStart;
+  let trendLabel, trendCol, trendArrow;
+  if(totalChange>0.4){ trendLabel='In crescita'; trendCol='var(--green)'; trendArrow='↗'; }
+  else if(totalChange<-0.4){ trendLabel='In calo'; trendCol='var(--red)'; trendArrow='↘'; }
+  else { trendLabel='Stabile'; trendCol='var(--amber)'; trendArrow='→'; }
+
+  // ── geometry: bars chart ──
+  const W=320, H=120, padL=22, padR=10, padT=10, padB=20;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const yMin=1, yMax=10;
+  const yToPx=v=>padT+plotH-((v-yMin)/(yMax-yMin))*plotH;
+  const slotW=plotW/n;
+  const barW=Math.min(34, slotW*0.6);
+
+  // gridlines at 4,6,8
+  const grid=[4,6,8].map(g=>{
+    const y=yToPx(g);
+    return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--gray3)" stroke-width="0.5" opacity="0.4"/>
+    <text x="${padL-4}" y="${(y+3).toFixed(1)}" font-size="7" fill="var(--text3)" text-anchor="end">${g}</text>`;
+  }).join('');
+
+  // bars
+  const bars=dated.map((r,j)=>{
+    const cx=padL+slotW*j+slotW/2;
+    const bx=cx-barW/2;
+    const by=yToPx(r.rating);
+    const bh=padT+plotH-by;
+    return `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" rx="2.5" fill="${barColor(r.rating)}" opacity="0.88"><title>${formatDate(r.date)}: ${r.rating}</title></rect>
+    <text x="${cx.toFixed(1)}" y="${(by-3).toFixed(1)}" font-size="7.5" font-weight="800" fill="var(--text2)" text-anchor="middle">${r.rating}</text>`;
+  }).join('');
+
+  // trend line across bar centers
+  const tx1=padL+slotW*0+slotW/2;
+  const tx2=padL+slotW*(n-1)+slotW/2;
+  const ty1=yToPx(Math.max(yMin,Math.min(yMax,trendStart)));
+  const ty2=yToPx(Math.max(yMin,Math.min(yMax,trendEnd)));
+  const trendLine=n>=2
+    ? `<line x1="${tx1.toFixed(1)}" y1="${ty1.toFixed(1)}" x2="${tx2.toFixed(1)}" y2="${ty2.toFixed(1)}" stroke="${trendCol}" stroke-width="2" stroke-linecap="round" stroke-dasharray="1,5" opacity="0.95"/>`
+    : '';
 
   container.innerHTML=`
-    <div style="font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">📊 Andamento pagelle</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+      <span style="font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">📊 Andamento pagelle</span>
+      <span style="font-size:11px;font-weight:800;color:${trendCol}">${trendArrow} ${trendLabel}</span>
+    </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
       <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Media</div>
@@ -880,12 +929,11 @@ function drawPagelle(i,player,container){
       </div>
     </div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:var(--gray);border-radius:8px;display:block">
-      <line x1="${M}" y1="${avgY}" x2="${W-M}" y2="${avgY}" stroke="var(--text3)" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.5"/>
-      <text x="${W-M+2}" y="${avgY+3}" font-size="8" fill="var(--text3)">μ</text>
-      <path d="${path}" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      ${xs.map((x,j)=>`<circle cx="${x.toFixed(1)}" cy="${ys[j].toFixed(1)}" r="3" fill="var(--green)" stroke="var(--gray)" stroke-width="1.5"><title>${formatDate(dated[j].date)}: ${dated[j].rating}</title></circle>`).join('')}
+      ${grid}
+      ${bars}
+      ${trendLine}
     </svg>
-    <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px">Da ${formatDate(dated[0].date)} a ${formatDate(dated[dated.length-1].date)}</div>
+    <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px">Da ${formatDate(dated[0].date)} a ${formatDate(dated[dated.length-1].date)} · linea tratteggiata = tendenza</div>
   `;
 }
 function upName(i,v){players[i].name=v;document.getElementById('av'+i).textContent=ini(v);save();buildConvList()}
