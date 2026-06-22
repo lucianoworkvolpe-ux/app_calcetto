@@ -797,6 +797,17 @@ function normalizeTeam(team){
   return (team||[]).map(x => (typeof x==='string') ? {id:null, name:x} : {id:x.id||null, name:x.name||''});
 }
 
+// Canonical aggregation key + display name for a record (id-then-name).
+// Resolves stale/legacy ids to the current roster player so the same person
+// never splits into two buckets in the leaderboards/stats.
+function playerKey(pid, pname){
+  let rp = pid ? players.find(p=>p.id===pid) : null;     // 1) exact id in roster
+  if(!rp && pname) rp = players.find(p=>p.name===pname);  // 2) name in roster (handles id drift)
+  if(rp) return {key:rp.id, name:rp.name};
+  // no roster match → group by name so orphan records of the same person merge
+  return {key:'name:'+(pname||pid||'?'), name:pname||'?'};
+}
+
 // All ratings for a given player object: match by id first, fall back to name for legacy rows
 function ratingsForPlayer(player){
   if(!matchesCache.data || !matchesCache.data.ratings) return [];
@@ -2160,11 +2171,7 @@ function renderScorers(){
   const ratings=matchesCache.data?.ratings||[];
   const allMatches=matches||[];
 
-  // helper: stable key + display name (id first, name fallback)
-  const keyFor=(pid,pname)=>{
-    const rp=players.find(p=>(pid&&p.id===pid)||(!pid&&p.name===pname));
-    return rp ? {key:rp.id, name:rp.name} : {key:pid||('name:'+pname), name:pname};
-  };
+  const keyFor=playerKey;
 
   const tally={}; // key → {name, goals, pres}
   const ensure=(key,name)=>{ if(!tally[key])tally[key]={name,goals:0,pres:0}; return tally[key]; };
@@ -2234,10 +2241,7 @@ function renderStatsTable(){
   const allMatches=matches||[];
 
   // stable key + display name for a player (id first, name fallback)
-  const keyFor=(pid,pname)=>{
-    const rp=players.find(p=>(pid&&p.id===pid)||(!pid&&p.name===pname));
-    return rp ? {key:rp.id, name:rp.name} : {key:pid||('name:'+pname), name:pname};
-  };
+  const keyFor=playerKey;
   const agg={}; // key → {name, pres, w, d, l, goals, ratingSum, ratingCount}
   const ensure=(key,name)=>{
     if(!agg[key]) agg[key]={name, pres:0, w:0, d:0, l:0, goals:0, ratingSum:0, ratingCount:0};
