@@ -716,9 +716,18 @@ function normalizeTeam(team){
 function ratingsForPlayer(player){
   if(!matchesCache.data || !matchesCache.data.ratings) return [];
   const id=player.id, name=player.name;
+  // ids of OTHER players currently in the roster (to protect against same-name collisions)
+  const otherIds=new Set(players.filter(p=>p!==player && p.id).map(p=>p.id));
   return matchesCache.data.ratings.filter(r=>{
-    if(r.playerId && id) return r.playerId===id;     // both have id → strict id match
-    return r.player===name;                          // legacy / no-id → name match
+    // 1) exact id match — most reliable
+    if(r.playerId && id && r.playerId===id) return true;
+    // 2) name fallback — handles legacy rows AND id drift (re-import, re-created player…)
+    //    accepted unless this rating is explicitly tagged to a DIFFERENT current player
+    if(r.player===name){
+      if(r.playerId && otherIds.has(r.playerId)) return false;
+      return true;
+    }
+    return false;
   });
 }
 
@@ -1964,9 +1973,10 @@ function openMatch(id){
   const teamB=normalizeTeam(m.teamB);
   const allPlayers=[...teamA,...teamB];
 
-  // find existing rating for a player object: id first, then name
+  // find existing rating for a player object: exact id, else name fallback
+  // (scoped to this match's ratings, so name fallback is safe here)
   const getRating=pl=>ratings.find(r=>{
-    if(r.playerId && pl.id) return r.playerId===pl.id;
+    if(r.playerId && pl.id && r.playerId===pl.id) return true;
     return r.player===pl.name;
   });
 
