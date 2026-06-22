@@ -205,7 +205,14 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 .media-pill{font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px}
 .mp-bl{background:#b8d4f5;color:var(--blue)}
 .mp-am{background:#ffc940;color:#5a3800}
-.pchip{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;margin-bottom:4px;font-size:13px;font-weight:600;min-height:36px}
+.pchip{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;margin-bottom:4px;font-size:13px;font-weight:600;min-height:36px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.pchip:active{cursor:grabbing}
+.pchip-grip{font-size:13px;opacity:.4;flex-shrink:0;line-height:1}
+.pchip-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pchip-score{font-weight:800;flex-shrink:0}
+.pchip-dragging{opacity:.35}
+.pchip-target{outline:2px dashed currentColor;outline-offset:1px}
+.pchip-ghost{position:fixed;z-index:1000;transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,0.3);opacity:.95;margin:0}
 .pc-bl{background:rgba(26,95,168,0.13);color:var(--blue)}
 .pc-am{background:rgba(184,112,0,0.13);color:var(--amber)}
 .cmp-row{display:flex;align-items:center;gap:5px;margin-bottom:5px;font-size:12px}
@@ -355,13 +362,14 @@ input[type=file]{display:none}
     </div>
 
     <!-- teams -->
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:8px">✋ Trascina un giocatore sull'altra squadra per scambiarlo</div>
     <div class="team-row">
-      <div class="team-card team-blue">
+      <div class="team-card team-blue" id="team-card-A">
         <div class="team-hd"><span class="team-nm bl">🔵 Blu</span><span class="media-pill mp-bl" id="avg-a">—</span></div>
         <div style="font-size:11px;color:var(--blue);font-weight:700;opacity:.7;margin-bottom:7px" id="mod-label-a"></div>
         <div id="chips-a"></div>
       </div>
-      <div class="team-card team-amber">
+      <div class="team-card team-amber" id="team-card-B">
         <div class="team-hd"><span class="team-nm am">🟠 Arancio</span><span class="media-pill mp-am" id="avg-b">—</span></div>
         <div style="font-size:11px;color:var(--amber);font-weight:700;opacity:.7;margin-bottom:7px" id="mod-label-b"></div>
         <div id="chips-b"></div>
@@ -984,43 +992,49 @@ function combos(arr,k){
   go(0,[]);return res;
 }
 
+// ── RoleFit: greedy one-slot-per-player assignment (module-scope, reusable) ──
+function roleFitScore(team, slots){
+  // GK slot (leftmost DIF, x<0.15) excluded — goalkeeper rotates among all players
+  const outfield=slots.filter(s=>!(s.role==='DIF'&&s.x<0.15));
+  if(!outfield.length)return 1;
+  // Process slots whose role is rarest in the squad first, so a scarce
+  // specialist isn't wasted before a slot only they could fill.
+  const supply={ATT:0,MED:0,DIF:0};
+  team.forEach(i=>players[i].roles.forEach(r=>{if(supply[r]!==undefined)supply[r]++;}));
+  const ordered=[...outfield].sort((a,b)=>(supply[a.role]||0)-(supply[b.role]||0));
+  const used=new Set();
+  let filled=0;
+  ordered.forEach(slot=>{
+    let found=-1;
+    for(let k=0;k<team.length;k++){
+      const pi=team[k];
+      if(used.has(pi))continue;
+      if(players[pi].roles.includes(slot.role)){found=pi;break;}
+    }
+    if(found!==-1){used.add(found);filled++;}
+  });
+  return filled/outfield.length; // 0..1
+}
+
+function getModulesForSize(n){
+  return MODULES[n]?MODULES[n]:[{slots:SLOT_FALLBACK[n]||SLOT_FALLBACK[5],notation:'auto',desc:''}];
+}
+
+// Recompute derived stats of a combo after a manual edit (drag&drop swap)
+function recomputeCombo(c){
+  c.sA=c.tA.reduce((s,i)=>s+wScore(players[i]),0)/c.tA.length;
+  c.sB=c.tB.reduce((s,i)=>s+wScore(players[i]),0)/c.tB.length;
+  c.diff=Math.abs(c.sA-c.sB);
+  const fitA=c.modA?roleFitScore(c.tA,c.modA.slots):0;
+  const fitB=c.modB?roleFitScore(c.tB,c.modB.slots):0;
+  c.roleFit=(fitA+fitB)/2;
+  c.custom=true; // mark as manually edited
+}
+
 function generateTeams(){
   const total=neededTotal();
   if(selected.size!==total){toast(`Seleziona esattamente ${total} giocatori (${selected.size}/${total})`);return}
   const idx=[...selected];
-
-  // ── RoleFit: proportional slot coverage (not binary) ──────────────────────
-  // For each role needed by the module's outfield slots, credit = min(have, need) / need.
-  // GK slot (x<0.15) excluded — goalkeeper rotates among all players.
-  function roleFitScore(team, slots){
-    // GK slot (leftmost DIF) excluded — goalkeeper rotates among all players
-    const outfield=slots.filter(s=>!(s.role==='DIF'&&s.x<0.15));
-    if(!outfield.length)return 1;
-
-    // Greedy assignment: each player can fill at most ONE slot.
-    // Process slots whose role is rarest in the squad first, so a scarce
-    // specialist isn't wasted before a slot that only they could fill.
-    const supply={ATT:0,MED:0,DIF:0};
-    team.forEach(i=>players[i].roles.forEach(r=>{if(supply[r]!==undefined)supply[r]++;}));
-
-    const ordered=[...outfield].sort((a,b)=>(supply[a.role]||0)-(supply[b.role]||0));
-    const used=new Set();
-    let filled=0;
-    ordered.forEach(slot=>{
-      let found=-1;
-      for(let k=0;k<team.length;k++){
-        const pi=team[k];
-        if(used.has(pi))continue;
-        if(players[pi].roles.includes(slot.role)){found=pi;break;}
-      }
-      if(found!==-1){used.add(found);filled++;}
-    });
-    return filled/outfield.length; // 0..1
-  }
-
-  function getModulesForSize(n){
-    return MODULES[n]?MODULES[n]:[{slots:SLOT_FALLBACK[n]||SLOT_FALLBACK[5],notation:'auto',desc:''}];
-  }
 
   const subsetsA=combos(idx,sizeA);
   const allScored=[];
@@ -1105,10 +1119,10 @@ function renderResult(){
   if(elMA)elMA.textContent=modLabelA;
   if(elMB)elMB.textContent=modLabelB;
 
-  const renderChips=(arr,pcls)=>
-    arr.map(p=>`<div class="pchip ${pcls}"><span>${p.name}</span><span>${p.score.toFixed(1)}</span></div>`).join('');
-  document.getElementById('chips-a').innerHTML=renderChips(pA,'pc-bl');
-  document.getElementById('chips-b').innerHTML=renderChips(pB,'pc-am');
+  const renderChips=(arr,pcls,team)=>
+    arr.map(p=>`<div class="pchip ${pcls}" data-team="${team}" data-pidx="${p.idx}" ondragstart="return false" onpointerdown="dragStart(event,${p.idx},'${team}')"><span class="pchip-grip">⠿</span><span class="pchip-name">${p.name}</span><span class="pchip-score">${p.score.toFixed(1)}</span></div>`).join('');
+  document.getElementById('chips-a').innerHTML=renderChips(pA,'pc-bl','A');
+  document.getElementById('chips-b').innerHTML=renderChips(pB,'pc-am','B');
 
   const avgA=STATS.map((_,j)=>c.tA.reduce((s,i)=>s+players[i].stats[j],0)/c.tA.length);
   const avgB=STATS.map((_,j)=>c.tB.reduce((s,i)=>s+players[i].stats[j],0)/c.tB.length);
@@ -1127,7 +1141,7 @@ function renderResult(){
   document.getElementById('bal-row').innerHTML=diff<=0.5
     ?`<span class="pill-ok">✓ Ben bilanciate — diff ${diff.toFixed(2)}</span>`
     :`<span class="pill-warn">⚠ Differenza media ${diff.toFixed(2)}</span>`;
-  document.getElementById('combo-idx').textContent=`${currentIdx+1} / ${allCombos.length}`;
+  document.getElementById('combo-idx').textContent=c.custom?'✏️ Personalizzata':`${currentIdx+1} / ${allCombos.length}`;
   // show quality info for current combo
   const qualEl=document.getElementById('combo-quality');
   if(qualEl){
@@ -1137,6 +1151,90 @@ function renderResult(){
   }
 
   renderPitch(pA,pB,c.modA,c.modB);
+}
+
+/* ════════════════════════════════════
+   DRAG & DROP — swap players between teams (mouse + touch via Pointer Events)
+════════════════════════════════════ */
+let dragState=null;
+
+function dragStart(e, pidx, team){
+  // only primary button / single touch
+  if(e.button!==undefined && e.button!==0) return;
+  e.preventDefault();
+  const chip=e.currentTarget;
+  dragState={pidx, team, srcEl:chip, ghost:null, targetEl:null, moved:false, startX:e.clientX, startY:e.clientY};
+  chip.setPointerCapture(e.pointerId);
+  chip.addEventListener('pointermove', dragMove);
+  chip.addEventListener('pointerup', dragEnd);
+  chip.addEventListener('pointercancel', dragEnd);
+}
+
+function dragMove(e){
+  if(!dragState)return;
+  const dx=e.clientX-dragState.startX, dy=e.clientY-dragState.startY;
+  if(!dragState.moved && Math.hypot(dx,dy)<6) return; // ignore micro-moves (taps)
+  if(!dragState.moved){
+    dragState.moved=true;
+    dragState.srcEl.classList.add('pchip-dragging');
+    // build floating ghost
+    const g=dragState.srcEl.cloneNode(true);
+    g.className='pchip pchip-ghost';
+    g.style.width=dragState.srcEl.offsetWidth+'px';
+    document.body.appendChild(g);
+    dragState.ghost=g;
+  }
+  dragState.ghost.style.left=e.clientX+'px';
+  dragState.ghost.style.top=e.clientY+'px';
+
+  // detect chip under pointer
+  dragState.ghost.style.pointerEvents='none';
+  const under=document.elementFromPoint(e.clientX,e.clientY);
+  const targetChip=under?under.closest('.pchip'):null;
+  // clear previous highlight
+  if(dragState.targetEl && dragState.targetEl!==targetChip) dragState.targetEl.classList.remove('pchip-target');
+  // valid target = a chip on the OTHER team
+  if(targetChip && targetChip.dataset.team && targetChip.dataset.team!==dragState.team){
+    targetChip.classList.add('pchip-target');
+    dragState.targetEl=targetChip;
+  }else{
+    dragState.targetEl=null;
+  }
+}
+
+function dragEnd(e){
+  if(!dragState)return;
+  const chip=dragState.srcEl;
+  chip.removeEventListener('pointermove', dragMove);
+  chip.removeEventListener('pointerup', dragEnd);
+  chip.removeEventListener('pointercancel', dragEnd);
+  chip.classList.remove('pchip-dragging');
+  if(dragState.ghost) dragState.ghost.remove();
+
+  const tgt=dragState.targetEl;
+  if(tgt){
+    tgt.classList.remove('pchip-target');
+    const otherPidx=parseInt(tgt.dataset.pidx);
+    swapPlayers(dragState.pidx, otherPidx);
+  }
+  dragState=null;
+}
+
+// Swap two players between teams in the current combo, recompute, re-render
+function swapPlayers(pidxA, pidxB){
+  const c=allCombos[currentIdx];
+  if(!c)return;
+  const inA=c.tA.indexOf(pidxA), inB=c.tB.indexOf(pidxB);
+  const inA2=c.tA.indexOf(pidxB), inB2=c.tB.indexOf(pidxA);
+  if(inA!==-1 && inB!==-1){
+    c.tA[inA]=pidxB; c.tB[inB]=pidxA;
+  }else if(inA2!==-1 && inB2!==-1){
+    c.tA[inA2]=pidxA; c.tB[inB2]=pidxB;
+  }else{
+    return; // not a cross-team pair
+  }
+  recomputeCombo(c);
+  renderResult();
 }
 
 /* ════════════════════════════════════
