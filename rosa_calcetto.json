@@ -313,7 +313,8 @@
         6,
         7,
         6
-      ]
+      ],
+      "id": "p_91c8faa1-2286-4b53-8d8a-cc0d1d41d652"
     },
     {
       "name": "DavideAddante",
@@ -331,7 +332,8 @@
         7,
         5,
         6
-      ]
+      ],
+      "id": "p_edb21ffe-9ec2-4d4a-b031-ad4b3409f09b"
     },
     {
       "name": "FabioFicarelli",
@@ -350,7 +352,8 @@
         5,
         7,
         4
-      ]
+      ],
+      "id": "p_5e184eb9-2c75-461b-98dc-5047085201c5"
     }
   ],
   "weights": [
@@ -368,7 +371,7 @@
   "sizeA": 5,
   "sizeB": 5,
   "asymMode": false,
-  "backendUrl": "https://script.google.com/macros/s/AKfycbxIuO6HRrMlYHtPVz443ZYp1U2Ls4twybcBMOu58j8xIrnOJCStXGHwIl4kYRgVHW_W/exec",
+  "backendUrl": "https://script.google.com/macros/s/AKfycbxiMFT57RNaquOFu-1vyAxZ9ssEOQtibhjIkxT5yOHmvvnuBanRRkgzFtI9ONYChMmnEw/exec",
   "version": 6,
-  "exported": "2026-06-22T07:42:14.095Z"
+  "exported": "2026-06-22T08:58:54.142Z"
 }
