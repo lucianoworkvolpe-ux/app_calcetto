@@ -1093,7 +1093,14 @@ function delPlayer(i,e){
   if(players.length<=2){toast('Minimo 2 giocatori');return}
   if(confirm('Rimuovere '+players[i].name+'?')){players.splice(i,1);selected.clear();save();buildRosa();buildConvList();}
 }
-function addPlayer(){players.push({id:uid(),name:'Giocatore '+(players.length+1),roles:['MED'],stats:STATS.map(()=>5)});save();buildRosa();buildConvList();toast('Giocatore aggiunto')}
+function addPlayer(){
+  let nome=prompt('Nome del nuovo giocatore:');
+  if(nome===null)return;            // annullato
+  nome=nome.trim();
+  if(!nome){toast('Nome non valido');return}
+  players.push({id:uid(),name:nome,roles:['MED'],stats:STATS.map(()=>5)});
+  save();buildRosa();buildConvList();toast('Giocatore aggiunto');
+}
 
 /* ════════════════════════════════════
    FORMAT PICKER
