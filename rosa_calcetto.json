@@ -354,6 +354,25 @@
         4
       ],
       "id": "p_5e184eb9-2c75-461b-98dc-5047085201c5"
+    },
+    {
+      "id": "p_163b3fe3-66b8-4fb7-a373-e1800ca3af34",
+      "name": "FabioMartino",
+      "roles": [
+        "ATT"
+      ],
+      "stats": [
+        5,
+        5,
+        3,
+        5,
+        4,
+        4,
+        7,
+        4,
+        3,
+        7
+      ]
     }
   ],
   "weights": [
@@ -373,5 +392,5 @@
   "asymMode": false,
   "backendUrl": "https://script.google.com/macros/s/AKfycbyM6ww_QjQe2f7ZvGWlhiFLFzMFQLm7307WBTTpiP4Uv1sVcmWoMDYteb-988S2WAe9tQ/exec",
   "version": 6,
-  "exported": "2026-06-22T12:35:44.874Z"
+  "exported": "2026-06-22T14:27:12.256Z"
 }
