@@ -832,11 +832,15 @@ function getPlayerPagInfo(player){
   if(!matchesCache.data || !matchesCache.data.ratings){
     return {label:'PAG —', cls:'pag-none', avg:null};
   }
-  const ratings=ratingsForPlayer(player);
+  // only count valid votes (1–10): skips goals-only rows (rating 0) and dirty legacy data
+  const ratings=ratingsForPlayer(player).filter(r=>{
+    const v=parseFloat(r.rating);
+    return !isNaN(v) && v>=1 && v<=10;
+  });
   if(!ratings.length){
     return {label:'PAG —', cls:'pag-none', avg:null};
   }
-  const avg=ratings.reduce((s,r)=>s+r.rating,0)/ratings.length;
+  const avg=ratings.reduce((s,r)=>s+parseFloat(r.rating),0)/ratings.length;
   let cls='pag-mid';
   if(avg>=6.5) cls='pag-good';
   else if(avg<5.5) cls='pag-bad';
