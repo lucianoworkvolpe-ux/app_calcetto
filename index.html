@@ -1512,7 +1512,24 @@ function generateTeams(){
   });
 
   allScored.sort((a,b)=>a.score-b.score);
-  allCombos=allScored.slice(0,50);
+
+  // ── Keep only DISTINCT player splits ──────────────────────────────────
+  // Alternatives must differ by WHO plays with whom, not just by formation.
+  // Since allScored is sorted best-first, the first time we see a split is
+  // already its best module pairing — keep it, drop later module variants.
+  const seenSplit=new Set();
+  const distinct=[];
+  for(const c of allScored){
+    const kA=[...c.tA].sort((a,b)=>a-b).join(',');
+    const kB=[...c.tB].sort((a,b)=>a-b).join(',');
+    // canonical split id (order-independent for symmetric matches)
+    const splitId=(sizeA===sizeB && kB<kA) ? kB+'/'+kA : kA+'/'+kB;
+    if(seenSplit.has(splitId))continue;
+    seenSplit.add(splitId);
+    distinct.push(c);
+  }
+
+  allCombos=distinct.slice(0,50);
   currentIdx=0;
   renderResult();
   document.getElementById('partita-result').style.display='block';
