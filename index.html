@@ -39,8 +39,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 header{background:var(--green);color:#fff;padding:2px 14px;display:flex;align-items:center;justify-content:flex-start;position:sticky;top:0;z-index:200;box-shadow:0 2px 14px rgba(0,0,0,0.2)}
 .logo{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:800;letter-spacing:-0.4px}
 .logo svg{width:24px;height:24px;flex-shrink:0}
-.btn-icon{background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;transition:background var(--tr);white-space:nowrap;min-height:38px}
-.btn-icon:active{background:rgba(255,255,255,0.35)}
+
 
 /* ─── bottom nav (mobile-first) ─── */
 .bottom-nav{display:flex;background:#fff;border-top:1px solid var(--gray2);position:fixed;left:0;right:0;bottom:0;z-index:200;padding-bottom:env(safe-area-inset-bottom,0)}
@@ -78,7 +77,6 @@ header{background:var(--green);color:#fff;padding:2px 14px;display:flex;align-it
 .av-multi{background:#f0eaf8;color:#6b3fa0}
 .av-none{background:var(--gray2);color:var(--text3)}
 .player-name-display{flex:1;min-width:0;font-size:12px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.player-spacer{flex:1;min-width:4px}
 .role-pills-display{display:flex;gap:2px;flex-wrap:wrap}
 .ovr-badge{font-size:8px;font-weight:800;padding:1px 4px;border-radius:99px;background:var(--green-light);color:var(--green);white-space:nowrap}
 .pag-badge{font-size:8px;font-weight:800;padding:1px 4px;border-radius:99px;white-space:nowrap}
@@ -390,6 +388,8 @@ input[type=file]{display:none}
       </div>
     </div>
 
+    <button class="btn btn-primary btn-full" style="margin:4px 0 14px;background:#25D366;border-color:#25D366" onclick="shareTeams()">📲 Condividi formazioni</button>
+
     <!-- stats compare -->
     <div class="card">
       <div class="section-header" style="margin-bottom:10px">Confronto statistiche</div>
@@ -424,7 +424,7 @@ input[type=file]{display:none}
   <div id="partite-content" style="display:none">
     <div style="display:flex;gap:8px;margin-bottom:14px">
       <button class="btn btn-primary" style="flex:1" onclick="newMatch()">📅 Nuova partita</button>
-      <button class="btn btn-secondary" style="flex:1;border:2px solid var(--green);color:var(--green)" onclick="loadMatches()">🔄 Aggiorna dati</button>
+      <button class="btn btn-secondary" style="flex:1;border:2px solid var(--green);color:var(--green)" onclick="loadMatches(true)">🔄 Aggiorna dati</button>
     </div>
     <div class="card" id="scorers-card">
       <div class="section-header" style="margin:0 0 10px">⚽ Classifica marcatori</div>
@@ -455,6 +455,20 @@ input[type=file]{display:none}
       <button onclick="closeMatchModal()" style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:22px;padding:4px">✕</button>
     </div>
     <div id="match-modal-body"></div>
+  </div>
+</div>
+
+<!-- ══════════ APP MODAL (confirm / prompt) ══════════ -->
+<div id="app-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:600;padding:18px;align-items:center;justify-content:center">
+  <div style="width:100%;max-width:380px;background:var(--gray);border-radius:var(--radius);padding:20px;box-shadow:0 12px 36px rgba(0,0,0,0.4)">
+    <div id="app-modal-icon" style="font-size:34px;text-align:center;margin-bottom:8px"></div>
+    <div id="app-modal-title" style="font-size:17px;font-weight:800;text-align:center;margin-bottom:6px;color:var(--text)"></div>
+    <div id="app-modal-msg" style="font-size:13px;color:var(--text2);text-align:center;line-height:1.5;margin-bottom:14px"></div>
+    <input id="app-modal-input" type="text" style="display:none;width:100%;padding:11px 13px;border:1.5px solid var(--gray3);border-radius:10px;background:var(--gray2);color:var(--text);font-size:15px;font-weight:600;margin-bottom:14px;box-sizing:border-box">
+    <div style="display:flex;gap:8px">
+      <button id="app-modal-cancel" class="btn btn-secondary" style="flex:1"></button>
+      <button id="app-modal-ok" class="btn btn-primary" style="flex:1"></button>
+    </div>
   </div>
 </div>
 
@@ -555,6 +569,28 @@ let players=[], weights=STATS.map(()=>1);
 let sizeA=5, sizeB=5, asymMode=false;
 let backendUrl='', matches=[], matchesCache={timestamp:0, data:null};
 let selected=new Set(), allCombos=[], currentIdx=0;
+
+/* ── Cache persistente (localStorage) — stale-while-revalidate ── */
+const CACHE_KEY='calcio_matches_cache';
+function loadCacheFromStorage(){
+  try{
+    const raw=localStorage.getItem(CACHE_KEY);
+    if(!raw)return false;
+    const obj=JSON.parse(raw);
+    if(obj && obj.data && Array.isArray(obj.data.matches)){
+      matches=obj.data.matches;
+      matchesCache.data=obj.data;
+      matchesCache.timestamp=obj.timestamp||0;
+      return true;
+    }
+  }catch(e){/* cache corrotta → ignora */}
+  return false;
+}
+function saveCacheToStorage(){
+  try{
+    localStorage.setItem(CACHE_KEY, JSON.stringify({timestamp:matchesCache.timestamp, data:matchesCache.data}));
+  }catch(e){/* quota piena → ignora, resta solo in RAM */}
+}
 
 /* ════════════════════════════════════
    DEFAULTS
@@ -721,6 +757,52 @@ function updateBuildDateLabel(){
 ════════════════════════════════════ */
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 
+/* ── App modals (replace native confirm/prompt) ── */
+function closeAppModal(){document.getElementById('app-modal').style.display='none';}
+// confirmModal({title, msg, icon, okLabel, cancelLabel, danger}) → Promise<boolean>
+function confirmModal(opts={}){
+  return new Promise(resolve=>{
+    const modal=document.getElementById('app-modal');
+    document.getElementById('app-modal-icon').textContent=opts.icon||'❓';
+    document.getElementById('app-modal-title').textContent=opts.title||'Conferma';
+    document.getElementById('app-modal-msg').innerHTML=opts.msg||'';
+    document.getElementById('app-modal-input').style.display='none';
+    const ok=document.getElementById('app-modal-ok');
+    const cancel=document.getElementById('app-modal-cancel');
+    ok.textContent=opts.okLabel||'Conferma';
+    cancel.textContent=opts.cancelLabel||'Annulla';
+    ok.className='btn '+(opts.danger?'btn-danger':'btn-primary');
+    modal.style.display='flex';
+    const done=v=>{closeAppModal();ok.onclick=null;cancel.onclick=null;resolve(v);};
+    ok.onclick=()=>done(true);
+    cancel.onclick=()=>done(false);
+  });
+}
+// promptModal({title, msg, icon, placeholder, value, okLabel}) → Promise<string|null>
+function promptModal(opts={}){
+  return new Promise(resolve=>{
+    const modal=document.getElementById('app-modal');
+    document.getElementById('app-modal-icon').textContent=opts.icon||'✏️';
+    document.getElementById('app-modal-title').textContent=opts.title||'';
+    document.getElementById('app-modal-msg').innerHTML=opts.msg||'';
+    const input=document.getElementById('app-modal-input');
+    input.style.display='block';
+    input.value=opts.value||'';
+    input.placeholder=opts.placeholder||'';
+    const ok=document.getElementById('app-modal-ok');
+    const cancel=document.getElementById('app-modal-cancel');
+    ok.textContent=opts.okLabel||'OK';
+    cancel.textContent=opts.cancelLabel||'Annulla';
+    ok.className='btn btn-primary';
+    modal.style.display='flex';
+    setTimeout(()=>input.focus(),50);
+    const done=v=>{closeAppModal();ok.onclick=null;cancel.onclick=null;input.onkeydown=null;resolve(v);};
+    ok.onclick=()=>done(input.value);
+    cancel.onclick=()=>done(null);
+    input.onkeydown=e=>{if(e.key==='Enter')done(input.value);if(e.key==='Escape')done(null);};
+  });
+}
+
 /* ════════════════════════════════════
    IO
 ════════════════════════════════════ */
@@ -760,6 +842,7 @@ function getBackupSizeInfo(){
   await loadData();
   loadBackendUrl();
   loadModules();
+  loadCacheFromStorage();   // restore cached matches/ratings → PAG badges show instantly
   buildRosa();
   buildSettings();
 
@@ -954,6 +1037,7 @@ async function loadAndRefreshPagelle(i){
       matches=data.matches||[];
       matchesCache.data={matches, ratings:data.ratings||[]};
       matchesCache.timestamp=Date.now();
+      saveCacheToStorage();
     }
     drawPagelle(i,players[i],container);
   }catch(e){
@@ -1136,23 +1220,38 @@ function delPlayer(i,e){
   e.stopPropagation();
   const active=players.filter(p=>!p.archived).length;
   if(active<=2){toast('Minimo 2 giocatori attivi');return}
-  if(confirm('Rimuovere '+players[i].name+' dalla rosa attiva?\nLo storico e le statistiche resteranno salvati.')){
+  confirmModal({
+    icon:'🗄️',
+    title:'Archiviare '+players[i].name+'?',
+    msg:'Verrà rimosso dalla rosa attiva, ma lo storico e le statistiche resteranno salvati. Puoi ripristinarlo dai Settings.',
+    okLabel:'Archivia',
+    cancelLabel:'Annulla',
+    danger:true
+  }).then(ok=>{
+    if(!ok)return;
     players[i].archived=true;
     selected.delete(i);
     save();buildRosa();buildConvList();
     toast('Giocatore archiviato');
-  }
+  });
 }
 function unarchivePlayer(i){
   if(players[i]){players[i].archived=false;save();buildRosa();buildConvList();buildSettings();toast('Giocatore ripristinato');}
 }
 function addPlayer(){
-  let nome=prompt('Nome del nuovo giocatore:');
-  if(nome===null)return;            // annullato
-  nome=nome.trim();
-  if(!nome){toast('Nome non valido');return}
-  players.push({id:uid(),name:nome,roles:['MED'],stats:STATS.map(()=>5)});
-  save();buildRosa();buildConvList();toast('Giocatore aggiunto');
+  promptModal({
+    icon:'➕',
+    title:'Nuovo giocatore',
+    msg:'Inserisci il nome (non sarà modificabile in seguito).',
+    placeholder:'Es. Marco',
+    okLabel:'Aggiungi'
+  }).then(nome=>{
+    if(nome===null)return;            // annullato
+    nome=nome.trim();
+    if(!nome){toast('Nome non valido');return}
+    players.push({id:uid(),name:nome,roles:['MED'],stats:STATS.map(()=>5)});
+    save();buildRosa();buildConvList();toast('Giocatore aggiunto');
+  });
 }
 
 /* ─── foto giocatore (salvata come thumbnail base64 nel JSON) ─── */
@@ -1450,6 +1549,131 @@ function renderResult(){
 }
 
 /* ════════════════════════════════════
+   CONDIVIDI FORMAZIONI (PNG)
+════════════════════════════════════ */
+async function shareTeams(){
+  if(!allCombos.length){toast('Genera prima le squadre');return}
+  const c=allCombos[currentIdx];
+  const roleOrder={ATT:0,MED:1,DIF:2};
+  const sortTeam=t=>t.map(i=>({name:players[i].name,score:wScore(players[i]),role:primaryRole(players[i])}))
+    .sort((a,b)=>roleOrder[a.role]-roleOrder[b.role]);
+  const tA=sortTeam(c.tA), tB=sortTeam(c.tB);
+
+  // ── canvas geometry (retina) ──
+  const W=900, scale=2;
+  const padX=50, colGap=40;
+  const headerH=190, rowH=58, footH=70;
+  const bodyRows=Math.max(tA.length,tB.length);
+  const H=headerH + bodyRows*rowH + footH + 30;
+  const canvas=document.createElement('canvas');
+  canvas.width=W*scale; canvas.height=H*scale;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(scale,scale);
+
+  const BLUE='#3a8fef', AMBER='#e8a020', BG='#0f1620', CARD='#1a2230', TXT='#eef2f8', SUB='#8a94a6';
+
+  // background
+  ctx.fillStyle=BG; ctx.fillRect(0,0,W,H);
+
+  // header
+  ctx.textAlign='center';
+  ctx.fillStyle=TXT;
+  ctx.font='800 38px system-ui,-apple-system,sans-serif';
+  ctx.fillText('⚽ CalcioLercio', W/2, 56);
+  ctx.fillStyle=SUB;
+  ctx.font='600 19px system-ui,-apple-system,sans-serif';
+  const today=new Date();
+  const dstr=String(today.getDate()).padStart(2,'0')+'/'+String(today.getMonth()+1).padStart(2,'0')+'/'+today.getFullYear();
+  ctx.fillText('Formazioni del '+dstr, W/2, 86);
+
+  // column geometry
+  const colW=(W-2*padX-colGap)/2;
+  const xA=padX, xB=padX+colW+colGap;
+  const headerBlockY=110, headerBlockH=58;
+
+  const drawTeamHeader=(x,color,label,avg,mod)=>{
+    ctx.fillStyle=color;
+    roundRect(ctx,x,headerBlockY,colW,headerBlockH,12); ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.textAlign='left';
+    ctx.font='800 24px system-ui,-apple-system,sans-serif';
+    ctx.fillText(label, x+18, headerBlockY+27);
+    ctx.font='600 15px system-ui,-apple-system,sans-serif';
+    ctx.globalAlpha=0.92;
+    ctx.fillText((mod?mod+'  ·  ':'')+'Media '+avg.toFixed(1), x+18, headerBlockY+48);
+    ctx.globalAlpha=1;
+  };
+  drawTeamHeader(xA,BLUE,'🔵 Blu',c.sA,c.modA?c.modA.notation:'');
+  drawTeamHeader(xB,AMBER,'🟠 Arancio',c.sB,c.modB?c.modB.notation:'');
+
+  // player rows
+  const drawRows=(x,team,accent)=>{
+    let y=headerH-8;
+    team.forEach(p=>{
+      ctx.fillStyle=CARD;
+      roundRect(ctx,x,y,colW,rowH-8,10); ctx.fill();
+      // role dot
+      const rc=p.role==='ATT'?'#ef5350':p.role==='DIF'?'#42a5f5':'#66bb6a';
+      ctx.fillStyle=rc;
+      ctx.beginPath(); ctx.arc(x+22,y+(rowH-8)/2,7,0,7); ctx.fill();
+      // name
+      ctx.fillStyle=TXT; ctx.textAlign='left';
+      ctx.font='700 21px system-ui,-apple-system,sans-serif';
+      let nm=p.name; if(nm.length>20)nm=nm.slice(0,19)+'…';
+      ctx.fillText(nm, x+40, y+(rowH-8)/2+7);
+      // score
+      ctx.fillStyle=accent; ctx.textAlign='right';
+      ctx.font='800 20px system-ui,-apple-system,sans-serif';
+      ctx.fillText(p.score.toFixed(1), x+colW-16, y+(rowH-8)/2+7);
+      y+=rowH;
+    });
+  };
+  drawRows(xA,tA,BLUE);
+  drawRows(xB,tB,AMBER);
+
+  // footer (balance)
+  const fy=H-footH+10;
+  ctx.textAlign='center';
+  const balOk=c.diff<=0.5;
+  ctx.fillStyle=balOk?'#2e7d32':'#b8860b';
+  roundRect(ctx,W/2-180,fy,360,40,20); ctx.fill();
+  ctx.fillStyle='#fff';
+  ctx.font='700 18px system-ui,-apple-system,sans-serif';
+  ctx.fillText((balOk?'✓ Squadre bilanciate':'⚠ Differenza media')+'  ·  diff '+c.diff.toFixed(2), W/2, fy+26);
+
+  // export
+  toast('⏳ Genero immagine...');
+  canvas.toBlob(async(blob)=>{
+    if(!blob){toast('Errore immagine');return}
+    const file=new File([blob],'formazioni.png',{type:'image/png'});
+    const shareData={files:[file],title:'CalcioLercio',text:'⚽ Formazioni di oggi'};
+    // Web Share API (mobile) with file support
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share(shareData); return; }
+      catch(e){ if(e.name==='AbortError')return; }
+    }
+    // fallback: download
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='formazioni.png'; a.style.display='none';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},200);
+    toast('Immagine salvata');
+  },'image/png');
+}
+
+// rounded-rect helper for canvas
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+/* ════════════════════════════════════
    DRAG & DROP — swap players between teams (mouse + touch via Pointer Events)
 ════════════════════════════════════ */
 let dragState=null;
@@ -1609,22 +1833,37 @@ function renderPitch(pA,pB,modA,modB){
   const assignedB=assignToSlots(pB,slotsB);
 
   const PR=17; // player circle radius — bigger for readability
-  function drawPlayer(px,py,name,fill){
-    const short=name.length>7?name.substring(0,6)+'…':name;
-    s+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${PR}" fill="${fill}" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>`;
-    s+=`<text x="${px.toFixed(1)}" y="${(py+4).toFixed(1)}" text-anchor="middle" font-size="8.5" font-weight="800" fill="white" font-family="-apple-system,BlinkMacSystemFont,sans-serif">${short}</text>`;
+  let clipDefs=''; // accumulated clipPath defs for photos
+  let clipSeq=0;
+  function drawPlayer(px,py,player,fill,borderCol){
+    const name=player.name;
+    const cx=px.toFixed(1), cy=py.toFixed(1);
+    if(player.photo){
+      const cid='pclip'+(clipSeq++);
+      clipDefs+=`<clipPath id="${cid}"><circle cx="${cx}" cy="${cy}" r="${PR}"/></clipPath>`;
+      // photo clipped into circle + colored team ring
+      s+=`<image href="${player.photo}" x="${(px-PR).toFixed(1)}" y="${(py-PR).toFixed(1)}" width="${PR*2}" height="${PR*2}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${cid})"/>`;
+      s+=`<circle cx="${cx}" cy="${cy}" r="${PR}" fill="none" stroke="${borderCol}" stroke-width="3"/>`;
+      // name label below the photo for recognition
+      const short=name.length>8?name.substring(0,7)+'…':name;
+      s+=`<text x="${cx}" y="${(py+PR+9).toFixed(1)}" text-anchor="middle" font-size="7.5" font-weight="800" fill="white" stroke="rgba(0,0,0,0.5)" stroke-width="0.4" font-family="-apple-system,BlinkMacSystemFont,sans-serif">${esc(short)}</text>`;
+    }else{
+      const short=name.length>7?name.substring(0,6)+'…':name;
+      s+=`<circle cx="${cx}" cy="${cy}" r="${PR}" fill="${fill}" stroke="rgba(255,255,255,0.6)" stroke-width="2"/>`;
+      s+=`<text x="${cx}" y="${(py+4).toFixed(1)}" text-anchor="middle" font-size="8.5" font-weight="800" fill="white" font-family="-apple-system,BlinkMacSystemFont,sans-serif">${esc(short)}</text>`;
+    }
   }
 
   slotsA.forEach((sl,i)=>{
     if(!assignedA[i])return;
-    drawPlayer(lxS+sl.x*(lxE-lxS), yS+sl.y*(yE-yS), assignedA[i].name,'#1e62c2');
+    drawPlayer(lxS+sl.x*(lxE-lxS), yS+sl.y*(yE-yS), assignedA[i],'#1e62c2','#3a8fef');
   });
   slotsB.forEach((sl,i)=>{
     if(!assignedB[i])return;
-    drawPlayer(rxS+(1-sl.x)*(rxE-rxS), yS+sl.y*(yE-yS), assignedB[i].name,'#c47a00');
+    drawPlayer(rxS+(1-sl.x)*(rxE-rxS), yS+sl.y*(yE-yS), assignedB[i],'#c47a00','#e8a020');
   });
 
-  svg.innerHTML=s;
+  svg.innerHTML=(clipDefs?`<defs>${clipDefs}</defs>`:'')+s;
 }
 
 function prevC(){currentIdx=(currentIdx-1+allCombos.length)%allCombos.length;renderResult()}
@@ -1816,11 +2055,18 @@ function addModule(n){
 function deleteModule(n,idx){
   if(MODULES[n].length<=1){toast('Almeno una formazione è richiesta');return}
   const m=MODULES[n][idx];
-  if(confirm(`Rimuovere la formazione ${m.notation}?`)){
+  confirmModal({
+    icon:'🗑️',
+    title:'Rimuovere la formazione?',
+    msg:`<strong>${esc(m.notation)}</strong> verrà eliminata dai moduli ${n}v${n}.`,
+    okLabel:'Rimuovi',
+    danger:true
+  }).then(ok=>{
+    if(!ok)return;
     MODULES[n].splice(idx,1);
     saveModules();
     buildSettings();
-  }
+  });
 }
 
 function saveModules(){
@@ -1886,6 +2132,7 @@ async function ensureMatchesCachedForRosa(){
       matches=data.matches||[];
       matchesCache.data={matches,ratings:data.ratings||[]};
       matchesCache.timestamp=Date.now();
+      saveCacheToStorage();
       // refresh all pag badges on Rosa
       players.forEach((p,i)=>{
         const el=document.getElementById('pag'+i);
@@ -2115,23 +2362,38 @@ function buildPartitePage(){
   loadMatches();
 }
 
-async function loadMatches(){
+async function loadMatches(force){
   const list=document.getElementById('matches-list');
-  list.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">⏳ Caricamento...</div>';
+  const haveCache=matchesCache.data && Array.isArray(matchesCache.data.matches);
+
+  // 1) show cached data instantly (stale-while-revalidate)
+  if(haveCache && !force){
+    matches=matchesCache.data.matches;
+    renderMatchesList();
+  }else{
+    list.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">⏳ Caricamento...</div>';
+  }
+
+  // 2) revalidate from backend in background
   try{
     const data=await backendCall('matches');
     if(!data.ok)throw new Error(data.error||'errore sconosciuto');
     matches=data.matches||[];
     matchesCache.data={matches, ratings:data.ratings||[]};
     matchesCache.timestamp=Date.now();
+    saveCacheToStorage();
     renderMatchesList();
   }catch(e){
-    list.innerHTML=`<div style="text-align:center;padding:20px;color:var(--red);font-size:13px">❌ ${e.message}</div>`;
-    // unstick the scorers + stats cards too
-    const sc=document.getElementById('scorers-list');
-    const st=document.getElementById('stats-table');
-    if(sc)sc.innerHTML='<div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">—</div>';
-    if(st)st.innerHTML='<div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">—</div>';
+    // keep showing cached data on error; only show error if we had nothing
+    if(!haveCache){
+      list.innerHTML=`<div style="text-align:center;padding:20px;color:var(--red);font-size:13px">❌ ${e.message}</div>`;
+      const sc=document.getElementById('scorers-list');
+      const st=document.getElementById('stats-table');
+      if(sc)sc.innerHTML='<div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">—</div>';
+      if(st)st.innerHTML='<div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">—</div>';
+    }else{
+      toast('⚠️ Offline: mostro dati salvati');
+    }
   }
 }
 
@@ -2387,7 +2649,7 @@ async function saveNewMatch(){
     await backendCall('addMatch',m);
     closeMatchModal();
     toast('Partita creata!');
-    loadMatches();
+    loadMatches(true);
   }catch(e){toast('Errore: '+e.message)}
 }
 
@@ -2596,17 +2858,24 @@ async function saveRatings(matchId){
     }
     toast(`Salvato: ${ratings.length} pagelle`);
     closeMatchModal();
-    loadMatches();
+    loadMatches(true);
   }catch(e){toast('Errore: '+e.message)}
 }
 
 async function deleteMatch(id){
-  if(!confirm('Eliminare questa partita e tutte le sue pagelle?'))return;
+  const ok=await confirmModal({
+    icon:'🗑️',
+    title:'Eliminare la partita?',
+    msg:'Verranno eliminate anche tutte le pagelle e i gol di questa partita. L\'operazione non è reversibile.',
+    okLabel:'Elimina',
+    danger:true
+  });
+  if(!ok)return;
   try{
     await backendCall('deleteMatch',{id});
     closeMatchModal();
     toast('Partita eliminata');
-    loadMatches();
+    loadMatches(true);
   }catch(e){toast('Errore: '+e.message)}
 }
 
