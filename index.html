@@ -1387,6 +1387,20 @@ function combos(arr,k){
   go(0,[]);return res;
 }
 
+// Distribution stats for a team: mean, standard deviation, and top-2 OVR sum.
+// Used to reward splits that spread the strongest players evenly.
+function teamSpread(team){
+  const ovrs=team.map(i=>wScore(players[i]));
+  const n=ovrs.length||1;
+  const mean=ovrs.reduce((s,v)=>s+v,0)/n;
+  const variance=ovrs.reduce((s,v)=>s+(v-mean)*(v-mean),0)/n;
+  const std=Math.sqrt(variance);
+  const sorted=[...ovrs].sort((a,b)=>b-a);
+  const top1=sorted[0]||0;
+  const top2=top1+(sorted[1]||0); // strength of the two best players
+  return {mean, std, top1, top2};
+}
+
 // ── RoleFit: greedy one-slot-per-player assignment (module-scope, reusable) ──
 function roleFitScore(team, slots){
   // GK slot (leftmost DIF, x<0.15) excluded — goalkeeper rotates among all players
@@ -1420,6 +1434,10 @@ function recomputeCombo(c){
   c.sA=c.tA.reduce((s,i)=>s+wScore(players[i]),0)/c.tA.length;
   c.sB=c.tB.reduce((s,i)=>s+wScore(players[i]),0)/c.tB.length;
   c.diff=Math.abs(c.sA-c.sB);
+  const spA=teamSpread(c.tA), spB=teamSpread(c.tB);
+  c.topDiff=Math.abs(spA.top2-spB.top2);
+  c.stdDiff=Math.abs(spA.std-spB.std);
+  c.distrib=c.topDiff+c.stdDiff;
   const fitA=c.modA?roleFitScore(c.tA,c.modA.slots):0;
   const fitB=c.modB?roleFitScore(c.tB,c.modB.slots):0;
   c.roleFit=(fitA+fitB)/2;
@@ -1440,6 +1458,12 @@ function generateTeams(){
     const sA=tA.reduce((s,i)=>s+wScore(players[i]),0)/tA.length;
     const sB=tB.reduce((s,i)=>s+wScore(players[i]),0)/tB.length;
     const diff=Math.abs(sA-sB);
+
+    // ── Distribution fairness: spread the strongest players evenly ──
+    const spA=teamSpread(tA), spB=teamSpread(tB);
+    const topDiff=Math.abs(spA.top2-spB.top2);  // diff in strength of the 2 best per team
+    const stdDiff=Math.abs(spA.std-spB.std);     // diff in how spread-out each team is
+    const distrib=topDiff+stdDiff;               // lower = fairer distribution
 
     const modsA=getModulesForSize(tA.length);
     const modsB=getModulesForSize(tB.length);
@@ -1475,12 +1499,14 @@ function generateTeams(){
         const fitB=roleFitScore(tB,modB.slots);
         const roleFit=(fitA+fitB)/2; // 0..1
 
-        // ── Score: balance is primary, roleFit is a small tiebreaker ─────
-        // roleFit weight (0.1) is intentionally small so that balance always
-        // dominates — a perfectly balanced split with mediocre roles beats
-        // an unbalanced split with perfect roles.
-        const score=diff-(roleFit*0.1);
-        allScored.push({tA,tB,sA,sB,diff,roleFit,modA,modB,score});
+        // ── Score (lower = better) ───────────────────────────────────────
+        //  • diff (media)      → priorità assoluta, peso 1.0
+        //  • distrib           → distribuzione equa dei forti, peso 0.35
+        //  • roleFit           → piccolo tiebreaker sui ruoli, peso 0.1
+        // La media domina; a parità di media, si premia chi distribuisce
+        // meglio i giocatori più forti; i ruoli sono l'ultimo criterio.
+        const score=diff + distrib*0.35 - roleFit*0.1;
+        allScored.push({tA,tB,sA,sB,diff,distrib,topDiff,stdDiff,roleFit,modA,modB,score});
       });
     });
   });
@@ -1541,7 +1567,10 @@ function renderResult(){
   const qualEl=document.getElementById('combo-quality');
   if(qualEl){
     const rfPct=Math.round((c.roleFit||0)*100);
-    qualEl.textContent=`diff ${c.diff.toFixed(2)}  ·  ruoli ${rfPct}%`;
+    const distrib=(c.distrib!==undefined)?c.distrib:0;
+    // distribution verdict (how evenly the strong players are split)
+    const distLbl=distrib<=0.6?'forti distribuiti ✓':distrib<=1.4?'distribuzione ok':'forti sbilanciati ⚠';
+    qualEl.textContent=`diff ${c.diff.toFixed(2)}  ·  ${distLbl}  ·  ruoli ${rfPct}%`;
     qualEl.style.color=c.diff<=0.3?'var(--green)':c.diff<=0.7?'var(--amber)':'var(--red)';
   }
 
