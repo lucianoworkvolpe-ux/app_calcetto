@@ -1414,13 +1414,12 @@ function roleFitScore(team, slots){
   const used=new Set();
   let filled=0;
   ordered.forEach(slot=>{
-    let found=-1;
-    for(let k=0;k<team.length;k++){
-      const pi=team[k];
-      if(used.has(pi))continue;
-      if(players[pi].roles.includes(slot.role)){found=pi;break;}
-    }
-    if(found!==-1){used.add(found);filled++;}
+    // among compatible free players, pick the LEAST flexible (fewest roles)
+    // so a versatile jolly isn't wasted on a slot a pure specialist could fill
+    const candidates=team
+      .filter(pi=>!used.has(pi) && players[pi].roles.includes(slot.role))
+      .sort((a,b)=>players[a].roles.length-players[b].roles.length);
+    if(candidates.length){used.add(candidates[0]);filled++;}
   });
   return filled/outfield.length; // 0..1
 }
@@ -1429,18 +1428,53 @@ function getModulesForSize(n){
   return MODULES[n]?MODULES[n]:[{slots:SLOT_FALLBACK[n]||SLOT_FALLBACK[5],notation:'auto',desc:''}];
 }
 
+// Reparto balance: penalizes uneven distribution of ATT/MED/DIF between teams.
+// Percentage-based (works with asymmetric teams) and counts multi-role players
+// "soft" — a MED/ATT contributes to both reparti, not just the first role.
+function roleCountPenalty(tA, tB){
+  const count=team=>{
+    const c={ATT:0,MED:0,DIF:0};
+    team.forEach(i=>{
+      const valid=players[i].roles.filter(r=>c[r]!==undefined);
+      const share=valid.length?1/valid.length:1;
+      valid.forEach(r=>c[r]+=share);
+    });
+    return c;
+  };
+  const a=count(tA), b=count(tB);
+  const diffRole=r=>Math.abs((a[r]/tA.length)-(b[r]/tB.length));
+  return diffRole('ATT')*0.60 + diffRole('MED')*0.35 + diffRole('DIF')*0.45;
+}
+
+// Compute all derived metrics + final score for a split. Single source of truth
+// so generateTeams() and recomputeCombo() never drift apart.
+function comboMetrics(tA, tB, modA, modB){
+  const sA=tA.reduce((s,i)=>s+wScore(players[i]),0)/tA.length;
+  const sB=tB.reduce((s,i)=>s+wScore(players[i]),0)/tB.length;
+  const diff=Math.abs(sA-sB);
+
+  const spA=teamSpread(tA), spB=teamSpread(tB);
+  const top1Diff=Math.abs(spA.top1-spB.top1);
+  const top2Diff=Math.abs(spA.top2-spB.top2);
+  const stdDiff=Math.abs(spA.std-spB.std);
+  // weight the single strongest player most, then the top pair, then overall spread
+  const distrib=top1Diff*0.45 + top2Diff*0.35 + stdDiff*0.20;
+
+  const fitA=modA?roleFitScore(tA,modA.slots):0;
+  const fitB=modB?roleFitScore(tB,modB.slots):0;
+  const roleFit=(fitA+fitB)/2; // 0..1
+  const rolePenalty=(1-roleFit)*0.15;       // ruoli coperti → penalità (non bonus)
+  const repartiPenalty=roleCountPenalty(tA,tB); // reparti equilibrati
+
+  // lower is better — media domina, poi distribuzione, poi ruoli/reparti
+  const score=diff + distrib*0.30 + rolePenalty + repartiPenalty;
+  return {sA,sB,diff,distrib,top1Diff,top2Diff,stdDiff,roleFit,rolePenalty,repartiPenalty,score};
+}
+
 // Recompute derived stats of a combo after a manual edit (drag&drop swap)
 function recomputeCombo(c){
-  c.sA=c.tA.reduce((s,i)=>s+wScore(players[i]),0)/c.tA.length;
-  c.sB=c.tB.reduce((s,i)=>s+wScore(players[i]),0)/c.tB.length;
-  c.diff=Math.abs(c.sA-c.sB);
-  const spA=teamSpread(c.tA), spB=teamSpread(c.tB);
-  c.topDiff=Math.abs(spA.top2-spB.top2);
-  c.stdDiff=Math.abs(spA.std-spB.std);
-  c.distrib=c.topDiff+c.stdDiff;
-  const fitA=c.modA?roleFitScore(c.tA,c.modA.slots):0;
-  const fitB=c.modB?roleFitScore(c.tB,c.modB.slots):0;
-  c.roleFit=(fitA+fitB)/2;
+  const m=comboMetrics(c.tA,c.tB,c.modA,c.modB);
+  Object.assign(c,m);
   c.custom=true; // mark as manually edited
 }
 
@@ -1455,15 +1489,6 @@ function generateTeams(){
 
   subsetsA.forEach(tA=>{
     const tB=idx.filter(i=>!tA.includes(i));
-    const sA=tA.reduce((s,i)=>s+wScore(players[i]),0)/tA.length;
-    const sB=tB.reduce((s,i)=>s+wScore(players[i]),0)/tB.length;
-    const diff=Math.abs(sA-sB);
-
-    // ── Distribution fairness: spread the strongest players evenly ──
-    const spA=teamSpread(tA), spB=teamSpread(tB);
-    const topDiff=Math.abs(spA.top2-spB.top2);  // diff in strength of the 2 best per team
-    const stdDiff=Math.abs(spA.std-spB.std);     // diff in how spread-out each team is
-    const distrib=topDiff+stdDiff;               // lower = fairer distribution
 
     const modsA=getModulesForSize(tA.length);
     const modsB=getModulesForSize(tB.length);
@@ -1495,22 +1520,14 @@ function generateTeams(){
         if(seen.has(key))return;
         seen.add(key);
 
-        const fitA=roleFitScore(tA,modA.slots);
-        const fitB=roleFitScore(tB,modB.slots);
-        const roleFit=(fitA+fitB)/2; // 0..1
-
-        // ── Score (lower = better) ───────────────────────────────────────
-        //  • diff (media)      → priorità assoluta, peso 1.0
-        //  • distrib           → distribuzione equa dei forti, peso 0.35
-        //  • roleFit           → piccolo tiebreaker sui ruoli, peso 0.1
-        // La media domina; a parità di media, si premia chi distribuisce
-        // meglio i giocatori più forti; i ruoli sono l'ultimo criterio.
-        const score=diff + distrib*0.35 - roleFit*0.1;
-        allScored.push({tA,tB,sA,sB,diff,distrib,topDiff,stdDiff,roleFit,modA,modB,score});
+        // all metrics + score from the single shared scorer
+        const m=comboMetrics(tA,tB,modA,modB);
+        allScored.push({tA,tB,modA,modB,...m});
       });
     });
   });
 
+  // sort by overall score (lower is better)
   allScored.sort((a,b)=>a.score-b.score);
 
   // ── Keep only DISTINCT player splits ──────────────────────────────────
@@ -1529,7 +1546,18 @@ function generateTeams(){
     distinct.push(c);
   }
 
-  allCombos=distinct.slice(0,50);
+  // ── Media priority: don't sacrifice balance for distribution/roles ──
+  // Float the splits whose mean-diff is within a small margin of the best,
+  // ranked among themselves by full score. The rest follow, still sorted.
+  if(distinct.length){
+    const bestDiff=Math.min(...distinct.map(c=>c.diff));
+    const MARGIN=0.15;
+    const near=distinct.filter(c=>c.diff<=bestDiff+MARGIN).sort((a,b)=>a.score-b.score);
+    const rest=distinct.filter(c=>c.diff>bestDiff+MARGIN).sort((a,b)=>a.score-b.score);
+    allCombos=[...near,...rest].slice(0,50);
+  }else{
+    allCombos=[];
+  }
   currentIdx=0;
   renderResult();
   document.getElementById('partita-result').style.display='block';
@@ -1586,7 +1614,7 @@ function renderResult(){
     const rfPct=Math.round((c.roleFit||0)*100);
     const distrib=(c.distrib!==undefined)?c.distrib:0;
     // distribution verdict (how evenly the strong players are split)
-    const distLbl=distrib<=0.6?'forti distribuiti ✓':distrib<=1.4?'distribuzione ok':'forti sbilanciati ⚠';
+    const distLbl=distrib<=0.5?'forti distribuiti ✓':distrib<=1.2?'distribuzione ok':'forti sbilanciati ⚠';
     qualEl.textContent=`diff ${c.diff.toFixed(2)}  ·  ${distLbl}  ·  ruoli ${rfPct}%`;
     qualEl.style.color=c.diff<=0.3?'var(--green)':c.diff<=0.7?'var(--amber)':'var(--red)';
   }
