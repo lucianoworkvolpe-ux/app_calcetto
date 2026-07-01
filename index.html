@@ -33,10 +33,11 @@
 }}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{font-size:16px}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--gray);color:var(--text);min-height:100vh;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(160deg,#eef3fb 0%,#f2f4f7 45%,#e9edf5 100%);background-attachment:fixed;color:var(--text);min-height:100vh;overflow-x:hidden}
+@media(prefers-color-scheme:dark){body{background:linear-gradient(160deg,#141b28 0%,#171b24 50%,#12161f 100%);background-attachment:fixed}}
 
 /* ─── header ─── */
-header{background:var(--green);color:#fff;padding:2px 14px;display:flex;align-items:center;justify-content:flex-start;position:sticky;top:0;z-index:200;box-shadow:0 2px 14px rgba(0,0,0,0.2)}
+header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);color:#fff;padding:2px 14px;display:flex;align-items:center;justify-content:flex-start;position:sticky;top:0;z-index:200;box-shadow:0 2px 14px rgba(0,0,0,0.2)}
 .logo{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:800;letter-spacing:-0.4px}
 .logo svg{width:24px;height:24px;flex-shrink:0}
 
@@ -44,22 +45,34 @@ header{background:var(--green);color:#fff;padding:2px 14px;display:flex;align-it
 /* ─── bottom nav (mobile-first) ─── */
 .bottom-nav{display:flex;background:#fff;border-top:1px solid var(--gray2);position:fixed;left:0;right:0;bottom:0;z-index:200;padding-bottom:env(safe-area-inset-bottom,0)}
 @media(prefers-color-scheme:dark){.bottom-nav{background:#181c24}}
-.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;cursor:pointer;border:none;background:transparent;color:var(--text3);font-size:10px;font-weight:600;border-top:2px solid transparent;transition:color var(--tr),border-color var(--tr)}
-.bnav-item .bni{font-size:20px;line-height:1}
+.bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 4px 8px;cursor:pointer;border:none;background:transparent;color:var(--text3);font-size:10px;font-weight:600;border-top:2px solid transparent;transition:color var(--tr),border-color var(--tr)}
+.bnav-item .bni{display:flex;align-items:center;justify-content:center;line-height:1}
+.bnav-item .bni svg{width:24px;height:24px;transition:transform var(--tr),stroke-width var(--tr)}
 .bnav-item.active{color:var(--green);border-top-color:var(--green)}
+.bnav-item.active .bni svg{transform:translateY(-1px) scale(1.08);stroke-width:2.4}
 
 /* ─── pages ─── */
 .page{display:none;padding:12px 8px 90px;max-width:800px;margin:0 auto}
 .page.active{display:block}
-.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 11px;margin-bottom:12px}
-.card.card-compact{padding:6px 7px;margin-bottom:7px}
-@media(prefers-color-scheme:dark){.card{background:#1e232e}}
+.card{background:rgba(255,255,255,0.72);backdrop-filter:blur(12px) saturate(1.4);-webkit-backdrop-filter:blur(12px) saturate(1.4);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 11px;margin-bottom:12px}
+.card.card-compact{padding:6px 7px;margin-bottom:7px;transition:transform var(--tr),box-shadow var(--tr)}
+@media(prefers-color-scheme:dark){
+  .card{background:rgba(32,38,50,0.62);border-color:rgba(255,255,255,0.08)}
+}
 
 /* rosa 2-column grid */
 #players-list{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:start}
 @media(max-width:340px){#players-list{grid-template-columns:1fr}}
 #players-list .card{margin-bottom:0}
-#players-list .card.expanded{grid-column:1 / -1 !important}
+#players-list .card.card-compact:not(.expanded):active{transform:scale(0.97)}
+#players-list .card.expanded{grid-column:1 / -1 !important;background:rgba(255,255,255,0.85);box-shadow:0 8px 30px rgba(0,0,0,0.16);border-left:4px solid var(--role-accent,var(--green));transform:none}
+@media(prefers-color-scheme:dark){
+  #players-list .card.expanded{background:rgba(38,46,62,0.82);box-shadow:0 8px 30px rgba(0,0,0,0.45)}
+}
+/* entrance animation for rosa cards */
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+#players-list .card.card-compact{animation:cardIn 0.32s ease both}
+@media(prefers-reduced-motion:reduce){#players-list .card.card-compact{animation:none}}
 
 /* ─── player card ─── */
 .player-header{display:flex;cursor:pointer;user-select:none}
@@ -79,12 +92,12 @@ header{background:var(--green);color:#fff;padding:2px 14px;display:flex;align-it
 .av-none{background:var(--gray2);color:var(--text3)}
 .player-name-display{flex:1;min-width:0;font-size:12px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .role-pills-display{display:flex;gap:2px;flex-wrap:wrap}
-.ovr-badge{font-size:8px;font-weight:800;padding:1px 4px;border-radius:99px;background:var(--green-light);color:var(--green);white-space:nowrap}
-.pag-badge{font-size:8px;font-weight:800;padding:1px 4px;border-radius:99px;white-space:nowrap}
-.pag-good{background:#e4f7ec;color:#1a5a2a}
-.pag-mid{background:#fff4d6;color:#7a4a00}
-.pag-bad{background:#fde8e8;color:#a82020}
-.pag-none{background:var(--gray2);color:var(--text3)}
+.ovr-badge{font-size:8px;font-weight:800;padding:1.5px 5px;border-radius:99px;background:linear-gradient(135deg,#2e69c4,#1a4a8f);color:#fff;white-space:nowrap;box-shadow:0 1px 3px rgba(26,74,143,0.35)}
+.pag-badge{font-size:8px;font-weight:800;padding:1.5px 5px;border-radius:99px;white-space:nowrap;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.18)}
+.pag-good{background:linear-gradient(135deg,#3aad5e,#1a5a2a)}
+.pag-mid{background:linear-gradient(135deg,#e0a92e,#9a6a00)}
+.pag-bad{background:linear-gradient(135deg,#e0584a,#a82020)}
+.pag-none{background:linear-gradient(135deg,var(--gray3),var(--gray2));color:var(--text3);box-shadow:none}
 .del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:1px;line-height:1;flex-shrink:0;min-height:22px;min-width:20px;display:flex;align-items:center;justify-content:center}
 .del-btn:active{color:var(--red)}
 
@@ -483,13 +496,13 @@ input[type=file]{display:none}
 <!-- bottom nav -->
 <nav class="bottom-nav">
   <button class="bnav-item active" id="bnav-rosa" onclick="showPage('rosa')">
-    <span class="bni">👥</span>Rosa
+    <span class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Rosa
   </button>
   <button class="bnav-item" id="bnav-partita" onclick="showPage('partita')">
-    <span class="bni">⚽</span>Gioca
+    <span class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5l4.3 3.1-1.6 5H9.3l-1.6-5z"/><path d="M12 3v4.5M4.5 9.3l3.2 1.3M6.9 18.5l2.4-3.5M17.1 18.5l-2.4-3.5M19.5 9.3l-3.2 1.3"/></svg></span>Gioca
   </button>
   <button class="bnav-item" id="bnav-partite" onclick="showPage('partite')">
-    <span class="bni">📅</span>Storico
+    <span class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l3.5 2"/></svg></span>Storico
   </button>
 </nav>
 
@@ -962,7 +975,11 @@ function buildRosa(){
     sg+='</div>';
     const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
     const pagInfo=getPlayerPagInfo(p);
+    // role accent for the expanded glass border (multi-role = purple)
+    const accent=p.roles.length>1?'#8b5cf6':(p.roles[0]==='ATT'?'var(--att)':p.roles[0]==='DIF'?'var(--def)':'var(--mid)');
     const d=document.createElement('div');d.className='card card-compact';
+    d.style.setProperty('--role-accent',accent);
+    d.style.animationDelay=(Math.min(i,12)*0.03)+'s';   // subtle stagger
     d.innerHTML=`<div class="player-header" onclick="toggleCard(${i})">
       <div class="ph-top">
         <div class="avatar-stack">
