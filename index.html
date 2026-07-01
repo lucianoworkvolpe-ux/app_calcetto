@@ -148,6 +148,16 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 /* ─── partita setup ─── */
 .section-header{font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px}
 
+/* ─── Storico: sub-tabs + dashboard ─── */
+.sub-tabs{display:flex;gap:6px;margin-bottom:12px;background:rgba(128,128,128,0.1);padding:4px;border-radius:12px}
+.sub-tab{flex:1;border:none;background:transparent;color:var(--text2);font-size:12px;font-weight:700;padding:8px 4px;border-radius:9px;cursor:pointer;transition:all var(--tr);white-space:nowrap}
+.sub-tab.active{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(26,74,143,0.3)}
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px}
+.dash-cell{background:rgba(255,255,255,0.72);backdrop-filter:blur(12px) saturate(1.4);-webkit-backdrop-filter:blur(12px) saturate(1.4);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-sm);padding:9px 5px;text-align:center;box-shadow:var(--shadow)}
+@media(prefers-color-scheme:dark){.dash-cell{background:rgba(32,38,50,0.62);border-color:rgba(255,255,255,0.08)}}
+.dash-val{font-size:19px;font-weight:800;color:var(--green);line-height:1.1}
+.dash-lbl{font-size:9px;color:var(--text2);margin-top:3px;text-transform:uppercase;letter-spacing:.3px}
+
 /* format grid: 3 base formats + asymmetric toggle row */
 .format-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
 .format-btn{padding:10px 4px;border:2px solid var(--gray2);border-radius:var(--radius-sm);background:transparent;font-size:14px;font-weight:800;cursor:pointer;color:var(--text2);transition:all var(--tr);text-align:center;min-height:48px}
@@ -440,20 +450,31 @@ input[type=file]{display:none}
       <button class="btn btn-primary" style="flex:1" onclick="newMatch()">📅 Nuova partita</button>
       <button class="btn btn-secondary" style="flex:1;border:2px solid var(--green);color:var(--green)" onclick="loadMatches(true)">🔄 Aggiorna dati</button>
     </div>
-    <div class="card" id="scorers-card">
-      <div class="section-header" style="margin:0 0 10px">⚽ Classifica marcatori</div>
+
+    <!-- dashboard riepilogo stagione -->
+    <div id="season-dash"></div>
+
+    <!-- ultima partita in evidenza -->
+    <div id="last-match"></div>
+
+    <!-- sotto-tab -->
+    <div class="sub-tabs">
+      <button class="sub-tab active" id="stab-marcatori" onclick="showStoricoTab('marcatori')">⚽ Marcatori</button>
+      <button class="sub-tab" id="stab-statistiche" onclick="showStoricoTab('statistiche')">📈 Statistiche</button>
+      <button class="sub-tab" id="stab-partite" onclick="showStoricoTab('partite')">📋 Partite</button>
+    </div>
+
+    <div class="card storico-sec" id="scorers-card">
       <div id="scorers-list">
         <div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">⏳ Caricamento...</div>
       </div>
     </div>
-    <div class="card" id="stats-card">
-      <div class="section-header" style="margin:0 0 10px">📈 Statistiche giocatori</div>
+    <div class="card storico-sec" id="stats-card" style="display:none">
       <div id="stats-table">
         <div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">⏳ Caricamento...</div>
       </div>
     </div>
-    <div class="card" id="matches-card">
-      <div class="section-header" style="margin:0 0 10px">📋 Partite registrate</div>
+    <div class="card storico-sec" id="matches-card" style="display:none">
       <div id="matches-list">
         <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">⏳ Caricamento...</div>
       </div>
@@ -2451,6 +2472,7 @@ function buildPartitePage(){
   }
   document.getElementById('partite-status').style.display='none';
   document.getElementById('partite-content').style.display='block';
+  showStoricoTab(storicoTab||'marcatori');   // restore/init active sub-tab
   loadMatches();
 }
 
@@ -2491,8 +2513,9 @@ async function loadMatches(force){
 
 function renderMatchesList(){
   const list=document.getElementById('matches-list');
+  const title='<div class="section-header" style="margin:0 0 10px">📋 Partite registrate</div>';
   if(!matches.length){
-    list.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Nessuna partita ancora. Crea la prima!</div>';
+    list.innerHTML=title+'<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Nessuna partita ancora. Crea la prima!</div>';
     renderScorers();   // still clear the loading state of scorers + stats
     return;
   }
@@ -2500,7 +2523,7 @@ function renderMatchesList(){
   const sorted=[...matches].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const ratings=matchesCache.data?.ratings||[];
 
-  list.innerHTML=sorted.map(m=>{
+  list.innerHTML=title+sorted.map(m=>{
     const ratedCount=ratings.filter(r=>r.matchId===m.id).length;
     const totalPlayers=(m.teamA?.length||0)+(m.teamB?.length||0);
     const hasRatings=ratedCount>0;
@@ -2556,10 +2579,10 @@ function renderScorers(){
     .sort((a,b)=>b.goals-a.goals||a.name.localeCompare(b.name));
 
   if(!ranked.length){
-    el.innerHTML='<div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">Nessun gol registrato ancora</div>';
+    el.innerHTML='<div class="section-header" style="margin:0 0 10px">⚽ Classifica marcatori</div><div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">Nessun gol registrato ancora</div>';
   }else{
     const medal=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span style="display:inline-block;width:20px;text-align:center;font-weight:800;color:var(--text3);font-size:12px">${i+1}</span>`;
-    el.innerHTML=ranked.map((s,i)=>{
+    el.innerHTML='<div class="section-header" style="margin:0 0 10px">⚽ Classifica marcatori</div>'+ranked.map((s,i)=>{
       const perMatch=s.pres?(s.goals/s.pres).toFixed(2):'0.00';
       return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);background:${i<3?'var(--green-light)':'var(--gray)'};margin-bottom:6px">
         <span style="font-size:16px;width:24px;text-align:center">${medal(i)}</span>
@@ -2574,6 +2597,83 @@ function renderScorers(){
 
   // always render the stats table (independent of goals)
   renderStatsTable();
+  renderSeasonDash();
+  renderLastMatch();
+}
+
+// ── Sub-tab switching in Storico ──
+let storicoTab='marcatori';
+function showStoricoTab(tab){
+  storicoTab=tab;
+  document.querySelectorAll('.sub-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('stab-'+tab)?.classList.add('active');
+  document.getElementById('scorers-card').style.display=tab==='marcatori'?'block':'none';
+  document.getElementById('stats-card').style.display=tab==='statistiche'?'block':'none';
+  document.getElementById('matches-card').style.display=tab==='partite'?'block':'none';
+}
+
+// ── Dashboard riepilogo stagione ──
+function renderSeasonDash(){
+  const el=document.getElementById('season-dash');
+  if(!el)return;
+  const ms=matches||[];
+  const ratings=matchesCache.data?.ratings||[];
+  if(!ms.length){el.innerHTML='';return;}
+  const totMatches=ms.length;
+  const totGoals=ratings.reduce((s,r)=>s+(parseInt(r.goals)||0),0);
+  const avgGoals=totMatches?(totGoals/totMatches):0;
+  // most present player (by team appearances)
+  const pres={};
+  ms.forEach(m=>{
+    const seen=new Set();
+    [...normalizeTeam(m.teamA),...normalizeTeam(m.teamB)].forEach(pl=>{
+      const {key,name}=playerKey(pl.id,pl.name);
+      if(seen.has(key))return; seen.add(key);
+      if(!pres[key])pres[key]={name,n:0}; pres[key].n++;
+    });
+  });
+  let topPres={name:'—',n:0};
+  Object.values(pres).forEach(p=>{if(p.n>topPres.n)topPres=p;});
+  const topName=topPres.name.length>9?topPres.name.slice(0,8)+'…':topPres.name;
+  el.innerHTML=`<div class="dash-grid">
+    <div class="dash-cell"><div class="dash-val">${totMatches}</div><div class="dash-lbl">Partite</div></div>
+    <div class="dash-cell"><div class="dash-val">${totGoals}</div><div class="dash-lbl">Gol totali</div></div>
+    <div class="dash-cell"><div class="dash-val">${avgGoals.toFixed(1)}</div><div class="dash-lbl">Gol/partita</div></div>
+    <div class="dash-cell"><div class="dash-val" style="font-size:13px">${esc(topName)}</div><div class="dash-lbl">+ Presente</div></div>
+  </div>`;
+}
+
+// ── Ultima partita in evidenza ──
+function renderLastMatch(){
+  const el=document.getElementById('last-match');
+  if(!el)return;
+  const ms=matches||[];
+  if(!ms.length){el.innerHTML='';return;}
+  const m=[...ms].sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
+  const ratings=(matchesCache.data?.ratings||[]).filter(r=>r.matchId===m.id);
+  const hasScore=(m.scoreA!==''&&m.scoreA!=null&&m.scoreB!==''&&m.scoreB!=null);
+  const a=parseInt(m.scoreA), b=parseInt(m.scoreB);
+  let winTxt='';
+  if(hasScore){
+    if(a>b)winTxt='<span style="color:var(--blue);font-weight:800">Vince Blu</span>';
+    else if(b>a)winTxt='<span style="color:var(--amber);font-weight:800">Vince Arancio</span>';
+    else winTxt='<span style="color:var(--text2);font-weight:800">Pareggio</span>';
+  }
+  // top scorer of the match
+  let topScorer=null;
+  ratings.forEach(r=>{const g=parseInt(r.goals)||0; if(g>0 && (!topScorer||g>topScorer.g)){const {name}=playerKey(r.playerId,r.player); topScorer={name,g};}});
+  el.innerHTML=`<div class="card" style="border-left:4px solid var(--green)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span class="section-header" style="margin:0">🏆 Ultima partita</span>
+      <span style="font-size:11px;color:var(--text3)">${formatDate(m.date)}</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:4px 0">
+      <span style="font-size:13px;font-weight:700;color:var(--blue)">🔵 Blu</span>
+      <span style="font-size:26px;font-weight:800;color:var(--text)">${hasScore?`${m.scoreA} - ${m.scoreB}`:'– : –'}</span>
+      <span style="font-size:13px;font-weight:700;color:var(--amber)">Arancio 🟠</span>
+    </div>
+    <div style="text-align:center;font-size:12px;margin-top:4px">${winTxt}${topScorer?`  ·  ⚽ ${esc(topScorer.name)} (${topScorer.g})`:''}</div>
+  </div>`;
 }
 
 // Result of a match for a player by id/name: 'W' | 'D' | 'L' | null (not played / no score)
@@ -2590,6 +2690,13 @@ function getPlayerMatchResult(match, playerId, playerName){
   const wonA=a>b;
   if(inA) return wonA?'W':'L';
   return wonA?'L':'W';
+}
+
+let statsSort={col:'goals', dir:-1}; // default: goals descending
+function setStatsSort(col){
+  if(statsSort.col===col){ statsSort.dir*=-1; }         // toggle direction
+  else { statsSort.col=col; statsSort.dir=(col==='name')?1:-1; } // names asc, numbers desc
+  renderStatsTable();
 }
 
 function renderStatsTable(){
@@ -2636,11 +2743,21 @@ function renderStatsTable(){
     el.innerHTML='<div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">Nessuna statistica ancora</div>';
     return;
   }
-  // default sort: goals desc, then media voto desc
-  rows.sort((x,y)=>y.goals-x.goals || (y.ratingCount?y.ratingSum/y.ratingCount:0)-(x.ratingCount?x.ratingSum/x.ratingCount:0) || x.name.localeCompare(y.name));
+  // sortable value per row for the active column
+  const val=(r,col)=>{
+    if(col==='name')return r.name.toLowerCase();
+    if(col==='voto')return r.ratingCount?r.ratingSum/r.ratingCount:-1;
+    return r[col]; // pres, w, d, l, goals
+  };
+  const {col,dir}=statsSort;
+  rows.sort((x,y)=>{
+    const a=val(x,col), b=val(y,col);
+    if(a<b)return -1*dir; if(a>b)return 1*dir;
+    return x.name.localeCompare(y.name); // stable tiebreak
+  });
 
   const cell=(v,bold)=>`<td style="padding:7px 8px;text-align:center;font-size:12px;${bold?'font-weight:800;':''}white-space:nowrap">${v}</td>`;
-  const body=rows.map((r,i)=>{
+  const body=rows.map(r=>{
     const media=r.ratingCount?(r.ratingSum/r.ratingCount).toFixed(2):'—';
     const mediaCol=r.ratingCount?(r.ratingSum/r.ratingCount>=6.5?'var(--green)':r.ratingSum/r.ratingCount<5.5?'var(--red)':'var(--amber)'):'var(--text3)';
     return `<tr style="border-top:1px solid var(--gray2)">
@@ -2654,24 +2771,29 @@ function renderStatsTable(){
     </tr>`;
   }).join('');
 
+  // header cell with sort indicator
+  const arrow=c=>statsSort.col===c?(statsSort.dir<0?' ▾':' ▴'):'';
+  const th=(c,label,title,left)=>`<th onclick="setStatsSort('${c}')" title="${title}" style="padding:6px 8px;text-align:${left?'left':'center'};cursor:pointer;user-select:none;${left?'position:sticky;left:0;background:var(--gray);':''}${statsSort.col===c?'color:var(--green);':''}">${label}${arrow(c)}</th>`;
+
   el.innerHTML=`
+    <div class="section-header" style="margin:0 0 10px">📈 Statistiche giocatori</div>
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
       <table style="width:100%;border-collapse:collapse;min-width:380px">
         <thead>
           <tr style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px">
-            <th style="padding:6px 8px;text-align:left;position:sticky;left:0;background:var(--gray)">Giocatore</th>
-            <th style="padding:6px 8px;text-align:center" title="Presenze">PG</th>
-            <th style="padding:6px 8px;text-align:center" title="Vittorie">V</th>
-            <th style="padding:6px 8px;text-align:center" title="Pareggi">N</th>
-            <th style="padding:6px 8px;text-align:center" title="Sconfitte">P</th>
-            <th style="padding:6px 8px;text-align:center" title="Gol">⚽</th>
-            <th style="padding:6px 8px;text-align:center" title="Media voto">Voto</th>
+            ${th('name','Giocatore','Nome',true)}
+            ${th('pres','PG','Presenze')}
+            ${th('w','V','Vittorie')}
+            ${th('d','N','Pareggi')}
+            ${th('l','P','Sconfitte')}
+            ${th('goals','⚽','Gol')}
+            ${th('voto','Voto','Media voto')}
           </tr>
         </thead>
         <tbody>${body}</tbody>
       </table>
     </div>
-    <div style="font-size:10px;color:var(--text3);margin-top:8px">PG presenze · V vittorie · N pareggi · P sconfitte · ordinata per gol</div>
+    <div style="font-size:10px;color:var(--text3);margin-top:8px">Tocca un'intestazione per riordinare · PG presenze · V/N/P vittorie/pareggi/sconfitte</div>
   `;
 }
 
