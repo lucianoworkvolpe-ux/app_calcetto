@@ -2652,7 +2652,6 @@ function renderLastMatch(){
   const ms=matches||[];
   if(!ms.length){el.innerHTML='';return;}
   const m=[...ms].sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
-  const ratings=(matchesCache.data?.ratings||[]).filter(r=>r.matchId===m.id);
   const hasScore=(m.scoreA!==''&&m.scoreA!=null&&m.scoreB!==''&&m.scoreB!=null);
   const a=parseInt(m.scoreA), b=parseInt(m.scoreB);
   let winTxt='';
@@ -2661,20 +2660,18 @@ function renderLastMatch(){
     else if(b>a)winTxt='<span style="color:var(--amber);font-weight:800">Vince Arancio</span>';
     else winTxt='<span style="color:var(--text2);font-weight:800">Pareggio</span>';
   }
-  // top scorer of the match
-  let topScorer=null;
-  ratings.forEach(r=>{const g=parseInt(r.goals)||0; if(g>0 && (!topScorer||g>topScorer.g)){const {name}=playerKey(r.playerId,r.player); topScorer={name,g};}});
-  el.innerHTML=`<div class="card" style="border-left:4px solid var(--green)">
+  el.innerHTML=`<div class="card" style="border-left:4px solid var(--green);cursor:pointer" onclick="openMatch('${m.id}')">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <span class="section-header" style="margin:0">🏆 Ultima partita</span>
-      <span style="font-size:11px;color:var(--text3)">${formatDate(m.date)}</span>
+      <span style="font-size:11px;color:var(--text3)">${formatDate(m.date)} ›</span>
     </div>
     <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:4px 0">
       <span style="font-size:13px;font-weight:700;color:var(--blue)">🔵 Blu</span>
       <span style="font-size:26px;font-weight:800;color:var(--text)">${hasScore?`${m.scoreA} - ${m.scoreB}`:'– : –'}</span>
       <span style="font-size:13px;font-weight:700;color:var(--amber)">Arancio 🟠</span>
     </div>
-    <div style="text-align:center;font-size:12px;margin-top:4px">${winTxt}${topScorer?`  ·  ⚽ ${esc(topScorer.name)} (${topScorer.g})`:''}</div>
+    <div style="text-align:center;font-size:12px;margin-top:4px">${winTxt}</div>
+    <div style="text-align:center;font-size:10px;color:var(--text3);margin-top:6px">Tocca per i dettagli e le pagelle</div>
   </div>`;
 }
 
@@ -2872,6 +2869,61 @@ async function saveNewMatch(){
 /* ════════════════════════════════════
    MATCH DETAIL (view + ratings)
 ════════════════════════════════════ */
+// Compute highlights of a match from its ratings: MVP, worst, top scorer, team avg voto
+function matchHighlights(m){
+  const ratings=(matchesCache.data?.ratings||[]).filter(r=>r.matchId===m.id);
+  const teamA=normalizeTeam(m.teamA), teamB=normalizeTeam(m.teamB);
+  const inTeam=(pl,team)=>team.some(t=>(t.id&&pl.id&&t.id===pl.id)||t.name===pl.name);
+
+  let mvp=null, worst=null, topScorer=null;
+  let sumA=0,cntA=0, sumB=0,cntB=0;
+
+  ratings.forEach(r=>{
+    const {name}=playerKey(r.playerId, r.player);
+    const rt=parseFloat(r.rating);
+    const g=parseInt(r.goals)||0;
+    if(!isNaN(rt)&&rt>=1){
+      if(!mvp||rt>mvp.v)   mvp={name,v:rt};
+      if(!worst||rt<worst.v) worst={name,v:rt};
+      // team averages (which side is this player on?)
+      const pl={id:r.playerId, name:r.player};
+      if(inTeam(pl,teamA)){sumA+=rt;cntA++;}
+      else if(inTeam(pl,teamB)){sumB+=rt;cntB++;}
+    }
+    if(g>0 && (!topScorer||g>topScorer.g)) topScorer={name,g};
+  });
+
+  return {
+    mvp, worst, topScorer,
+    avgA: cntA?sumA/cntA:null,
+    avgB: cntB?sumB/cntB:null
+  };
+}
+
+// Render the highlights panel (MVP / peggiore / capocannoniere / medie squadre)
+function matchHighlightsHTML(m){
+  const h=matchHighlights(m);
+  if(!h.mvp && !h.topScorer && h.avgA==null) return ''; // no ratings yet
+  const short=n=>n&&n.length>12?n.slice(0,11)+'…':n;
+  const cell=(icon,label,content,col)=>`<div style="flex:1;min-width:0;background:rgba(128,128,128,0.08);border-radius:var(--radius-sm);padding:8px 9px">
+    <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px">${icon} ${label}</div>
+    <div style="font-size:12px;font-weight:800;color:${col||'var(--text)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${content}</div>
+  </div>`;
+  let rows='';
+  const line1=[];
+  if(h.mvp)   line1.push(cell('⭐','MVP',`${esc(short(h.mvp.name))} · ${h.mvp.v.toFixed(1)}`,'var(--green)'));
+  if(h.worst && !(h.mvp && h.worst.name===h.mvp.name)) line1.push(cell('🥴','Peggiore',`${esc(short(h.worst.name))} · ${h.worst.v.toFixed(1)}`,'var(--red)'));
+  if(line1.length) rows+=`<div style="display:flex;gap:6px;margin-bottom:6px">${line1.join('')}</div>`;
+  const line2=[];
+  line2.push(cell('⚽','Capocannoniere', h.topScorer?`${esc(short(h.topScorer.name))} (${h.topScorer.g})`:'—', h.topScorer?'var(--green)':'var(--text3)'));
+  if(h.avgA!=null||h.avgB!=null) line2.push(cell('📊','Media voto',`<span style="color:var(--blue)">${h.avgA!=null?h.avgA.toFixed(1):'—'}</span> · <span style="color:var(--amber)">${h.avgB!=null?h.avgB.toFixed(1):'—'}</span>`));
+  rows+=`<div style="display:flex;gap:6px">${line2.join('')}</div>`;
+  return `<div style="margin:12px 0 4px">
+    <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Highlights</div>
+    ${rows}
+  </div>`;
+}
+
 function openMatch(id){
   const m=matches.find(x=>x.id===id);
   if(!m)return;
@@ -2952,6 +3004,7 @@ function openMatch(id){
       ${m.notes?`<div style="font-size:12px;color:var(--text2);font-style:italic;margin-bottom:8px">${esc(m.notes)}</div>`:''}
       <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-top:8px">Risultato</div>
       ${scoreEditor}
+      ${matchHighlightsHTML(m)}
       <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">Pagelle (1–10)</div>
       <div style="display:flex;gap:8px;margin-bottom:14px">
         ${renderTeam('🔵 Blu',teamA,true)}
