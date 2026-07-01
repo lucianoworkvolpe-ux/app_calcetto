@@ -82,7 +82,6 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .ph-name-row{display:flex;align-items:center;gap:3px}
 .avatar{width:26px;height:26px;border-radius:50%;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .avatar.has-photo,.conv-avatar.has-photo{background-size:cover;background-position:center;color:transparent}
-.avatar-lg{width:64px;height:64px;font-size:20px}
 .avatar-xl{width:140px;height:140px;font-size:44px;border:3px solid var(--gray3);box-shadow:0 4px 14px rgba(0,0,0,0.18)}
 .photo-row{display:flex;flex-direction:column;align-items:center;gap:12px;margin:8px 0 16px}
 .av-att{background:var(--att-light);color:var(--att)}
@@ -311,6 +310,7 @@ input[type=file]{display:none}
     CalcioLercio
     <span id="data-source" style="font-size:10px;font-weight:500;opacity:0.7;margin-left:6px"></span>
   </div>
+  <button id="header-refresh" onclick="event.stopPropagation();loadMatches(true)" title="Aggiorna dati storico" style="margin-left:auto;background:rgba(255,255,255,0.18);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:15px;display:none;align-items:center;justify-content:center;flex-shrink:0">🔄</button>
 </header>
 
 <!-- ══════ PAGES ══════ -->
@@ -412,7 +412,10 @@ input[type=file]{display:none}
       </div>
     </div>
 
-    <button class="btn btn-primary btn-full" style="margin:4px 0 14px;background:#25D366;border-color:#25D366" onclick="shareTeams()">📲 Condividi formazioni</button>
+    <div style="display:flex;gap:8px;margin:4px 0 14px">
+      <button class="btn btn-primary" style="flex:1;background:#25D366;border-color:#25D366" onclick="shareTeams()">📲 Condividi</button>
+      <button class="btn btn-primary" style="flex:1" onclick="newMatch()">📅 Crea partita</button>
+    </div>
 
     <!-- stats compare -->
     <div class="card">
@@ -446,10 +449,6 @@ input[type=file]{display:none}
   </div>
 
   <div id="partite-content" style="display:none">
-    <div style="display:flex;gap:8px;margin-bottom:14px">
-      <button class="btn btn-primary" style="flex:1" onclick="newMatch()">📅 Nuova partita</button>
-      <button class="btn btn-secondary" style="flex:1;border:2px solid var(--green);color:var(--green)" onclick="loadMatches(true)">🔄 Aggiorna dati</button>
-    </div>
 
     <!-- dashboard riepilogo stagione -->
     <div id="season-dash"></div>
@@ -2232,6 +2231,9 @@ function showPage(name){
   if(name==='partita'){buildConvList();updateFormatUI();}
   if(name==='partite')buildPartitePage();
   if(name==='settings')buildSettings();
+  // header refresh button only relevant on Storico (and only with a backend)
+  const hr=document.getElementById('header-refresh');
+  if(hr)hr.style.display=(name==='partite'&&backendUrl)?'flex':'none';
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
