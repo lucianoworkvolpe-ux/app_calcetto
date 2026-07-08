@@ -406,21 +406,21 @@
     }
   ],
   "weights": [
-    1.5,
-    1.5,
-    2.5,
     2,
-    2.5,
+    1,
+    2,
+    1.5,
+    1.5,
     1.5,
     1,
     1,
-    1.5,
-    1.5
+    2,
+    1
   ],
   "sizeA": 5,
   "sizeB": 5,
   "asymMode": false,
   "backendUrl": "https://script.google.com/macros/s/AKfycbwkiL7q2Kj371Y3RpNZmaFHwdr_V7zcwTSuaAUwBP_CrjnvLafSp6orNAOxrGXsqTrLbg/exec",
   "version": 6,
-  "exported": "2026-07-08T08:30:25.091Z"
+  "exported": "2026-07-08T10:51:14.373Z"
 }
