@@ -2446,6 +2446,7 @@ function updateScore(payload) {
     if (data[i][0] === payload.id) {
       sh.getRange(i + 1, 6).setValue(payload.scoreA);
       sh.getRange(i + 1, 7).setValue(payload.scoreB);
+      if (payload.notes !== undefined) sh.getRange(i + 1, 3).setValue(payload.notes);
       return true;
     }
   }
@@ -3007,7 +3008,8 @@ function openMatch(id){
 
   document.getElementById('match-modal-body').innerHTML=`
     <div>
-      ${m.notes?`<div style="font-size:12px;color:var(--text2);font-style:italic;margin-bottom:8px">${esc(m.notes)}</div>`:''}
+      <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Descrizione</div>
+      <input type="text" id="edit-notes" value="${esc(m.notes||'')}" placeholder="es. partita serale al Sole" style="width:100%;padding:9px 11px;border:1.5px solid var(--gray3);border-radius:8px;background:var(--gray);color:var(--text);font-size:13px;box-sizing:border-box;margin-bottom:8px">
       <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-top:8px">Risultato</div>
       ${scoreEditor}
       ${matchHighlightsHTML(m)}
@@ -3124,17 +3126,25 @@ async function saveRatings(matchId){
   const scB=document.getElementById('sc-b');
   const scoreA=scA&&scA.value!==''?clampInt(scA.value,0,99,0):'';
   const scoreB=scB&&scB.value!==''?clampInt(scB.value,0,99,0):'';
+  // read possibly-edited description
+  const notesEl=document.getElementById('edit-notes');
+  const notes=notesEl?notesEl.value.trim():(m.notes||'');
+  const scoreChanged=(scoreA!==(m.scoreA??'')||scoreB!==(m.scoreB??''));
+  const notesChanged=(notes!==(m.notes||''));
   try{
     toast('⏳ Salvataggio...');
     await backendCall('saveRatings',{matchId,ratings});
-    // also update score if it changed
-    if(scoreA!==(m.scoreA??'')||scoreB!==(m.scoreB??'')){
-      await backendCall('updateScore',{id:matchId,scoreA,scoreB});
+    // score/notes are secondary — don't let their failure keep the modal open
+    if(scoreChanged||notesChanged){
+      try{ await backendCall('updateScore',{id:matchId,scoreA,scoreB,notes}); }
+      catch(e2){ toast('Voti salvati, ma errore su punteggio/note'); }
     }
+    closeMatchModal();                 // ← always close once ratings are saved
     toast(`Salvato: ${ratings.length} pagelle`);
-    closeMatchModal();
     loadMatches(true);
-  }catch(e){toast('Errore: '+e.message)}
+  }catch(e){
+    toast('Errore: '+e.message);       // ratings failed → keep modal open to retry
+  }
 }
 
 async function deleteMatch(id){
