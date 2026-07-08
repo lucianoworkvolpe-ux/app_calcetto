@@ -287,6 +287,10 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);background:#151a22;color:#fff;padding:10px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;opacity:0;transition:all 0.25s;z-index:999;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 input[type=file]{display:none}
+.form-switch{width:46px;height:27px;border-radius:99px;border:none;background:var(--gray3);position:relative;cursor:pointer;flex-shrink:0;transition:background var(--tr);padding:0}
+.form-switch.on{background:var(--green)}
+.form-switch .form-knob{position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;transition:transform var(--tr);box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.form-switch.on .form-knob{transform:translateX(19px)}
 </style>
 </head>
 <body>
@@ -892,7 +896,45 @@ function avatarHTML(p, baseCls, idAttr){
   return `<div class="${baseCls} ${avCls(p)}" ${id}>${ini(p.name)}</div>`;
 }
 function calcOvr(stats){const tot=weights.reduce((a,b)=>a+b,0)||1;return stats.reduce((s,v,i)=>s+v*weights[i],0)/tot}
-function wScore(p){return calcOvr(p.stats)}
+// ── Forma recente: correzione leggera dell'OVR con la media pagelle storica ──
+let useFormInBalance = (localStorage.getItem('calcio_useform')!=='0'); // default ON
+const FORM_WEIGHT = 0.10;   // 10% pagelle, 90% OVR
+const FORM_MIN_RATINGS = 2; // serve almeno 2 pagelle valide per correggere
+let _formCache = null;      // per-generation cache: player.id → {avg, count}
+
+// Average of ALL valid ratings (1–10) for a player, with count. Cheap wrapper.
+function playerRatingAvg(player){
+  const rows=ratingsForPlayer(player).filter(r=>{
+    const v=parseFloat(r.rating);
+    return !isNaN(v)&&v>=1&&v<=10;
+  });
+  if(!rows.length) return {avg:null, count:0};
+  return {avg:rows.reduce((s,r)=>s+parseFloat(r.rating),0)/rows.length, count:rows.length};
+}
+
+// Effective balancing score: OVR nudged by historical pagelle average.
+// Uses _formCache when populated (during generateTeams) to avoid recomputing.
+function effectiveScore(p){
+  const ovr=calcOvr(p.stats);
+  if(!useFormInBalance) return ovr;
+  let info;
+  if(_formCache){
+    info=_formCache[p.id];
+    if(!info){ info=playerRatingAvg(p); _formCache[p.id]=info; }
+  }else{
+    info=playerRatingAvg(p);
+  }
+  if(info.avg==null || info.count<FORM_MIN_RATINGS) return ovr; // not enough data → pure OVR
+  return ovr*(1-FORM_WEIGHT) + info.avg*FORM_WEIGHT;
+}
+
+function wScore(p){return effectiveScore(p)}
+function toggleFormBalance(){
+  useFormInBalance=!useFormInBalance;
+  localStorage.setItem('calcio_useform', useFormInBalance?'1':'0');
+  buildSettings();
+  toast(useFormInBalance?'Forma recente attiva':'Forma recente disattivata');
+}
 
 // Normalize a stored team into [{id,name}] — handles legacy string[] and new object[]
 function normalizeTeam(team){
@@ -1523,6 +1565,7 @@ function generateTeams(){
   const total=neededTotal();
   if(selected.size!==total){toast(`Seleziona esattamente ${total} giocatori (${selected.size}/${total})`);return}
   const idx=[...selected];
+  _formCache={};   // fresh per-generation cache of pagelle averages (perf)
 
   const subsetsA=combos(idx,sizeA);
   const allScored=[];
@@ -1601,6 +1644,7 @@ function generateTeams(){
     allCombos=[];
   }
   currentIdx=0;
+  _formCache=null;   // release cache; ad-hoc wScore calls recompute on demand
   renderResult();
   document.getElementById('partita-result').style.display='block';
   setTimeout(()=>document.getElementById('partita-result').scrollIntoView({behavior:'smooth',block:'nearest'}),60);
@@ -2116,6 +2160,16 @@ function buildSettings(){
       </div>`).join('')}
     </div>`;
   }
+
+  // ── Forma recente nel bilanciamento ──
+  html+=`<div class="section-header" style="margin-top:4px">⚽ Forma recente</div>
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(128,128,128,0.08);border-radius:var(--radius-sm);padding:11px 13px;margin-bottom:8px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">Considera le pagelle</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.4;margin-top:2px">Corregge leggermente l'OVR con la media voti storica (${Math.round(FORM_WEIGHT*100)}%). Serve almeno ${FORM_MIN_RATINGS} pagelle.</div>
+      </div>
+      <button onclick="toggleFormBalance()" class="form-switch ${useFormInBalance?'on':''}" aria-label="Attiva forma"><span class="form-knob"></span></button>
+    </div>`;
 
   // ── Weights (compact pill selector) ──
   html+=`<div class="section-header" style="margin-top:4px">Peso statistiche</div>
