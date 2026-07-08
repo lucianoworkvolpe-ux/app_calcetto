@@ -1419,8 +1419,10 @@ function teamSpread(team){
   const std=Math.sqrt(variance);
   const sorted=[...ovrs].sort((a,b)=>b-a);
   const top1=sorted[0]||0;
-  const top2=top1+(sorted[1]||0); // strength of the two best players
-  return {mean, std, top1, top2};
+  const top2=top1+(sorted[1]||0);            // strength of the two best players
+  const bottom1=sorted[sorted.length-1]||0;  // weakest player
+  const bottom2=bottom1+(sorted[sorted.length-2]||0); // two weakest combined
+  return {mean, std, top1, top2, bottom1, bottom2};
 }
 
 // ── RoleFit: greedy one-slot-per-player assignment (module-scope, reusable) ──
@@ -1478,9 +1480,15 @@ function comboMetrics(tA, tB, modA, modB){
   const spA=teamSpread(tA), spB=teamSpread(tB);
   const top1Diff=Math.abs(spA.top1-spB.top1);
   const top2Diff=Math.abs(spA.top2-spB.top2);
+  const bottom1Diff=Math.abs(spA.bottom1-spB.bottom1);
+  const bottom2Diff=Math.abs(spA.bottom2-spB.bottom2);
   const stdDiff=Math.abs(spA.std-spB.std);
-  // weight the single strongest player most, then the top pair, then overall spread
-  const distrib=top1Diff*0.45 + top2Diff*0.35 + stdDiff*0.20;
+  // distribute BOTH strong and weak players evenly:
+  //  strongest player weighs most, then the top pair, then the weak players,
+  //  and finally the overall spread. A team isn't fair only because the two
+  //  best are split — two very weak players stuck together also unbalance it.
+  const distrib=top1Diff*0.30 + top2Diff*0.25 + bottom1Diff*0.20 + bottom2Diff*0.15 + stdDiff*0.10;
+  const weakDistrib=bottom1Diff*0.25 + bottom2Diff*0.15; // exposed for transparency
 
   const fitA=modA?roleFitScore(tA,modA.slots):0;
   const fitB=modB?roleFitScore(tB,modB.slots):0;
@@ -1488,9 +1496,20 @@ function comboMetrics(tA, tB, modA, modB){
   const rolePenalty=(1-roleFit)*0.15;       // ruoli coperti → penalità (non bonus)
   const repartiPenalty=roleCountPenalty(tA,tB); // reparti equilibrati
 
-  // lower is better — media domina, poi distribuzione, poi ruoli/reparti
-  const score=diff + distrib*0.30 + rolePenalty + repartiPenalty;
-  return {sA,sB,diff,distrib,top1Diff,top2Diff,stdDiff,roleFit,rolePenalty,repartiPenalty,score};
+  // "extreme" guard: penalize a team that hoards both the very top AND the very
+  // bottom (lopsided rosters), which raw diff alone can miss.
+  const extremeA=spA.top1 - spA.bottom1;
+  const extremeB=spB.top1 - spB.bottom1;
+  const extremePenalty=Math.abs(extremeA-extremeB)*0.05;
+
+  // lower is better — la media domina; ruoli e reparti pesano un po' di più
+  // per evitare squadre "strane" senza però superare la media.
+  const score = diff*1.00
+              + distrib*0.28
+              + rolePenalty*1.30
+              + repartiPenalty*1.10
+              + extremePenalty;
+  return {sA,sB,diff,distrib,weakDistrib,top1Diff,top2Diff,bottom1Diff,bottom2Diff,stdDiff,roleFit,rolePenalty,repartiPenalty,extremePenalty,score};
 }
 
 // Recompute derived stats of a combo after a manual edit (drag&drop swap)
@@ -1573,7 +1592,8 @@ function generateTeams(){
   // ranked among themselves by full score. The rest follow, still sorted.
   if(distinct.length){
     const bestDiff=Math.min(...distinct.map(c=>c.diff));
-    const MARGIN=0.15;
+    // adaptive tolerance: smaller rosters get a wider margin, larger ones stay stricter
+    const MARGIN=idx.length<=10 ? 0.20 : 0.15;
     const near=distinct.filter(c=>c.diff<=bestDiff+MARGIN).sort((a,b)=>a.score-b.score);
     const rest=distinct.filter(c=>c.diff>bestDiff+MARGIN).sort((a,b)=>a.score-b.score);
     allCombos=[...near,...rest].slice(0,50);
