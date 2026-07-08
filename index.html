@@ -102,33 +102,26 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 
 /* ─── role toggles ─── */
 .role-section{margin:12px 0 0;padding-top:12px;border-top:1px solid var(--gray2)}
-.role-section-label{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:9px}
-.role-toggles{display:flex;gap:8px}
-.role-toggle{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border:2px solid;border-radius:var(--radius-sm);background:transparent;cursor:pointer;transition:all var(--tr);min-height:72px;justify-content:center}
-.role-toggle .rt-icon{font-size:20px}
+.role-section-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px}
+.role-toggles{display:flex;gap:6px}
+.role-toggle{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 4px;border:1.5px solid;border-radius:99px;background:transparent;cursor:pointer;transition:all var(--tr);opacity:0.55}
 .role-toggle .rt-label{font-size:11px;font-weight:700}
-.role-toggle .rt-check{width:18px;height:18px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all var(--tr)}
+.role-toggle .rt-tick{font-size:10px;font-weight:800;line-height:1}
 
-/* ATT — always red border, red label; filled when active */
+/* ATT — red; faded when off, filled when active */
 .role-toggle.role-att{border-color:var(--att-mid)}
-.role-toggle.role-att .rt-label{color:var(--att)}
-.role-toggle.role-att .rt-check{border-color:var(--att-mid);color:transparent}
-.role-toggle.role-att.tog-att{background:var(--att-light)}
-.role-toggle.role-att.tog-att .rt-check{background:var(--att-mid);border-color:var(--att-mid);color:#fff}
+.role-toggle.role-att .rt-label,.role-toggle.role-att .rt-tick{color:var(--att)}
+.role-toggle.role-att.tog-att{background:var(--att-light);opacity:1}
 
-/* MED — always green border, green label; filled when active */
+/* MED — green */
 .role-toggle.role-mid{border-color:var(--mid-mid)}
-.role-toggle.role-mid .rt-label{color:var(--mid)}
-.role-toggle.role-mid .rt-check{border-color:var(--mid-mid);color:transparent}
-.role-toggle.role-mid.tog-mid{background:var(--mid-light)}
-.role-toggle.role-mid.tog-mid .rt-check{background:var(--mid-mid);border-color:var(--mid-mid);color:#fff}
+.role-toggle.role-mid .rt-label,.role-toggle.role-mid .rt-tick{color:var(--mid)}
+.role-toggle.role-mid.tog-mid{background:var(--mid-light);opacity:1}
 
-/* DIF — always sky border, sky label; filled when active */
+/* DIF — sky */
 .role-toggle.role-def{border-color:var(--def-mid)}
-.role-toggle.role-def .rt-label{color:var(--def)}
-.role-toggle.role-def .rt-check{border-color:var(--def-mid);color:transparent}
-.role-toggle.role-def.tog-def{background:var(--def-light)}
-.role-toggle.role-def.tog-def .rt-check{background:var(--def-mid);border-color:var(--def-mid);color:#fff}
+.role-toggle.role-def .rt-label,.role-toggle.role-def .rt-tick{color:var(--def)}
+.role-toggle.role-def.tog-def{background:var(--def-light);opacity:1}
 .rp{font-size:8px;font-weight:700;padding:1px 4px;border-radius:4px}
 .rp-att{background:var(--att-light);color:var(--att)}
 .rp-mid{background:var(--mid-light);color:var(--mid)}
@@ -538,8 +531,6 @@ const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacc
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤'];
 const ROLES=['ATT','MED','DIF'];
 const RLBL={ATT:'Attacco',MED:'Centrocampo',DIF:'Difesa'};
-const RICO={ATT:'⚔️',MED:'🔀',DIF:'🛡️'};
-
 // ── MODULES ──────────────────────────────────────────────────────────────────
 // Each module: { name, notation, slots[] }
 // slots: {role:'DIF'|'MED'|'ATT', x:0..1, y:0..1}
@@ -978,9 +969,8 @@ function buildRosa(){
       const on=p.roles.includes(r);
       const baseCls=`role-toggle role-${roleMap[r]}${on?' tog-'+roleMap[r]:''}`;
       return `<button class="${baseCls}" onclick="toggleRole(${i},'${r}',event)">
-        <span class="rt-icon">${RICO[r]}</span>
         <span class="rt-label">${RLBL[r]}</span>
-        <div class="rt-check">${on?'✓':''}</div>
+        ${on?'<span class="rt-tick">✓</span>':''}
       </button>`;
     }).join('');
     let sg='<div class="stats-grid">';
@@ -2624,24 +2614,40 @@ function renderSeasonDash(){
   const totMatches=ms.length;
   const totGoals=ratings.reduce((s,r)=>s+(parseInt(r.goals)||0),0);
   const avgGoals=totMatches?(totGoals/totMatches):0;
-  // most present player (by team appearances)
-  const pres={};
+  // presences (from saved teams) + rating averages (from pagelle) per player
+  const stat={}; // key → {name, pres, sum, cnt}
+  const ensure=(key,name)=>{ if(!stat[key])stat[key]={name,pres:0,sum:0,cnt:0}; return stat[key]; };
   ms.forEach(m=>{
     const seen=new Set();
     [...normalizeTeam(m.teamA),...normalizeTeam(m.teamB)].forEach(pl=>{
       const {key,name}=playerKey(pl.id,pl.name);
       if(seen.has(key))return; seen.add(key);
-      if(!pres[key])pres[key]={name,n:0}; pres[key].n++;
+      ensure(key,name).pres++;
     });
   });
-  let topPres={name:'—',n:0};
-  Object.values(pres).forEach(p=>{if(p.n>topPres.n)topPres=p;});
-  const topName=topPres.name.length>9?topPres.name.slice(0,8)+'…':topPres.name;
+  ratings.forEach(r=>{
+    const rt=parseFloat(r.rating);
+    if(isNaN(rt)||rt<1)return;
+    const {key,name}=playerKey(r.playerId,r.player);
+    const s=ensure(key,name); s.sum+=rt; s.cnt++;
+  });
+  // best average rating, but only among players who played enough matches
+  // (threshold scales with season length so early data isn't skewed by 1-match wonders)
+  const minPres=Math.max(2, Math.ceil(totMatches*0.4));
+  let topRt={name:'—', avg:0};
+  Object.values(stat).forEach(p=>{
+    if(p.pres>=minPres && p.cnt>0){
+      const avg=p.sum/p.cnt;
+      if(avg>topRt.avg) topRt={name:p.name, avg};
+    }
+  });
+  const topName=topRt.name.length>8?topRt.name.slice(0,7)+'…':topRt.name;
+  const topVal=topRt.avg>0?`${esc(topName)} ${topRt.avg.toFixed(1)}`:'—';
   el.innerHTML=`<div class="dash-grid">
     <div class="dash-cell"><div class="dash-val">${totMatches}</div><div class="dash-lbl">Partite</div></div>
     <div class="dash-cell"><div class="dash-val">${totGoals}</div><div class="dash-lbl">Gol totali</div></div>
     <div class="dash-cell"><div class="dash-val">${avgGoals.toFixed(1)}</div><div class="dash-lbl">Gol/partita</div></div>
-    <div class="dash-cell"><div class="dash-val" style="font-size:13px">${esc(topName)}</div><div class="dash-lbl">+ Presente</div></div>
+    <div class="dash-cell"><div class="dash-val" style="font-size:13px">${topVal}</div><div class="dash-lbl">⭐ Miglior media</div></div>
   </div>`;
 }
 
