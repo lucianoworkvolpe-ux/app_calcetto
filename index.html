@@ -258,6 +258,7 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 .rate-stepper input{width:36px;padding:5px 2px;border:1.5px solid var(--gray3);border-radius:5px;background:var(--gray);color:var(--text);font-size:13px;font-weight:800;text-align:center;-moz-appearance:textfield}
 .rate-stepper input::-webkit-outer-spin-button,
 .rate-stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.rate-stepper input:disabled,.score-stepper input:disabled,#edit-notes:disabled{opacity:1;-webkit-text-fill-color:var(--text);color:var(--text);border-color:transparent;background:transparent}
 .rate-btn{width:26px;height:26px;border:none;background:transparent;font-size:18px;font-weight:800;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text);transition:background var(--tr);line-height:1;padding:0;flex-shrink:0}
 .rate-btn:active{background:rgba(0,0,0,0.15)}
 .rate-btn-minus{color:var(--red)}
@@ -3075,7 +3076,10 @@ function openMatch(id){
     </div>`;
 
   document.getElementById('match-modal-body').innerHTML=`
-    <div>
+    <div id="match-edit-bar" style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <button id="edit-toggle-btn" class="btn btn-secondary btn-sm" onclick="setMatchEditable(true)" style="border:2px solid var(--green);color:var(--green)">✏️ Edita</button>
+    </div>
+    <div id="match-fields">
       <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Descrizione</div>
       <input type="text" id="edit-notes" value="${esc(m.notes||'')}" placeholder="es. partita serale al Sole" style="width:100%;padding:9px 11px;border:1.5px solid var(--gray3);border-radius:8px;background:var(--gray);color:var(--text);font-size:13px;box-sizing:border-box;margin-bottom:8px">
       <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-top:8px">Risultato</div>
@@ -3086,7 +3090,7 @@ function openMatch(id){
         ${renderTeam('🔵 Blu',teamA,true)}
         ${renderTeam('🟠 Arancio',teamB,false)}
       </div>
-      <div style="display:flex;gap:8px">
+      <div id="match-actions" style="display:none;gap:8px">
         <button class="btn btn-primary" style="flex:1" onclick="saveRatings('${id}')">💾 Salva partita</button>
         <button class="btn btn-danger" onclick="deleteMatch('${id}')">🗑️</button>
       </div>
@@ -3094,6 +3098,25 @@ function openMatch(id){
   document.getElementById('match-modal').style.display='block';
   // apply initial colors
   document.querySelectorAll('.rate-stepper input').forEach(el=>rateColor(el));
+  setMatchEditable(false);   // open locked (read-only) to prevent accidental edits
+}
+
+// Lock/unlock the match modal. Locked = read-only (view stats safely).
+function setMatchEditable(on){
+  const body=document.getElementById('match-fields');
+  if(!body)return;
+  // all inputs (voto, gol, punteggio, note)
+  body.querySelectorAll('input').forEach(el=>{ el.disabled=!on; });
+  // all +/- stepper buttons
+  body.querySelectorAll('.rate-btn').forEach(el=>{ el.style.display=on?'':'none'; });
+  // save/delete actions only when editing
+  const actions=document.getElementById('match-actions');
+  if(actions)actions.style.display=on?'flex':'none';
+  // the Edita button hides once editing
+  const eb=document.getElementById('edit-toggle-btn');
+  if(eb)eb.style.display=on?'none':'';
+  // subtle visual cue while locked
+  body.style.opacity=on?'1':'0.92';
 }
 
 function scoreStep(id, delta){
