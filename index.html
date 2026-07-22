@@ -99,8 +99,6 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .pag-mid{background:linear-gradient(135deg,#e0a92e,#9a6a00)}
 .pag-bad{background:linear-gradient(135deg,#e0584a,#a82020)}
 .pag-none{background:linear-gradient(135deg,var(--gray3),var(--gray2));color:var(--text3);box-shadow:none}
-.del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:1px;line-height:1;flex-shrink:0;min-height:22px;min-width:20px;display:flex;align-items:center;justify-content:center}
-.del-btn:active{color:var(--red)}
 
 /* ─── role toggles ─── */
 .role-section{margin:12px 0 0;padding-top:12px;border-top:1px solid var(--gray2)}
@@ -1039,7 +1037,6 @@ function buildRosa(){
         <div class="ph-info">
           <div class="ph-name-row">
             <span class="player-name-display">${esc(p.name)}</span>
-            <button class="del-btn" onclick="delPlayer(${i},event)">✕</button>
           </div>
           <div class="role-pills-display" id="rpills${i}">${pills}</div>
         </div>
@@ -1058,6 +1055,9 @@ function buildRosa(){
         <div class="role-toggles">${toggles}</div>
       </div>${sg}
       <div id="pagelle-${i}" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray2)"></div>
+      <div style="text-align:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--gray2)">
+        <button onclick="delPlayer(${i},event)" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:4px 8px;text-decoration:underline;text-underline-offset:2px">🗄️ Archivia giocatore</button>
+      </div>
     </div>`;
     c.appendChild(d);
   });
@@ -1077,6 +1077,22 @@ function toggleCard(i){
   const card=e.closest('.card');
   if(card) card.classList.toggle('expanded', !o);
   if(!o) renderPlayerPagelle(i);
+}
+
+// Open a player's Rosa card by roster index (used from the stats table).
+function openPlayerCardByIdx(idx){
+  if(idx<0||!players[idx]){toast('Giocatore non in rosa');return;}
+  // if archived, temporarily nothing to expand in Rosa — inform the user
+  if(players[idx].archived){toast('Giocatore archiviato (ripristinalo dai Settings)');return;}
+  showPage('rosa');
+  // wait for the Rosa page to render its cards, then expand + scroll
+  setTimeout(()=>{
+    const body=document.getElementById('cd'+idx);
+    if(!body)return;
+    if(body.style.display==='none') toggleCard(idx);
+    const card=body.closest('.card');
+    if(card) card.scrollIntoView({behavior:'smooth',block:'center'});
+  },90);
 }
 
 function renderPlayerPagelle(i){
@@ -2904,7 +2920,7 @@ function renderStatsTable(){
     return x.name.localeCompare(y.name); // stable tiebreak
   });
 
-  const cell=(v,bold)=>`<td style="padding:7px 8px;text-align:center;font-size:12px;${bold?'font-weight:800;':''}white-space:nowrap">${v}</td>`;
+  const cell=(v,bold)=>`<td style="padding:11px 8px;text-align:center;font-size:12px;${bold?'font-weight:800;':''}white-space:nowrap">${v}</td>`;
   // last-5 form as coloured dots (most recent on the right)
   const formDots=r=>{
     const last=(r.results||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(-5);
@@ -2918,16 +2934,21 @@ function renderStatsTable(){
     const dec=r.w+r.d+r.l;
     const winpct=dec?Math.round(r.w/dec*100):null;
     const winCol=winpct==null?'var(--text3)':winpct>=60?'var(--green)':winpct<40?'var(--red)':'var(--amber)';
+    // resolve roster index for the click (id/name), -1 if not in current roster
+    const pIdx=players.findIndex(p=>p.name===r.name);
+    const nameCell=pIdx>=0
+      ? `<td onclick="openPlayerCardByIdx(${pIdx})" style="padding:11px 8px;text-align:left;font-size:13px;font-weight:700;white-space:nowrap;position:sticky;left:0;background:var(--gray);cursor:pointer;color:var(--green)">${esc(r.name)} <span style="font-size:9px;opacity:.6">›</span></td>`
+      : `<td style="padding:11px 8px;text-align:left;font-size:13px;font-weight:700;white-space:nowrap;position:sticky;left:0;background:var(--gray);color:var(--text3)">${esc(r.name)}</td>`;
     return `<tr style="border-top:1px solid var(--gray2)">
-      <td style="padding:7px 8px;text-align:left;font-size:13px;font-weight:700;white-space:nowrap;position:sticky;left:0;background:var(--gray)">${esc(r.name)}</td>
+      ${nameCell}
       ${cell(r.pres)}
       ${cell('<span style="color:var(--green)">'+r.w+'</span>')}
       ${cell('<span style="color:var(--amber)">'+r.d+'</span>')}
       ${cell('<span style="color:var(--red)">'+r.l+'</span>')}
-      <td style="padding:7px 8px;text-align:center;font-size:12px;font-weight:800;color:${winCol};white-space:nowrap">${winpct==null?'—':winpct+'%'}</td>
+      <td style="padding:11px 8px;text-align:center;font-size:12px;font-weight:800;color:${winCol};white-space:nowrap">${winpct==null?'—':winpct+'%'}</td>
       ${cell(formDots(r))}
       ${cell('<span style="color:var(--green);font-weight:800">'+r.goals+'</span>',true)}
-      <td style="padding:7px 8px;text-align:center;font-size:12px;font-weight:800;color:${mediaCol};white-space:nowrap">${media}</td>
+      <td style="padding:11px 8px;text-align:center;font-size:12px;font-weight:800;color:${mediaCol};white-space:nowrap">${media}</td>
     </tr>`;
   }).join('');
 
