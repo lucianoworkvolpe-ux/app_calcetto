@@ -1134,6 +1134,26 @@ function drawPagelle(i,player,container){
   }).length || raw.length;   // fallback to rating rows if teams missing
   const goalsPerMatch=matchesPlayed?totGoals/matchesPlayed:0;
 
+  // ── new stats: autogol + meta totals (from rating rows) ──
+  const rrows=ratingsForPlayer(player);
+  const totAutogol=rrows.reduce((s,r)=>s+(parseInt(r.autogol)||0),0);
+  const totMeta=rrows.reduce((s,r)=>s+(parseInt(r.meta)||0),0);
+
+  // ── W/D/L from saved teams (for win% and last-5 form) ──
+  let pw=0,pd=0,pl_=0; const formRes=[];
+  (matches||[]).forEach(m=>{
+    const res=getPlayerMatchResult(m, player.id, player.name);
+    if(res==='W')pw++; else if(res==='D')pd++; else if(res==='L')pl_++;
+    if(res)formRes.push({date:m.date||'', res});
+  });
+  const decided=pw+pd+pl_;
+  const winPct=decided?Math.round(pw/decided*100):null;
+  const winCol=winPct==null?'var(--text3)':winPct>=60?'var(--green)':winPct<40?'var(--red)':'var(--amber)';
+  const last5=formRes.sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(-5);
+  const formDotsHTML=last5.length
+    ? last5.map(x=>{const c=x.res==='W'?'#3aad5e':x.res==='L'?'#e05c5c':'#e0a92e';return `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin:0 1px"></span>`;}).join('')
+    : '<span style="color:var(--text3)">—</span>';
+
   // ── rating series: only rows with a real vote (>=1) ──
   const dated=raw.filter(r=>r.rating>=1);
 
@@ -1156,6 +1176,18 @@ function drawPagelle(i,player,container){
         <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
           <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol/P</div>
           <div style="font-size:15px;font-weight:800;color:var(--green)">${goalsPerMatch.toFixed(2)}</div>
+        </div>
+        <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">% Vittorie</div>
+          <div style="font-size:15px;font-weight:800;color:${winCol}">${winPct==null?'—':winPct+'%'}</div>
+        </div>
+        <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+          <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Forma</div>
+          <div style="font-size:13px;line-height:9px;padding:3px 0">${formDotsHTML}</div>
+        </div>
+        <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">🙃 AG · 🚀 Meta</div>
+          <div style="font-size:14px;font-weight:800;color:var(--text)">${totAutogol} · ${totMeta}</div>
         </div>
       </div>
       <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:9px">Nessun voto ancora registrato</div>
@@ -1257,6 +1289,22 @@ function drawPagelle(i,player,container){
       <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol/P</div>
         <div style="font-size:15px;font-weight:800;color:var(--green)">${goalsPerMatch.toFixed(2)}</div>
+      </div>
+      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">% Vittorie</div>
+        <div style="font-size:15px;font-weight:800;color:${winCol}">${winPct==null?'—':winPct+'%'}</div>
+      </div>
+      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Forma</div>
+        <div style="font-size:13px;line-height:9px;padding:3px 0">${formDotsHTML}</div>
+      </div>
+      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">🙃 Autogol</div>
+        <div style="font-size:15px;font-weight:800;color:${totAutogol>0?'var(--red)':'var(--text)'}">${totAutogol}</div>
+      </div>
+      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">🚀 Meta</div>
+        <div style="font-size:15px;font-weight:800;color:${totMeta>0?'var(--amber)':'var(--text)'}">${totMeta}</div>
       </div>
     </div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:var(--gray);border-radius:8px;display:block">
@@ -2716,29 +2764,12 @@ function renderSeasonDash(){
   const topName=topRt.name.length>8?topRt.name.slice(0,7)+'…':topRt.name;
   const topVal=topRt.avg>0?`${esc(topName)} ${topRt.avg.toFixed(1)}`:'—';
 
-  // 🚀 Meta (tiri alle stelle): total + top "cannoniere" delle stelle
-  const totMeta=ratings.reduce((s,r)=>s+(parseInt(r.meta)||0),0);
-  const metaBy={};
-  ratings.forEach(r=>{
-    const mt=parseInt(r.meta)||0; if(mt<=0)return;
-    const {key,name}=playerKey(r.playerId,r.player);
-    if(!metaBy[key])metaBy[key]={name,n:0}; metaBy[key].n+=mt;
-  });
-  let topMeta={name:'—',n:0};
-  Object.values(metaBy).forEach(p=>{if(p.n>topMeta.n)topMeta=p;});
-  const metaLine=totMeta>0
-    ? `<div style="margin-top:8px;background:rgba(128,128,128,0.08);border-radius:var(--radius-sm);padding:9px 12px;display:flex;align-items:center;justify-content:space-between;font-size:12px">
-        <span style="color:var(--text2)">🚀 Mete totali (tiri alle stelle)</span>
-        <span style="font-weight:800;color:var(--text)">${totMeta}${topMeta.n>0?` · 👑 ${esc(topMeta.name)} (${topMeta.n})`:''}</span>
-      </div>`
-    : '';
-
   el.innerHTML=`<div class="dash-grid">
     <div class="dash-cell"><div class="dash-val">${totMatches}</div><div class="dash-lbl">Partite</div></div>
     <div class="dash-cell"><div class="dash-val">${totGoals}</div><div class="dash-lbl">Gol totali</div></div>
     <div class="dash-cell"><div class="dash-val">${avgGoals.toFixed(1)}</div><div class="dash-lbl">Gol/partita</div></div>
     <div class="dash-cell"><div class="dash-val" style="font-size:13px">${topVal}</div><div class="dash-lbl">⭐ Miglior media</div></div>
-  </div>${metaLine}`;
+  </div>`;
 }
 
 // ── Ultima partita in evidenza ──
@@ -2788,10 +2819,20 @@ function getPlayerMatchResult(match, playerId, playerName){
 }
 
 let statsSort={col:'goals', dir:-1}; // default: goals descending
+let statsFilter='regulars';          // 'all' | 'regulars' (≥30% presenze) — default Titolari
 function setStatsSort(col){
   if(statsSort.col===col){ statsSort.dir*=-1; }         // toggle direction
   else { statsSort.col=col; statsSort.dir=(col==='name')?1:-1; } // names asc, numbers desc
   renderStatsTable();
+}
+function setStatsFilter(f){ statsFilter=f; renderStatsTable(); }
+// Two mini-tabs above the stats table: all players vs regulars (≥30% presenze)
+function statsFilterTabs(minPres){
+  const t=(id,label)=>`<button onclick="setStatsFilter('${id}')" class="sub-tab ${statsFilter===id?'active':''}" style="font-size:11px;padding:6px 4px">${label}</button>`;
+  return `<div class="sub-tabs" style="margin-bottom:10px">
+    ${t('all','👥 Tutti')}
+    ${t('regulars','⭐ Titolari (≥'+minPres+')')}
+  </div>`;
 }
 
 function renderStatsTable(){
@@ -2835,9 +2876,18 @@ function renderStatsTable(){
     if(!isNaN(rt)&&rt>=1){a.ratingSum+=rt; a.ratingCount++;}
   });
 
-  const rows=Object.values(agg);
+  let rows=Object.values(agg);
+  const totMatches=allMatches.length;
+  // "regulars" = played at least 30% of the season's matches (rounded up, inclusive)
+  const minPres=Math.ceil(totMatches*0.30);
+  if(statsFilter==='regulars'){
+    rows=rows.filter(r=>r.pres>=minPres);
+  }
   if(!rows.length){
-    el.innerHTML='<div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">Nessuna statistica ancora</div>';
+    const msg=statsFilter==='regulars'
+      ? `Nessun giocatore con almeno ${minPres} presenze (30%)`
+      : 'Nessuna statistica ancora';
+    el.innerHTML=`<div class="section-header" style="margin:0 0 10px">📈 Statistiche giocatori</div>${statsFilterTabs(minPres)}<div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">${msg}</div>`;
     return;
   }
   // sortable value per row for the active column
@@ -2887,6 +2937,7 @@ function renderStatsTable(){
 
   el.innerHTML=`
     <div class="section-header" style="margin:0 0 10px">📈 Statistiche giocatori</div>
+    ${statsFilterTabs(minPres)}
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
       <table style="width:100%;border-collapse:collapse;min-width:480px">
         <thead>
@@ -2995,9 +3046,12 @@ function matchHighlights(m){
     const {name}=playerKey(r.playerId, r.player);
     const rt=parseFloat(r.rating);
     const g=parseInt(r.goals)||0;
+    const ag=parseInt(r.autogol)||0;
     if(!isNaN(rt)&&rt>=1){
-      if(!mvp||rt>mvp.v)   mvp={name,v:rt};
-      if(!worst||rt<worst.v) worst={name,v:rt};
+      // composite performance: voto + 0.5·gol − 0.5·autogol
+      const perf=rt + g*0.5 - ag*0.5;
+      if(!mvp||perf>mvp.perf)   mvp={name, v:rt, perf};
+      if(!worst||perf<worst.perf) worst={name, v:rt, perf};
       // team averages (which side is this player on?)
       const pl={id:r.playerId, name:r.player};
       if(inTeam(pl,teamA)){sumA+=rt;cntA++;}
