@@ -2463,11 +2463,11 @@ function getMatches() {
 }
 
 function getRatings() {
-  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals']);
+  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta']);
   const data = sh.getDataRange().getValues();
   if (data.length < 2) return [];
   return data.slice(1).map(r => ({
-    matchId: r[0], player: r[1], rating: parseFloat(r[2]) || 0, notes: r[3] || '', playerId: r[4] || '', goals: parseInt(r[5]) || 0
+    matchId: r[0], player: r[1], rating: parseFloat(r[2]) || 0, notes: r[3] || '', playerId: r[4] || '', goals: parseInt(r[5]) || 0, autogol: parseInt(r[6]) || 0, meta: parseInt(r[7]) || 0
   })).filter(r => r.matchId && (r.player || r.playerId));
 }
 
@@ -2488,7 +2488,7 @@ function deleteMatch(id) {
     if (data[i][0] === id) sh.deleteRow(i + 1);
   }
   // delete ratings too
-  const rs = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals']);
+  const rs = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta']);
   const rd = rs.getDataRange().getValues();
   for (let i = rd.length - 1; i >= 1; i--) {
     if (rd[i][0] === id) rs.deleteRow(i + 1);
@@ -2497,7 +2497,7 @@ function deleteMatch(id) {
 }
 
 function saveRatings(payload) {
-  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals']);
+  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta']);
   const data = sh.getDataRange().getValues();
   // remove old ratings for this match
   for (let i = data.length - 1; i >= 1; i--) {
@@ -2505,7 +2505,7 @@ function saveRatings(payload) {
   }
   // append new ones
   (payload.ratings || []).forEach(r => {
-    sh.appendRow([payload.matchId, r.player, r.rating, r.notes || '', r.playerId || '', r.goals || 0]);
+    sh.appendRow([payload.matchId, r.player, r.rating, r.notes || '', r.playerId || '', r.goals || 0, r.autogol || 0, r.meta || 0]);
   });
   return (payload.ratings || []).length;
 }
@@ -2715,12 +2715,30 @@ function renderSeasonDash(){
   });
   const topName=topRt.name.length>8?topRt.name.slice(0,7)+'…':topRt.name;
   const topVal=topRt.avg>0?`${esc(topName)} ${topRt.avg.toFixed(1)}`:'—';
+
+  // 🚀 Meta (tiri alle stelle): total + top "cannoniere" delle stelle
+  const totMeta=ratings.reduce((s,r)=>s+(parseInt(r.meta)||0),0);
+  const metaBy={};
+  ratings.forEach(r=>{
+    const mt=parseInt(r.meta)||0; if(mt<=0)return;
+    const {key,name}=playerKey(r.playerId,r.player);
+    if(!metaBy[key])metaBy[key]={name,n:0}; metaBy[key].n+=mt;
+  });
+  let topMeta={name:'—',n:0};
+  Object.values(metaBy).forEach(p=>{if(p.n>topMeta.n)topMeta=p;});
+  const metaLine=totMeta>0
+    ? `<div style="margin-top:8px;background:rgba(128,128,128,0.08);border-radius:var(--radius-sm);padding:9px 12px;display:flex;align-items:center;justify-content:space-between;font-size:12px">
+        <span style="color:var(--text2)">🚀 Mete totali (tiri alle stelle)</span>
+        <span style="font-weight:800;color:var(--text)">${totMeta}${topMeta.n>0?` · 👑 ${esc(topMeta.name)} (${topMeta.n})`:''}</span>
+      </div>`
+    : '';
+
   el.innerHTML=`<div class="dash-grid">
     <div class="dash-cell"><div class="dash-val">${totMatches}</div><div class="dash-lbl">Partite</div></div>
     <div class="dash-cell"><div class="dash-val">${totGoals}</div><div class="dash-lbl">Gol totali</div></div>
     <div class="dash-cell"><div class="dash-val">${avgGoals.toFixed(1)}</div><div class="dash-lbl">Gol/partita</div></div>
     <div class="dash-cell"><div class="dash-val" style="font-size:13px">${topVal}</div><div class="dash-lbl">⭐ Miglior media</div></div>
-  </div>`;
+  </div>${metaLine}`;
 }
 
 // ── Ultima partita in evidenza ──
@@ -2803,6 +2821,8 @@ function renderStatsTable(){
       a.pres++;
       const res=getPlayerMatchResult(m, pl.id, pl.name);
       if(res==='W')a.w++; else if(res==='D')a.d++; else if(res==='L')a.l++;
+      if(!a.results)a.results=[];
+      if(res)a.results.push({date:m.date||'', res}); // for "last 5 form"
     });
   });
 
@@ -2824,6 +2844,7 @@ function renderStatsTable(){
   const val=(r,col)=>{
     if(col==='name')return r.name.toLowerCase();
     if(col==='voto')return r.ratingCount?r.ratingSum/r.ratingCount:-1;
+    if(col==='winpct'){const dec=r.w+r.d+r.l; return dec?r.w/dec:-1;}
     return r[col]; // pres, w, d, l, goals
   };
   const {col,dir}=statsSort;
@@ -2834,15 +2855,27 @@ function renderStatsTable(){
   });
 
   const cell=(v,bold)=>`<td style="padding:7px 8px;text-align:center;font-size:12px;${bold?'font-weight:800;':''}white-space:nowrap">${v}</td>`;
+  // last-5 form as coloured dots (most recent on the right)
+  const formDots=r=>{
+    const last=(r.results||[]).slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(-5);
+    if(!last.length)return '<span style="color:var(--text3)">—</span>';
+    const dot=res=>{const c=res==='W'?'#3aad5e':res==='L'?'#e05c5c':'#e0a92e';return `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin:0 1px"></span>`;};
+    return last.map(x=>dot(x.res)).join('');
+  };
   const body=rows.map(r=>{
     const media=r.ratingCount?(r.ratingSum/r.ratingCount).toFixed(2):'—';
     const mediaCol=r.ratingCount?(r.ratingSum/r.ratingCount>=6.5?'var(--green)':r.ratingSum/r.ratingCount<5.5?'var(--red)':'var(--amber)'):'var(--text3)';
+    const dec=r.w+r.d+r.l;
+    const winpct=dec?Math.round(r.w/dec*100):null;
+    const winCol=winpct==null?'var(--text3)':winpct>=60?'var(--green)':winpct<40?'var(--red)':'var(--amber)';
     return `<tr style="border-top:1px solid var(--gray2)">
       <td style="padding:7px 8px;text-align:left;font-size:13px;font-weight:700;white-space:nowrap;position:sticky;left:0;background:var(--gray)">${esc(r.name)}</td>
       ${cell(r.pres)}
       ${cell('<span style="color:var(--green)">'+r.w+'</span>')}
       ${cell('<span style="color:var(--amber)">'+r.d+'</span>')}
       ${cell('<span style="color:var(--red)">'+r.l+'</span>')}
+      <td style="padding:7px 8px;text-align:center;font-size:12px;font-weight:800;color:${winCol};white-space:nowrap">${winpct==null?'—':winpct+'%'}</td>
+      ${cell(formDots(r))}
       ${cell('<span style="color:var(--green);font-weight:800">'+r.goals+'</span>',true)}
       <td style="padding:7px 8px;text-align:center;font-size:12px;font-weight:800;color:${mediaCol};white-space:nowrap">${media}</td>
     </tr>`;
@@ -2855,7 +2888,7 @@ function renderStatsTable(){
   el.innerHTML=`
     <div class="section-header" style="margin:0 0 10px">📈 Statistiche giocatori</div>
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-      <table style="width:100%;border-collapse:collapse;min-width:380px">
+      <table style="width:100%;border-collapse:collapse;min-width:480px">
         <thead>
           <tr style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.3px">
             ${th('name','Giocatore','Nome',true)}
@@ -2863,6 +2896,8 @@ function renderStatsTable(){
             ${th('w','V','Vittorie')}
             ${th('d','N','Pareggi')}
             ${th('l','P','Sconfitte')}
+            ${th('winpct','%','Percentuale vittorie')}
+            <th style="padding:6px 8px;text-align:center" title="Forma ultime 5">Forma</th>
             ${th('goals','⚽','Gol')}
             ${th('voto','Voto','Media voto')}
           </tr>
@@ -2870,7 +2905,7 @@ function renderStatsTable(){
         <tbody>${body}</tbody>
       </table>
     </div>
-    <div style="font-size:10px;color:var(--text3);margin-top:8px">Tocca un'intestazione per riordinare · PG presenze · V/N/P vittorie/pareggi/sconfitte</div>
+    <div style="font-size:10px;color:var(--text3);margin-top:8px">Tocca un'intestazione per riordinare · PG presenze · V/N/P vittorie/pareggi/sconfitte · % vittorie · Forma = ultime 5 (🟢 vinta 🟡 pari 🔴 persa)</div>
   `;
 }
 
@@ -3032,7 +3067,9 @@ function openMatch(id){
         const val=r?r.rating:'';
         const goals=r&&r.goals?r.goals:'';
         const localIdx=allPlayers.indexOf(pl);
-        const rid='rate-'+cls+'-'+localIdx, gid='goal-'+cls+'-'+localIdx;
+        const rid='rate-'+cls+'-'+localIdx, gid='goal-'+cls+'-'+localIdx, aid='og-'+cls+'-'+localIdx, mid='meta-'+cls+'-'+localIdx;
+        const og=r&&r.autogol?r.autogol:'';
+        const meta=r&&r.meta?r.meta:'';
         return `<div style="padding:7px 0;border-bottom:1px solid rgba(128,128,128,0.12)">
           <div style="font-size:12px;font-weight:700;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(pl.name)}</div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -3050,6 +3087,22 @@ function openMatch(id){
                 <button type="button" onclick="goalStep('${gid}',-1);checkGoalRating('${rid}','${gid}')" class="rate-btn rate-btn-minus">−</button>
                 <input type="number" min="0" max="20" step="1" placeholder="0" value="${goals}" id="${gid}" inputmode="numeric" oninput="checkGoalRating('${rid}','${gid}')">
                 <button type="button" onclick="goalStep('${gid}',1);checkGoalRating('${rid}','${gid}')" class="rate-btn rate-btn-plus">+</button>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:12px" title="Autogol">🙃</span>
+              <div class="goal-stepper">
+                <button type="button" onclick="goalStep('${aid}',-1)" class="rate-btn rate-btn-minus">−</button>
+                <input type="number" min="0" max="20" step="1" placeholder="0" value="${og}" id="${aid}" inputmode="numeric">
+                <button type="button" onclick="goalStep('${aid}',1)" class="rate-btn rate-btn-plus">+</button>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:12px" title="Meta — tiri alle stelle">🚀</span>
+              <div class="goal-stepper">
+                <button type="button" onclick="goalStep('${mid}',-1)" class="rate-btn rate-btn-minus">−</button>
+                <input type="number" min="0" max="50" step="1" placeholder="0" value="${meta}" id="${mid}" inputmode="numeric">
+                <button type="button" onclick="goalStep('${mid}',1)" class="rate-btn rate-btn-plus">+</button>
               </div>
             </div>
           </div>
@@ -3188,22 +3241,28 @@ async function saveRatings(matchId){
     const teamCls=i<teamA.length?'bl':'am';
     const el=document.getElementById('rate-'+teamCls+'-'+i);
     const gEl=document.getElementById('goal-'+teamCls+'-'+i);
+    const aEl=document.getElementById('og-'+teamCls+'-'+i);
+    const mEl=document.getElementById('meta-'+teamCls+'-'+i);
     const v=clampRating(el?.value);          // null if empty/invalid, else 1–10 snapped to .5
     const g=clampInt(gEl?.value, 0, 20, 0);  // 0–20 integer
+    const ag=clampInt(aEl?.value, 0, 20, 0); // autogol 0–20
+    const mt=clampInt(mEl?.value, 0, 50, 0); // meta (tiri alle stelle) 0–50
     const hasRating=(v!==null);
-    // RULE: chi ha segnato deve avere un voto (ha per forza giocato)
-    if(g>0 && !hasRating){
+    // RULE: chi ha segnato (gol o autogol) deve avere un voto (ha per forza giocato)
+    if((g>0||ag>0) && !hasRating){
       goalNoRating.push(pl.name);
       return;
     }
-    // save the row only if there's a valid rating (goals optional)
+    // save the row only if there's a valid rating (goals/autogol/meta optional)
     if(hasRating){
       ratings.push({
         playerId:pl.id||'',
         player:pl.name,
         rating:v,
         notes:'',
-        goals:g
+        goals:g,
+        autogol:ag,
+        meta:mt
       });
     }
   });
