@@ -9,6 +9,7 @@
   --green:#1a4a8f;--green-light:#e8eef8;--green-mid:#2e69c4;
   --blue:#1a5fa8;--blue-light:#deeaf8;
   --amber:#b87000;--amber-light:#fff0cc;
+  --teamb:#5c6773;--teamb-light:#eceef1;
   --red:#c0392b;--red-light:#fdecea;
   --gray:#f2f4f7;--gray2:#e4e7ec;--gray3:#c0c6d0;
   --text:#151a22;--text2:#506070;--text3:#8a95a5;
@@ -23,6 +24,7 @@
   --green:#4a8ee0;--green-light:#0a1a30;--green-mid:#3a78c8;
   --blue:#4a9eff;--blue-light:#0a1c30;
   --amber:#f0b030;--amber-light:#261800;
+  --teamb:#c2cad6;--teamb-light:#242a33;
   --red:#e05c4e;--red-light:#280d0a;
   --gray:#181c24;--gray2:#232830;--gray3:#384050;
   --text:#eaedf5;--text2:#8898aa;--text3:#586070;
@@ -85,7 +87,6 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .avatar{width:26px;height:26px;border-radius:50%;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .avatar.has-photo,.conv-avatar.has-photo{background-size:cover;background-position:center;color:transparent}
 .avatar-xl{width:140px;height:140px;font-size:44px;border:3px solid var(--gray3);box-shadow:0 4px 14px rgba(0,0,0,0.18)}
-.avatar-md{width:56px;height:56px;font-size:18px;flex-shrink:0}
 .photo-row{display:flex;flex-direction:column;align-items:center;gap:12px;margin:8px 0 16px}
 .av-att{background:var(--att-light);color:var(--att)}
 .av-mid{background:var(--mid-light);color:var(--mid)}
@@ -224,10 +225,10 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 .team-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
 .team-nm{font-size:14px;font-weight:800}
 .team-nm.bl{color:var(--blue)}
-.team-nm.am{color:var(--amber)}
+.team-nm.am{color:var(--teamb)}
 .media-pill{font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px}
 .mp-bl{background:#b8d4f5;color:var(--blue)}
-.mp-am{background:#ffc940;color:#5a3800}
+.mp-am{background:var(--teamb-light);color:var(--teamb)}
 .pchip{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;margin-bottom:4px;font-size:13px;font-weight:600;min-height:36px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .pchip:active{cursor:grabbing}
 .pchip-grip{font-size:13px;opacity:.4;flex-shrink:0;line-height:1}
@@ -237,15 +238,15 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 .pchip-target{outline:2px dashed currentColor;outline-offset:1px}
 .pchip-ghost{position:fixed;z-index:1000;transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,0.3);opacity:.95;margin:0}
 .pc-bl{background:rgba(26,95,168,0.13);color:var(--blue)}
-.pc-am{background:rgba(184,112,0,0.13);color:var(--amber)}
+.pc-am{background:rgba(120,130,145,0.15);color:var(--teamb)}
 .cmp-row{display:flex;align-items:center;gap:5px;margin-bottom:5px;font-size:12px}
 .cmp-v{width:28px;text-align:right;font-weight:800}
 .cmp-v.bl{color:var(--blue)}
-.cmp-v.am{color:var(--amber)}
+.cmp-v.am{color:var(--teamb)}
 .cmp-bar{flex:1;display:flex;align-items:center;gap:3px}
 .cmp-lbl{font-size:10px;color:var(--text3);min-width:56px;text-align:center}
 .cf-bl{height:6px;background:var(--blue);border-radius:3px 0 0 3px}
-.cf-am{height:6px;background:var(--amber);border-radius:0 3px 3px 0}
+.cf-am{height:6px;background:var(--teamb);border-radius:0 3px 3px 0}
 .balance-row{text-align:center;margin:10px 0;font-size:13px}
 .pill-ok{background:#d0f5e0;color:#0e5028;padding:4px 14px;border-radius:99px;font-weight:800}
 .pill-warn{background:#fff0b0;color:#6a4000;padding:4px 14px;border-radius:99px;font-weight:800}
@@ -356,9 +357,9 @@ input[type=file]{display:none}
       <!-- Team B -->
       <div style="display:flex;align-items:center;gap:8px;background:var(--amber-light);border-radius:var(--radius-sm);padding:8px 12px">
         <button class="adj-btn" onclick="adjTeam('B',-1)">−</button>
-        <span id="sz-b" style="font-size:22px;font-weight:800;color:var(--amber);min-width:24px;text-align:center">6</span>
+        <span id="sz-b" style="font-size:22px;font-weight:800;color:var(--teamb);min-width:24px;text-align:center">6</span>
         <button class="adj-btn" onclick="adjTeam('B',1)">+</button>
-        <span style="font-size:12px;font-weight:700;color:var(--amber);min-width:52px;text-align:right">Arancio 🟠</span>
+        <span style="font-size:12px;font-weight:700;color:var(--teamb);min-width:52px;text-align:right">Bianchi ⚪</span>
       </div>
     </div>
 
@@ -384,7 +385,7 @@ input[type=file]{display:none}
         <span class="pitch-title">Campo</span>
         <div class="pitch-legend">
           <span><div class="dot" style="background:#3a8fef"></div>Blu</span>
-          <span><div class="dot" style="background:#e8a020"></div>Arancio</span>
+          <span><div class="dot" style="background:#f2f2f2;border:1px solid #b0b6c0"></div>Bianchi</span>
         </div>
       </div>
       <svg id="pitch-svg" class="pitch" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -399,8 +400,8 @@ input[type=file]{display:none}
         <div id="chips-a"></div>
       </div>
       <div class="team-card team-amber" id="team-card-B">
-        <div class="team-hd"><span class="team-nm am">🟠 Arancio</span><span class="media-pill mp-am" id="avg-b">—</span></div>
-        <div style="font-size:11px;color:var(--amber);font-weight:700;opacity:.7;margin-bottom:7px" id="mod-label-b"></div>
+        <div class="team-hd"><span class="team-nm am">⚪ Bianchi</span><span class="media-pill mp-am" id="avg-b">—</span></div>
+        <div style="font-size:11px;color:var(--teamb);font-weight:700;opacity:.7;margin-bottom:7px" id="mod-label-b"></div>
         <div id="chips-b"></div>
       </div>
     </div>
@@ -1081,41 +1082,59 @@ function toggleCard(i){
 }
 
 // Open a read-only player profile in a modal (used from the stats/scorers tables).
+// Mirrors the Rosa expanded-card layout exactly, minus the editing controls.
 function openPlayerCardByIdx(idx){
   if(idx<0||!players[idx]){toast('Giocatore non in rosa');return;}
   const p=players[idx];
   const ovr=calcOvr(p.stats).toFixed(1);
   const pagInfo=getPlayerPagInfo(p);
   const roleMap={ATT:'att',MED:'mid',DIF:'def'};
-  const roleLbl={ATT:'Attacco',MED:'Centrocampo',DIF:'Difesa'};
-  const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${roleLbl[r]}</span>`).join(' ');
-  // stat bars (read-only)
-  const bars=STATS.map((s,j)=>{
-    const v=p.stats[j];
-    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-      <span style="font-size:11px;width:74px;flex-shrink:0;color:var(--text2)">${ICONS[j]} ${s}</span>
-      <div style="flex:1;height:6px;background:var(--gray2);border-radius:3px;overflow:hidden"><div style="height:100%;width:${v*10}%;background:var(--green);border-radius:3px"></div></div>
-      <span style="font-size:12px;font-weight:800;width:22px;text-align:right">${v}</span>
+  // role pills (read-only, same look as the compact header pills)
+  const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
+  // role display like the Rosa toggles but non-interactive (faded when off)
+  const toggles=ROLES.map(r=>{
+    const on=p.roles.includes(r);
+    return `<div class="role-toggle role-${roleMap[r]}${on?' tog-'+roleMap[r]:''}" style="cursor:default">
+      <span class="rt-label">${RLBL[r]}</span>${on?'<span class="rt-tick">✓</span>':''}
     </div>`;
   }).join('');
+  // stat rows identical to the Rosa grid, but read-only (value shown, no input)
+  let sg='<div class="stats-grid">';
+  STATS.forEach((s,j)=>{
+    sg+=`<div class="stat-row">
+      <span class="stat-icon">${ICONS[j]}</span>
+      <span class="stat-name">${s}</span>
+      <span class="stat-input" style="border:none;background:transparent;font-weight:800;text-align:center">${p.stats[j]}</span>
+      <div class="mini-bar"><div class="mini-bar-fill" style="width:${p.stats[j]*10}%"></div></div>
+    </div>`;
+  });
+  sg+='</div>';
 
   document.getElementById('match-modal-title').textContent='👤 Scheda giocatore';
   document.getElementById('match-modal-body').innerHTML=`
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      ${avatarHTML(p,'avatar avatar-md','')}
-      <div style="flex:1;min-width:0">
-        <div style="font-size:17px;font-weight:800;color:var(--text)">${esc(p.name)}</div>
-        <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
+    <div class="player-header" style="margin-bottom:4px">
+      <div class="ph-top">
+        <div class="avatar-stack">
+          <span class="pag-badge ${pagInfo.cls}" title="Media pagelle">${pagInfo.label}</span>
+          ${avatarHTML(p,'avatar','')}
           <span class="ovr-badge">OVR ${ovr}</span>
-          <span class="pag-badge ${pagInfo.cls}">${pagInfo.label}</span>
-          <span style="display:flex;gap:3px">${pills}</span>
+        </div>
+        <div class="ph-info">
+          <div class="ph-name-row"><span class="player-name-display">${esc(p.name)}</span></div>
+          <div class="role-pills-display">${pills}</div>
         </div>
       </div>
     </div>
-    <div style="background:rgba(128,128,128,0.06);border-radius:var(--radius-sm);padding:11px;margin-bottom:14px">${bars}</div>
-    <div id="modal-pagelle"></div>`;
+    <div class="photo-row">
+      ${avatarHTML(p,'avatar avatar-xl','')}
+    </div>
+    <div class="role-section">
+      <div class="role-section-label">Ruoli</div>
+      <div class="role-toggles">${toggles}</div>
+    </div>${sg}
+    <div id="modal-pagelle" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray2)"></div>`;
   document.getElementById('match-modal').style.display='block';
-  // draw the pagelle chart + stats into the modal container
+  // draw the pagelle chart + stats into the modal container (same as Rosa)
   const container=document.getElementById('modal-pagelle');
   if(!backendUrl){
     container.innerHTML=`<div style="font-size:12px;color:var(--text3);text-align:center">📊 Configura il backend in Settings per vedere le pagelle</div>`;
@@ -1828,7 +1847,7 @@ async function shareTeams(){
   const ctx=canvas.getContext('2d');
   ctx.scale(scale,scale);
 
-  const BLUE='#3a8fef', AMBER='#e8a020', BG='#0f1620', CARD='#1a2230', TXT='#eef2f8', SUB='#8a94a6';
+  const BLUE='#3a8fef', WHITE='#e9ecf2', BG='#0f1620', CARD='#1a2230', TXT='#eef2f8', SUB='#8a94a6';
 
   // background
   ctx.fillStyle=BG; ctx.fillRect(0,0,W,H);
@@ -1849,10 +1868,10 @@ async function shareTeams(){
   const xA=padX, xB=padX+colW+colGap;
   const headerBlockY=110, headerBlockH=58;
 
-  const drawTeamHeader=(x,color,label,avg,mod)=>{
+  const drawTeamHeader=(x,color,textCol,label,avg,mod)=>{
     ctx.fillStyle=color;
     roundRect(ctx,x,headerBlockY,colW,headerBlockH,12); ctx.fill();
-    ctx.fillStyle='#fff';
+    ctx.fillStyle=textCol;
     ctx.textAlign='left';
     ctx.font='800 24px system-ui,-apple-system,sans-serif';
     ctx.fillText(label, x+18, headerBlockY+27);
@@ -1861,8 +1880,8 @@ async function shareTeams(){
     ctx.fillText((mod?mod+'  ·  ':'')+'Media '+avg.toFixed(1), x+18, headerBlockY+48);
     ctx.globalAlpha=1;
   };
-  drawTeamHeader(xA,BLUE,'🔵 Blu',c.sA,c.modA?c.modA.notation:'');
-  drawTeamHeader(xB,AMBER,'🟠 Arancio',c.sB,c.modB?c.modB.notation:'');
+  drawTeamHeader(xA,BLUE,'#fff','🔵 Blu',c.sA,c.modA?c.modA.notation:'');
+  drawTeamHeader(xB,WHITE,'#16202c','⚪ Bianchi',c.sB,c.modB?c.modB.notation:'');
 
   // player rows
   const drawRows=(x,team,accent)=>{
@@ -1887,7 +1906,7 @@ async function shareTeams(){
     });
   };
   drawRows(xA,tA,BLUE);
-  drawRows(xB,tB,AMBER);
+  drawRows(xB,tB,WHITE);
 
   // footer (balance)
   const fy=H-footH+10;
@@ -2118,7 +2137,7 @@ function renderPitch(pA,pB,modA,modB){
   });
   slotsB.forEach((sl,i)=>{
     if(!assignedB[i])return;
-    drawPlayer(rxS+(1-sl.x)*(rxE-rxS), yS+sl.y*(yE-yS), assignedB[i],'#c47a00','#e8a020');
+    drawPlayer(rxS+(1-sl.x)*(rxE-rxS), yS+sl.y*(yE-yS), assignedB[i],'#5b6570','#ffffff');
   });
 
   svg.innerHTML=(clipDefs?`<defs>${clipDefs}</defs>`:'')+s;
@@ -2831,7 +2850,7 @@ function renderLastMatch(){
   let winTxt='';
   if(hasScore){
     if(a>b)winTxt='<span style="color:var(--blue);font-weight:800">Vince Blu</span>';
-    else if(b>a)winTxt='<span style="color:var(--amber);font-weight:800">Vince Arancio</span>';
+    else if(b>a)winTxt='<span style="color:var(--teamb);font-weight:800">Vince Bianchi</span>';
     else winTxt='<span style="color:var(--text2);font-weight:800">Pareggio</span>';
   }
   el.innerHTML=`<div class="card" style="border-left:4px solid var(--green);cursor:pointer" onclick="openMatch('${m.id}')">
@@ -2842,7 +2861,7 @@ function renderLastMatch(){
     <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:4px 0">
       <span style="font-size:13px;font-weight:700;color:var(--blue)">🔵 Blu</span>
       <span style="font-size:26px;font-weight:800;color:var(--text)">${hasScore?`${m.scoreA} - ${m.scoreB}`:'– : –'}</span>
-      <span style="font-size:13px;font-weight:700;color:var(--amber)">Arancio 🟠</span>
+      <span style="font-size:13px;font-weight:700;color:var(--teamb)">⚪ Bianchi</span>
     </div>
     <div style="text-align:center;font-size:12px;margin-top:4px">${winTxt}</div>
     <div style="text-align:center;font-size:10px;color:var(--text3);margin-top:6px">Tocca per i dettagli e le pagelle</div>
@@ -3045,7 +3064,7 @@ function newMatch(){
       </div>
       ${lastCombo?`<div style="background:var(--green-light);border-radius:var(--radius-sm);padding:9px 11px;border:1px solid var(--green)">
         <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px">✓ Squadre dall'ultima generazione</div>
-        <div style="font-size:11px;color:var(--text2);line-height:1.5"><strong>🔵 Blu:</strong> ${presetA}<br><strong>🟠 Arancio:</strong> ${presetB}</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.5"><strong>🔵 Blu:</strong> ${presetA}<br><strong>⚪ Bianchi:</strong> ${presetB}</div>
       </div>`:`<div style="background:var(--amber-light);border-radius:var(--radius-sm);padding:9px 11px;font-size:12px;color:var(--text)">⚠️ Genera prima le squadre nella scheda Partita</div>`}
       <div>
         <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">⚽ Risultato (opz.)</label>
@@ -3135,7 +3154,7 @@ function matchHighlightsHTML(m){
   if(line1.length) rows+=`<div style="display:flex;gap:6px;margin-bottom:6px">${line1.join('')}</div>`;
   const line2=[];
   line2.push(cell('⚽','Capocannoniere', h.topScorer?`${esc(short(h.topScorer.name))} (${h.topScorer.g})`:'—', h.topScorer?'var(--green)':'var(--text3)'));
-  if(h.avgA!=null||h.avgB!=null) line2.push(cell('📊','Media voto',`<span style="color:var(--blue)">${h.avgA!=null?h.avgA.toFixed(1):'—'}</span> · <span style="color:var(--amber)">${h.avgB!=null?h.avgB.toFixed(1):'—'}</span>`));
+  if(h.avgA!=null||h.avgB!=null) line2.push(cell('📊','Media voto',`<span style="color:var(--blue)">${h.avgA!=null?h.avgA.toFixed(1):'—'}</span> · <span style="color:var(--teamb)">${h.avgB!=null?h.avgB.toFixed(1):'—'}</span>`));
   rows+=`<div style="display:flex;gap:6px">${line2.join('')}</div>`;
   return `<div style="margin:12px 0 4px">
     <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Highlights</div>
@@ -3165,7 +3184,7 @@ function openMatch(id){
   const renderTeam=(title, team, isBlue)=>{
     const cls=isBlue?'bl':'am';
     const bg=isBlue?'var(--blue-light)':'var(--amber-light)';
-    const col=isBlue?'var(--blue)':'var(--amber)';
+    const col=isBlue?'var(--blue)':'var(--teamb)';
     return `<div style="background:${bg};border-radius:var(--radius-sm);padding:10px;flex:1">
       <div style="font-size:12px;font-weight:800;color:${col};margin-bottom:8px">${title}</div>
       ${team.map(pl=>{
@@ -3233,7 +3252,7 @@ function openMatch(id){
         <input type="number" min="0" max="99" id="sc-b" value="${scoreB}" placeholder="0" inputmode="numeric">
         <button type="button" onclick="scoreStep('sc-b',1)" class="rate-btn rate-btn-plus">+</button>
       </div>
-      <span style="font-size:11px;font-weight:700;color:var(--amber)">Arancio 🟠</span>
+      <span style="font-size:11px;font-weight:700;color:var(--teamb)">⚪ Bianchi</span>
     </div>`;
 
   document.getElementById('match-modal-body').innerHTML=`
@@ -3249,7 +3268,7 @@ function openMatch(id){
       <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">Pagelle (1–10)</div>
       <div style="display:flex;gap:8px;margin-bottom:14px">
         ${renderTeam('🔵 Blu',teamA,true)}
-        ${renderTeam('🟠 Arancio',teamB,false)}
+        ${renderTeam('⚪ Bianchi',teamB,false)}
       </div>
       <div id="match-actions" style="display:none;gap:8px">
         <button class="btn btn-primary" style="flex:1" onclick="saveRatings('${id}')">💾 Salva partita</button>
