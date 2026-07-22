@@ -85,6 +85,7 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .avatar{width:26px;height:26px;border-radius:50%;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .avatar.has-photo,.conv-avatar.has-photo{background-size:cover;background-position:center;color:transparent}
 .avatar-xl{width:140px;height:140px;font-size:44px;border:3px solid var(--gray3);box-shadow:0 4px 14px rgba(0,0,0,0.18)}
+.avatar-md{width:56px;height:56px;font-size:18px;flex-shrink:0}
 .photo-row{display:flex;flex-direction:column;align-items:center;gap:12px;margin:8px 0 16px}
 .av-att{background:var(--att-light);color:var(--att)}
 .av-mid{background:var(--mid-light);color:var(--mid)}
@@ -1079,20 +1080,50 @@ function toggleCard(i){
   if(!o) renderPlayerPagelle(i);
 }
 
-// Open a player's Rosa card by roster index (used from the stats table).
+// Open a read-only player profile in a modal (used from the stats/scorers tables).
 function openPlayerCardByIdx(idx){
   if(idx<0||!players[idx]){toast('Giocatore non in rosa');return;}
-  // if archived, temporarily nothing to expand in Rosa — inform the user
-  if(players[idx].archived){toast('Giocatore archiviato (ripristinalo dai Settings)');return;}
-  showPage('rosa');
-  // wait for the Rosa page to render its cards, then expand + scroll
-  setTimeout(()=>{
-    const body=document.getElementById('cd'+idx);
-    if(!body)return;
-    if(body.style.display==='none') toggleCard(idx);
-    const card=body.closest('.card');
-    if(card) card.scrollIntoView({behavior:'smooth',block:'center'});
-  },90);
+  const p=players[idx];
+  const ovr=calcOvr(p.stats).toFixed(1);
+  const pagInfo=getPlayerPagInfo(p);
+  const roleMap={ATT:'att',MED:'mid',DIF:'def'};
+  const roleLbl={ATT:'Attacco',MED:'Centrocampo',DIF:'Difesa'};
+  const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${roleLbl[r]}</span>`).join(' ');
+  // stat bars (read-only)
+  const bars=STATS.map((s,j)=>{
+    const v=p.stats[j];
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+      <span style="font-size:11px;width:74px;flex-shrink:0;color:var(--text2)">${ICONS[j]} ${s}</span>
+      <div style="flex:1;height:6px;background:var(--gray2);border-radius:3px;overflow:hidden"><div style="height:100%;width:${v*10}%;background:var(--green);border-radius:3px"></div></div>
+      <span style="font-size:12px;font-weight:800;width:22px;text-align:right">${v}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('match-modal-title').textContent='👤 Scheda giocatore';
+  document.getElementById('match-modal-body').innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      ${avatarHTML(p,'avatar avatar-md','')}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:17px;font-weight:800;color:var(--text)">${esc(p.name)}</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:4px">
+          <span class="ovr-badge">OVR ${ovr}</span>
+          <span class="pag-badge ${pagInfo.cls}">${pagInfo.label}</span>
+          <span style="display:flex;gap:3px">${pills}</span>
+        </div>
+      </div>
+    </div>
+    <div style="background:rgba(128,128,128,0.06);border-radius:var(--radius-sm);padding:11px;margin-bottom:14px">${bars}</div>
+    <div id="modal-pagelle"></div>`;
+  document.getElementById('match-modal').style.display='block';
+  // draw the pagelle chart + stats into the modal container
+  const container=document.getElementById('modal-pagelle');
+  if(!backendUrl){
+    container.innerHTML=`<div style="font-size:12px;color:var(--text3);text-align:center">📊 Configura il backend in Settings per vedere le pagelle</div>`;
+  }else if(!matchesCache.data){
+    container.innerHTML=`<div style="font-size:12px;color:var(--text3);text-align:center">📊 Nessun dato pagelle in cache</div>`;
+  }else{
+    drawPagelle(idx, p, container);
+  }
 }
 
 function renderPlayerPagelle(i){
