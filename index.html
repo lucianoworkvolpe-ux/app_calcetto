@@ -130,14 +130,14 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .rp-def{background:var(--def-light);color:var(--def)}
 
 /* ─── stats grid ─── */
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px 18px;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray2)}
-.stat-row{display:flex;align-items:center;gap:6px}
-.stat-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
-.stat-name{font-size:12px;color:var(--text2);width:70px;flex-shrink:0;text-transform:capitalize}
-.stat-input{width:44px;font-size:14px;font-weight:700;padding:4px 4px;border:1.5px solid var(--gray2);border-radius:7px;background:var(--gray);color:var(--text);text-align:center;min-height:36px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray2)}
+.stat-row{display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;column-gap:5px;row-gap:4px;align-items:center;background:var(--gray);border-radius:8px;padding:6px 8px}
+.stat-icon{grid-column:1;grid-row:1;font-size:13px;line-height:1}
+.stat-name{grid-column:2;grid-row:1;font-size:10.5px;color:var(--text2);text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat-input{grid-column:3;grid-row:1;width:30px;font-size:13px;font-weight:800;padding:2px 3px;border:1px solid var(--gray3);border-radius:5px;background:var(--card,#fff);color:var(--text);text-align:center}
 .stat-input:focus{outline:none;border-color:var(--green)}
-.mini-bar{flex:1;height:5px;background:var(--gray2);border-radius:3px;overflow:hidden}
-.mini-bar-fill{height:100%;background:var(--green-mid);border-radius:3px;transition:width 0.2s}
+.mini-bar{grid-column:1 / -1;grid-row:2;height:4px;background:var(--gray2);border-radius:2px;overflow:hidden}
+.mini-bar-fill{height:100%;background:var(--green-mid);border-radius:2px;transition:width 0.2s}
 
 /* ─── partita setup ─── */
 .section-header{font-size:12px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px}
@@ -528,8 +528,8 @@ input[type=file]{display:none}
    CONSTANTS
 ════════════════════════════════════ */
 let BUILD_DATE='—'; // popolata da fetchBuildDate() leggendo l'header Last-Modified di index.html
-const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta'];
-const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤'];
+const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
+const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
 const ROLES=['ATT','MED','DIF'];
 const RLBL={ATT:'Attacco',MED:'Centrocampo',DIF:'Difesa'};
 // ── MODULES ──────────────────────────────────────────────────────────────────
@@ -686,10 +686,14 @@ function applyData(d){
     players=d.players;
     players.forEach(migratePlayer);
   }
-  if(d.weights)weights=d.weights;
-  if(d.sizeA){sizeA=d.sizeA;sizeB=d.sizeB;}
-  if(d.matchFormat&&!d.sizeA){sizeA=d.matchFormat;sizeB=d.matchFormat;}
-  if(d.asymMode!==undefined)asymMode=d.asymMode;
+  if(d.weights){
+    weights=d.weights;
+    // pad/trim so weights always matches the current STATS length
+    while(weights.length<STATS.length) weights.push(1);
+    if(weights.length>STATS.length) weights=weights.slice(0,STATS.length);
+  }
+  // Match format always defaults to 5vs5 on open (saved format is intentionally ignored)
+  sizeA=5; sizeB=5; asymMode=false;
   if(d.backendUrl) backendUrl=d.backendUrl;
 }
 
@@ -1104,7 +1108,7 @@ function openPlayerCardByIdx(idx){
     sg+=`<div class="stat-row">
       <span class="stat-icon">${ICONS[j]}</span>
       <span class="stat-name">${s}</span>
-      <span class="stat-input" style="border:none;background:transparent;font-weight:800;text-align:center">${p.stats[j]}</span>
+      <span class="stat-input" style="border:none;background:transparent">${p.stats[j]}</span>
       <div class="mini-bar"><div class="mini-bar-fill" style="width:${p.stats[j]*10}%"></div></div>
     </div>`;
   });
