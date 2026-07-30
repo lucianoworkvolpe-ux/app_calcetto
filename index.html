@@ -130,13 +130,13 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .rp-def{background:var(--def-light);color:var(--def)}
 
 /* ─── stats grid ─── */
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray2)}
-.stat-row{display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;column-gap:5px;row-gap:4px;align-items:center;background:var(--gray);border-radius:8px;padding:6px 8px}
-.stat-icon{grid-column:1;grid-row:1;font-size:13px;line-height:1}
-.stat-name{grid-column:2;grid-row:1;font-size:10.5px;color:var(--text2);text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.stat-input{grid-column:3;grid-row:1;width:30px;font-size:13px;font-weight:800;padding:2px 3px;border:1px solid var(--gray3);border-radius:5px;background:var(--card,#fff);color:var(--text);text-align:center}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px 6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray2)}
+.stat-row{display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;column-gap:4px;row-gap:3px;align-items:center;background:var(--gray);border-radius:7px;padding:5px 6px}
+.stat-icon{grid-column:1;grid-row:1;font-size:11px;line-height:1}
+.stat-name{grid-column:2;grid-row:1;font-size:9.5px;color:var(--text2);text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat-input{grid-column:3;grid-row:1;width:24px;font-size:12px;font-weight:800;padding:1px 2px;border:1px solid var(--gray3);border-radius:4px;background:var(--gray2);color:var(--text);-webkit-text-fill-color:var(--text);text-align:center}
 .stat-input:focus{outline:none;border-color:var(--green)}
-.mini-bar{grid-column:1 / -1;grid-row:2;height:4px;background:var(--gray2);border-radius:2px;overflow:hidden}
+.mini-bar{grid-column:1 / -1;grid-row:2;height:3px;background:var(--gray2);border-radius:2px;overflow:hidden}
 .mini-bar-fill{height:100%;background:var(--green-mid);border-radius:2px;transition:width 0.2s}
 
 /* ─── partita setup ─── */
@@ -1108,7 +1108,7 @@ function openPlayerCardByIdx(idx){
     sg+=`<div class="stat-row">
       <span class="stat-icon">${ICONS[j]}</span>
       <span class="stat-name">${s}</span>
-      <span class="stat-input" style="border:none;background:transparent">${p.stats[j]}</span>
+      <span class="stat-input" style="border:none;background:transparent;-webkit-text-fill-color:var(--text)">${p.stats[j]}</span>
       <div class="mini-bar"><div class="mini-bar-fill" style="width:${p.stats[j]*10}%"></div></div>
     </div>`;
   });
