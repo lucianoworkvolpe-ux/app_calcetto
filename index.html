@@ -1094,16 +1094,8 @@ function openPlayerCardByIdx(idx){
   const p=players[idx];
   const ovr=calcOvr(p.stats).toFixed(1);
   const pagInfo=getPlayerPagInfo(p);
-  const roleMap={ATT:'att',MED:'mid',DIF:'def'};
   // role pills (read-only, same look as the compact header pills)
   const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
-  // role display like the Rosa toggles but non-interactive (faded when off)
-  const toggles=ROLES.map(r=>{
-    const on=p.roles.includes(r);
-    return `<div class="role-toggle role-${roleMap[r]}${on?' tog-'+roleMap[r]:''}" style="cursor:default">
-      <span class="rt-label">${RLBL[r]}</span>${on?'<span class="rt-tick">✓</span>':''}
-    </div>`;
-  }).join('');
   // stat rows identical to the Rosa grid, but read-only (value shown, no input)
   let sg='<div class="stats-grid">';
   STATS.forEach((s,j)=>{
@@ -1131,13 +1123,10 @@ function openPlayerCardByIdx(idx){
         </div>
       </div>
     </div>
-    <div class="photo-row">
+    <div class="photo-row" style="margin:2px 0 8px">
       ${avatarHTML(p,'avatar avatar-xl','')}
     </div>
-    <div class="role-section">
-      <div class="role-section-label">Ruoli</div>
-      <div class="role-toggles">${toggles}</div>
-    </div>${sg}
+    ${sg}
     <div id="modal-pagelle" style="margin-top:4px;padding-top:6px;border-top:1px solid var(--gray2)"></div>`;
   document.getElementById('match-modal').style.display='block';
   // draw the pagelle chart + stats into the modal container (same as Rosa)
