@@ -480,9 +480,9 @@ input[type=file]{display:none}
 <!-- Match detail modal -->
 <div id="match-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;padding:14px;overflow-y:auto">
   <div style="max-width:600px;margin:0 auto;background:var(--gray);border-radius:var(--radius);padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.3)">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;min-height:24px">
       <div style="font-size:16px;font-weight:800" id="match-modal-title">Partita</div>
-      <button onclick="closeMatchModal()" style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:22px;padding:4px">✕</button>
+      <button onclick="closeMatchModal()" style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:22px;padding:4px;line-height:1">✕</button>
     </div>
     <div id="match-modal-body"></div>
   </div>
@@ -1062,7 +1062,7 @@ function buildRosa(){
         <div class="role-section-label">Ruoli (anche più di uno)</div>
         <div class="role-toggles">${toggles}</div>
       </div>${sg}
-      <div id="pagelle-${i}" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--gray2)"></div>
+      <div id="pagelle-${i}" style="margin-top:4px;padding-top:6px;border-top:1px solid var(--gray2)"></div>
       <div style="text-align:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--gray2)">
         <button onclick="delPlayer(${i},event)" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:4px 8px;text-decoration:underline;text-underline-offset:2px">🗄️ Archivia giocatore</button>
       </div>
@@ -1118,8 +1118,8 @@ function openPlayerCardByIdx(idx){
 
   document.getElementById('match-modal-title').textContent='';
   document.getElementById('match-modal-body').innerHTML=`
-    <div class="player-header" style="margin:-42px 0 4px">
-      <div class="ph-top" style="padding-right:34px">
+    <div class="player-header" style="margin:0 0 6px">
+      <div class="ph-top">
         <div class="avatar-stack">
           <span class="pag-badge ${pagInfo.cls}" title="Media pagelle">${pagInfo.label}</span>
           ${avatarHTML(p,'avatar','')}
@@ -1138,7 +1138,7 @@ function openPlayerCardByIdx(idx){
       <div class="role-section-label">Ruoli</div>
       <div class="role-toggles">${toggles}</div>
     </div>${sg}
-    <div id="modal-pagelle" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--gray2)"></div>`;
+    <div id="modal-pagelle" style="margin-top:4px;padding-top:6px;border-top:1px solid var(--gray2)"></div>`;
   document.getElementById('match-modal').style.display='block';
   // draw the pagelle chart + stats into the modal container (same as Rosa)
   const container=document.getElementById('modal-pagelle');
