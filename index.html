@@ -82,19 +82,19 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .player-header{display:flex;cursor:pointer;user-select:none}
 .ph-top{display:flex;align-items:center;gap:7px;width:100%}
 .avatar-stack{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0}
-.ph-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
-.ph-name-row{display:flex;align-items:center;gap:3px}
+.ph-info{flex:1;min-width:0;display:flex;flex-direction:row;align-items:center;gap:6px}
+.ph-name-row{display:flex;align-items:center;gap:3px;flex:1;min-width:0}
+.player-name-display{flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.role-pills-display{display:flex;gap:2px;flex-wrap:wrap;flex-shrink:0}
 .avatar{width:26px;height:26px;border-radius:50%;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .avatar.has-photo,.conv-avatar.has-photo{background-size:cover;background-position:center;color:transparent}
-.avatar-xl{width:140px;height:140px;font-size:44px;border:3px solid var(--gray3);box-shadow:0 4px 14px rgba(0,0,0,0.18)}
-.photo-row{display:flex;flex-direction:column;align-items:center;gap:12px;margin:8px 0 16px}
+.avatar-xl{width:104px;height:104px;font-size:34px;border:3px solid var(--gray3);box-shadow:0 4px 14px rgba(0,0,0,0.18)}
+.photo-row{display:flex;flex-direction:column;align-items:center;gap:8px;margin:4px 0 10px}
 .av-att{background:var(--att-light);color:var(--att)}
 .av-mid{background:var(--mid-light);color:var(--mid)}
 .av-def{background:var(--def-light);color:var(--def)}
 .av-multi{background:#f0eaf8;color:#6b3fa0}
 .av-none{background:var(--gray2);color:var(--text3)}
-.player-name-display{flex:1;min-width:0;font-size:12px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.role-pills-display{display:flex;gap:2px;flex-wrap:wrap}
 .ovr-badge{font-size:8px;font-weight:800;padding:1.5px 5px;border-radius:99px;background:linear-gradient(135deg,#2e69c4,#1a4a8f);color:#fff;white-space:nowrap;box-shadow:0 1px 3px rgba(26,74,143,0.35)}
 .pag-badge{font-size:8px;font-weight:800;padding:1.5px 5px;border-radius:99px;white-space:nowrap;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.18)}
 .pag-good{background:linear-gradient(135deg,#3aad5e,#1a5a2a)}
@@ -103,8 +103,8 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .pag-none{background:linear-gradient(135deg,var(--gray3),var(--gray2));color:var(--text3);box-shadow:none}
 
 /* ─── role toggles ─── */
-.role-section{margin:12px 0 0;padding-top:12px;border-top:1px solid var(--gray2)}
-.role-section-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px}
+.role-section{margin:8px 0 0;padding-top:8px;border-top:1px solid var(--gray2)}
+.role-section-label{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px}
 .role-toggles{display:flex;gap:6px}
 .role-toggle{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 4px;border:1.5px solid;border-radius:99px;background:transparent;cursor:pointer;transition:all var(--tr);opacity:0.55}
 .role-toggle .rt-label{font-size:11px;font-weight:700}
@@ -130,11 +130,13 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .rp-def{background:var(--def-light);color:var(--def)}
 
 /* ─── stats grid ─── */
-.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px 6px;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray2)}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px 6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--gray2)}
 .stat-row{display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;column-gap:4px;row-gap:3px;align-items:center;background:var(--gray);border-radius:7px;padding:5px 6px}
 .stat-icon{grid-column:1;grid-row:1;font-size:11px;line-height:1}
 .stat-name{grid-column:2;grid-row:1;font-size:9.5px;color:var(--text2);text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.stat-input{grid-column:3;grid-row:1;width:24px;font-size:12px;font-weight:800;padding:1px 2px;border:1px solid var(--gray3);border-radius:4px;background:var(--gray2);color:var(--text);-webkit-text-fill-color:var(--text);text-align:center}
+.stat-input{grid-column:3;grid-row:1;width:30px;font-size:13px;font-weight:800;padding:2px;border:1px solid var(--gray3);border-radius:4px;background:var(--gray2);color:var(--text);-webkit-text-fill-color:var(--text);text-align:center;-moz-appearance:textfield;appearance:textfield}
+.stat-input::-webkit-outer-spin-button,
+.stat-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .stat-input:focus{outline:none;border-color:var(--green)}
 .mini-bar{grid-column:1 / -1;grid-row:2;height:3px;background:var(--gray2);border-radius:2px;overflow:hidden}
 .mini-bar-fill{height:100%;background:var(--green-mid);border-radius:2px;transition:width 0.2s}
@@ -1060,7 +1062,7 @@ function buildRosa(){
         <div class="role-section-label">Ruoli (anche più di uno)</div>
         <div class="role-toggles">${toggles}</div>
       </div>${sg}
-      <div id="pagelle-${i}" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray2)"></div>
+      <div id="pagelle-${i}" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--gray2)"></div>
       <div style="text-align:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--gray2)">
         <button onclick="delPlayer(${i},event)" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:4px 8px;text-decoration:underline;text-underline-offset:2px">🗄️ Archivia giocatore</button>
       </div>
@@ -1114,10 +1116,10 @@ function openPlayerCardByIdx(idx){
   });
   sg+='</div>';
 
-  document.getElementById('match-modal-title').textContent='👤 Scheda giocatore';
+  document.getElementById('match-modal-title').textContent='';
   document.getElementById('match-modal-body').innerHTML=`
-    <div class="player-header" style="margin-bottom:4px">
-      <div class="ph-top">
+    <div class="player-header" style="margin:-42px 0 4px">
+      <div class="ph-top" style="padding-right:34px">
         <div class="avatar-stack">
           <span class="pag-badge ${pagInfo.cls}" title="Media pagelle">${pagInfo.label}</span>
           ${avatarHTML(p,'avatar','')}
@@ -1136,7 +1138,7 @@ function openPlayerCardByIdx(idx){
       <div class="role-section-label">Ruoli</div>
       <div class="role-toggles">${toggles}</div>
     </div>${sg}
-    <div id="modal-pagelle" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray2)"></div>`;
+    <div id="modal-pagelle" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--gray2)"></div>`;
   document.getElementById('match-modal').style.display='block';
   // draw the pagelle chart + stats into the modal container (same as Rosa)
   const container=document.getElementById('modal-pagelle');
@@ -1233,29 +1235,29 @@ function drawPagelle(i,player,container){
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
         <span style="font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">📊 Andamento pagelle</span>
       </div>
-      <div style="font-size:9px;color:var(--text3);font-style:italic;opacity:.65;margin-bottom:9px">✒️ a cura della Redazione Avv. Peppe Rella</div>
+      <div style="font-size:9px;color:var(--text3);font-style:italic;opacity:.6;margin-bottom:6px">✒️ a cura della Redazione Avv. Peppe Rella</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
-        <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
           <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Partite</div>
-          <div style="font-size:15px;font-weight:800;color:var(--text)">${matchesPlayed}</div>
+          <div style="font-size:14px;font-weight:800;color:var(--text)">${matchesPlayed}</div>
         </div>
-        <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
           <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol</div>
           <div style="font-size:15px;font-weight:800;color:var(--green)">${totGoals}</div>
         </div>
-        <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
           <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol/P</div>
           <div style="font-size:15px;font-weight:800;color:var(--green)">${goalsPerMatch.toFixed(2)}</div>
         </div>
-        <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
           <div style="font-size:10px;color:var(--text2);margin-bottom:2px">% Vittorie</div>
           <div style="font-size:15px;font-weight:800;color:${winCol}">${winPct==null?'—':winPct+'%'}</div>
         </div>
-        <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
           <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Forma</div>
           <div style="font-size:13px;line-height:9px;padding:3px 0">${formDotsHTML}</div>
         </div>
-        <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+        <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
           <div style="font-size:10px;color:var(--text2);margin-bottom:2px">🙃 AG · 🚀 Meta</div>
           <div style="font-size:14px;font-weight:800;color:var(--text)">${totAutogol} · ${totMeta}</div>
         </div>
@@ -1334,45 +1336,45 @@ function drawPagelle(i,player,container){
       <span style="font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">📊 Andamento pagelle</span>
       <span style="font-size:11px;font-weight:800;color:${trendCol}">${trendArrow} ${trendLabel}</span>
     </div>
-    <div style="font-size:9px;color:var(--text3);font-style:italic;opacity:.65;margin-bottom:9px">✒️ a cura della Redazione Avv. Peppe Rella</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
-      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+    <div style="font-size:9px;color:var(--text3);font-style:italic;opacity:.6;margin-bottom:6px">✒️ a cura della Redazione Avv. Peppe Rella</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px">
+      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Media voto</div>
         <div style="font-size:15px;font-weight:800;color:var(--text)">${avg.toFixed(2)}</div>
       </div>
-      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Partite</div>
-        <div style="font-size:15px;font-weight:800;color:var(--text)">${matchesPlayed}</div>
+        <div style="font-size:14px;font-weight:800;color:var(--text)">${matchesPlayed}</div>
       </div>
-      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">vs OVR</div>
         <div style="font-size:14px;font-weight:800;color:${deltaCol}">${deltaSym} ${delta.toFixed(1)}</div>
       </div>
-      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Min · Max</div>
         <div style="font-size:13px;font-weight:800;color:var(--text)">${min} · ${max}</div>
       </div>
-      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol</div>
         <div style="font-size:15px;font-weight:800;color:var(--green)">${totGoals}</div>
       </div>
-      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol/P</div>
         <div style="font-size:15px;font-weight:800;color:var(--green)">${goalsPerMatch.toFixed(2)}</div>
       </div>
-      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">% Vittorie</div>
         <div style="font-size:15px;font-weight:800;color:${winCol}">${winPct==null?'—':winPct+'%'}</div>
       </div>
-      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Forma</div>
         <div style="font-size:13px;line-height:9px;padding:3px 0">${formDotsHTML}</div>
       </div>
-      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">🙃 Autogol</div>
         <div style="font-size:15px;font-weight:800;color:${totAutogol>0?'var(--red)':'var(--text)'}">${totAutogol}</div>
       </div>
-      <div style="background:var(--gray);border-radius:8px;padding:7px 5px;text-align:center">
+      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">🚀 Meta</div>
         <div style="font-size:15px;font-weight:800;color:${totMeta>0?'var(--amber)':'var(--text)'}">${totMeta}</div>
       </div>
@@ -2766,10 +2768,12 @@ function renderScorers(){
     const medal=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span style="display:inline-block;width:20px;text-align:center;font-weight:800;color:var(--text3);font-size:12px">${i+1}</span>`;
     el.innerHTML='<div class="section-header" style="margin:0 0 10px">⚽ Classifica marcatori</div>'+ranked.map((s,i)=>{
       const perMatch=s.pres?(s.goals/s.pres).toFixed(2):'0.00';
-      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);background:${i<3?'var(--green-light)':'var(--gray)'};margin-bottom:6px">
+      const pIdx=players.findIndex(p=>p.name===s.name);
+      const clickable=pIdx>=0;
+      return `<div ${clickable?`onclick="openPlayerCardByIdx(${pIdx})" style="cursor:pointer;`:'style="'}display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);background:${i<3?'var(--green-light)':'var(--gray)'};margin-bottom:6px">
         <span style="font-size:16px;width:24px;text-align:center">${medal(i)}</span>
         <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}</div>
+          <div style="font-size:14px;font-weight:700;color:${clickable?'var(--green)':'var(--text)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}${clickable?' <span style="font-size:9px;opacity:.6">›</span>':''}</div>
           <div style="font-size:11px;color:var(--text3)">${s.pres} ${s.pres===1?'presenza':'presenze'} · ${perMatch} gol/partita</div>
         </div>
         <span style="font-size:15px;font-weight:800;color:var(--green)">${s.goals} ⚽</span>
