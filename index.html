@@ -2078,6 +2078,127 @@ function shareMatchSummary(id){
   shareCanvas(canvas,'riepilogo_'+(m.date||'partita')+'.png','⚽ Riepilogo della partita del '+formatDate(m.date));
 }
 
+// Storico → printable B&W "foglio partita" (A4) to mark gol/assist/autogol with an X during the match
+function shareMatchSheet(id){
+  const m=matches.find(x=>x.id===id);
+  if(!m){toast('Partita non trovata');return}
+  shareCanvas(drawFieldSheet(m),'foglio_partita_'+(m.date||'partita')+'.png','📋 Foglio partita del '+formatDate(m.date));
+}
+
+function drawFieldSheet(m){
+  const W=1240, H=1754;                       // A4 portrait @150dpi (×2 → 300dpi)
+  const scale=2, canvas=document.createElement('canvas');
+  canvas.width=W*scale; canvas.height=H*scale;
+  const ctx=canvas.getContext('2d'); ctx.scale(scale,scale);
+  const INK='#000', MID='#555', BOX='#777', F=SHARE_FONT;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  const M=70, CW=W-2*M, EXTRA=2;              // margins, content width, empty rows per team
+  const line=(x1,y1,x2,y2)=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();};
+  // same player order as the match modal, so copying into the app afterwards is quick
+  const namesOf=team=>normalizeTeam(team).map(pl=>playerKey(pl.id,pl.name).name);
+  const teamA=namesOf(m.teamA), teamB=namesOf(m.teamB);
+
+  // ── header ──
+  let y=M+40;
+  ctx.fillStyle=INK; ctx.textAlign='center';
+  ctx.font=F('900 46px'); ctx.fillText('CALCIOLERCIO', W/2, y);
+  y+=40; ctx.font=F('700 26px'); ctx.fillText('Foglio partita — '+formatDate(m.date), W/2, y);
+  const notes=(m.notes||'').trim();
+  if(notes){ y+=32; ctx.fillStyle=MID; ctx.font=F('italic 500 22px'); ctx.fillText(fitText(ctx,notes,CW), W/2, y); ctx.fillStyle=INK; }
+
+  // ── result boxes ──
+  y+=34;
+  const bw=130, bh=86;
+  ctx.lineWidth=3; ctx.strokeStyle=INK;
+  ctx.strokeRect(W/2-bw-30, y, bw, bh);
+  ctx.strokeRect(W/2+30, y, bw, bh);
+  ctx.font=F('900 34px');
+  ctx.textAlign='right'; ctx.fillText('BLU', W/2-bw-50, y+bh/2+12);
+  ctx.textAlign='left';  ctx.fillText('BIANCHI', W/2+bw+50, y+bh/2+12);
+  ctx.textAlign='center'; ctx.font=F('900 40px'); ctx.fillText('–', W/2, y+bh/2+14);
+  y+=bh+38;
+  ctx.fillStyle=MID; ctx.font=F('600 20px');
+  ctx.fillText('Segna una X in una casella per ogni gol, assist o autogol', W/2, y);
+  ctx.fillStyle=INK;
+  y+=26;
+
+  // ── adaptive row height so both teams always fit on one page ──
+  const BAR=54, COLH=38, GAP=34, FOOT=110;
+  const totalRows=teamA.length+teamB.length+2*EXTRA;
+  const avail=H-M-FOOT-y-(2*(BAR+COLH)+GAP);
+  const rowH=Math.max(44,Math.min(86,Math.floor(avail/totalRows)));
+  // GOL / ASSIST fill the cell width with groups of 5 boxes (1 or 2 lines, depending on row height); AUTOGOL: 3
+  const cols=[{label:'GIOCATORE',w:240},{label:'GOL',w:375,fill:true},{label:'ASSIST',w:375,fill:true},{label:'AUTOGOL',w:110,n:3}];
+  const twoRows=Math.floor((rowH-14)/2)>=22;
+  const bs=twoRows?Math.min(30,Math.floor((rowH-14)/2)):Math.min(26,Math.floor(rowH*0.5));
+  const gap=7, grp=16, rowGap=5, cellPad=8;
+  // how many boxes fit on one line of a cell, always in whole groups of 5
+  const perLine=w=>{
+    const groupW=5*bs+4*gap;
+    const g=Math.max(1,Math.floor((w-2*cellPad+grp)/(groupW+grp)));
+    return g*5;
+  };
+
+  // draw the X-boxes of a cell: 'fill' cells use every line available, others a fixed count on one line
+  const drawBoxes=(x0,y0,w,c)=>{
+    const lines=c.fill?Array(twoRows?2:1).fill(perLine(w)):[c.n];
+    const blockH=lines.length*bs+(lines.length-1)*rowGap;
+    let by=y0+(rowH-blockH)/2;
+    ctx.lineWidth=2; ctx.strokeStyle=BOX;
+    lines.forEach(cnt=>{
+      const xs=[]; let cx=0;
+      for(let k=0;k<cnt;k++){ xs.push(cx); cx+=bs+gap; if((k+1)%5===0) cx+=grp-gap; }
+      const off=x0+(w-(xs[xs.length-1]+bs))/2;
+      xs.forEach(bx=>ctx.strokeRect(off+bx, by, bs, bs));
+      by+=bs+rowGap;
+    });
+  };
+
+  const drawTable=(label,names,isBlue,y0)=>{
+    // team bar: Blu = solid black, Bianchi = outlined (readable in B&W)
+    if(isBlue){ ctx.fillStyle=INK; ctx.fillRect(M,y0,CW,BAR); ctx.fillStyle='#fff'; }
+    else { ctx.lineWidth=3; ctx.strokeStyle=INK; ctx.strokeRect(M,y0,CW,BAR); ctx.fillStyle=INK; }
+    ctx.textAlign='left'; ctx.font=F('900 30px'); ctx.fillText(label, M+20, y0+37);
+    ctx.textAlign='right'; ctx.font=F('600 20px'); ctx.fillText(names.length+' giocatori', M+CW-20, y0+35);
+    const top=y0+BAR;
+    // column headers
+    ctx.fillStyle=INK; ctx.font=F('800 19px');
+    let x=M;
+    cols.forEach((c,i)=>{ ctx.textAlign=i?'center':'left'; ctx.fillText(c.label, i?x+c.w/2:x+16, top+26); x+=c.w; });
+    // rows (players + empty rows for late arrivals)
+    const rows=[...names, ...Array(EXTRA).fill('')];
+    let ry=top+COLH;
+    rows.forEach(nm=>{
+      if(nm){ ctx.fillStyle=INK; ctx.textAlign='left'; ctx.font=F('700 '+Math.min(26,Math.round(rowH*0.42))+'px');
+        ctx.fillText(fitText(ctx,nm,cols[0].w-28), M+16, ry+rowH/2+9); }
+      let cx=M+cols[0].w;
+      cols.slice(1).forEach(c=>{ drawBoxes(cx,ry,c.w,c); cx+=c.w; });
+      ry+=rowH;
+    });
+    const bottom=ry;
+    // grid
+    ctx.strokeStyle=INK; ctx.lineWidth=1.5;
+    line(M,top+COLH,M+CW,top+COLH);
+    for(let k=1;k<rows.length;k++) line(M,top+COLH+k*rowH,M+CW,top+COLH+k*rowH);
+    let vx=M; cols.forEach((c,i)=>{ if(i>0) line(vx,top,vx,bottom); vx+=c.w; });
+    ctx.lineWidth=3; ctx.strokeRect(M,y0,CW,bottom-y0);
+    return bottom;
+  };
+
+  const endA=drawTable('BLU',teamA,true,y);
+  const endB=drawTable('BIANCHI',teamB,false,endA+GAP);
+
+  // ── notes lines + credit ──
+  let ny=endB+46;
+  ctx.fillStyle=INK; ctx.textAlign='left'; ctx.font=F('800 20px'); ctx.fillText('NOTE', M, ny);
+  ctx.strokeStyle=MID; ctx.lineWidth=1.2;
+  line(M+80,ny+2,M+CW,ny+2);
+  if(ny+40<H-M) line(M,ny+40,M+CW,ny+40);
+  ctx.fillStyle=MID; ctx.textAlign='center'; ctx.font=F('italic 500 15px');
+  ctx.fillText('CalcioLercio — da riportare nell\'app con il tasto Edita', W/2, H-M+30);
+  return canvas;
+}
+
 // rounded-rect helper for canvas
 function roundRect(ctx,x,y,w,h,r){
   ctx.beginPath();
@@ -3408,11 +3529,12 @@ function openMatch(id){
 
   document.getElementById('match-modal-body').innerHTML=`
     <div id="match-edit-bar" style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-      <div style="display:flex;gap:6px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-primary btn-sm" onclick="shareMatchFormations('${id}')" style="background:#25D366;border-color:#25D366">📲 Formazioni</button>
         <button class="btn btn-primary btn-sm" onclick="shareMatchSummary('${id}')">🖼️ Riepilogo</button>
+        <button class="btn btn-secondary btn-sm" onclick="shareMatchSheet('${id}')" title="Foglio A4 in bianco e nero da stampare e compilare in campo">🖨️ Foglio</button>
       </div>
-      <button id="edit-toggle-btn" class="btn btn-secondary btn-sm" onclick="setMatchEditable(true)" style="border:2px solid var(--green);color:var(--green)">✏️ Edita</button>
+      <button id="edit-toggle-btn" class="btn btn-secondary btn-sm" onclick="setMatchEditable(true)" style="border:2px solid var(--green);color:var(--green);margin-left:auto">✏️ Edita</button>
     </div>
     <div id="match-fields">
       <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Descrizione</div>
