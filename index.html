@@ -207,6 +207,7 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .btn-danger{background:var(--red-light);color:var(--red)}
 .btn-full{width:100%}
 .btn-sm{padding:8px 14px;font-size:12px;min-height:38px}
+.mbar-btn{padding:8px 6px;gap:3px}
 .btn-row{display:flex;gap:8px;flex-wrap:wrap}
 
 /* ─── pitch ─── */
@@ -3541,13 +3542,13 @@ function openMatch(id){
     </div>`;
 
   document.getElementById('match-modal-body').innerHTML=`
-    <div id="match-edit-bar" style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px">
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn btn-primary btn-sm" onclick="shareMatchFormations('${id}')" style="background:#25D366;border-color:#25D366">📲 Formazioni</button>
-        <button class="btn btn-primary btn-sm" onclick="shareMatchSummary('${id}')">🖼️ Riepilogo</button>
-        <button class="btn btn-secondary btn-sm" onclick="shareMatchSheet('${id}')" title="Foglio A4 in bianco e nero da stampare e compilare in campo">🖨️ Foglio</button>
+    <div id="match-edit-bar" style="display:flex;justify-content:space-between;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:10px">
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm mbar-btn" onclick="shareMatchFormations('${id}')" style="background:#25D366;border-color:#25D366">📲 Formazioni</button>
+        <button class="btn btn-primary btn-sm mbar-btn" onclick="shareMatchSummary('${id}')">🖼️ Riepilogo</button>
+        <button class="btn btn-secondary btn-sm mbar-btn" onclick="shareMatchSheet('${id}')" title="Foglio A4 in bianco e nero da stampare e compilare in campo">🖨️ Foglio</button>
       </div>
-      <button id="edit-toggle-btn" class="btn btn-secondary btn-sm" onclick="setMatchEditable(true)" style="border:2px solid var(--green);color:var(--green);margin-left:auto">✏️ Edita</button>
+      <button id="edit-toggle-btn" class="btn btn-secondary btn-sm mbar-btn" onclick="setMatchEditable(true)" title="Modifica partita" aria-label="Modifica partita" style="border:2px solid var(--green);color:var(--green);margin-left:auto;font-size:15px;padding:6px 9px">✏️</button>
     </div>
     <div id="match-fields">
       <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Descrizione</div>
