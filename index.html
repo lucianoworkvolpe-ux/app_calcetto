@@ -223,7 +223,7 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 @media(max-width:420px){.team-row{grid-template-columns:1fr}}
 .team-card{border-radius:var(--radius);padding:12px}
 .team-blue{background:var(--blue-light)}
-.team-amber{background:var(--amber-light)}
+.team-bianchi{background:var(--teamb-light)}
 .team-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
 .team-nm{font-size:14px;font-weight:800}
 .team-nm.bl{color:var(--blue)}
@@ -364,7 +364,7 @@ input[type=file]{display:none}
       </div>
       <div style="font-size:18px;color:var(--text3);font-weight:300">vs</div>
       <!-- Team B -->
-      <div style="display:flex;align-items:center;gap:8px;background:var(--amber-light);border-radius:var(--radius-sm);padding:8px 12px">
+      <div style="display:flex;align-items:center;gap:8px;background:var(--teamb-light);border-radius:var(--radius-sm);padding:8px 12px">
         <button class="adj-btn" onclick="adjTeam('B',-1)">−</button>
         <span id="sz-b" style="font-size:22px;font-weight:800;color:var(--teamb);min-width:24px;text-align:center">6</span>
         <button class="adj-btn" onclick="adjTeam('B',1)">+</button>
@@ -408,7 +408,7 @@ input[type=file]{display:none}
         <div style="font-size:11px;color:var(--blue);font-weight:700;opacity:.7;margin-bottom:7px" id="mod-label-a"></div>
         <div id="chips-a"></div>
       </div>
-      <div class="team-card team-amber" id="team-card-B">
+      <div class="team-card team-bianchi" id="team-card-B">
         <div class="team-hd"><span class="team-nm am">⚪ Bianchi</span><span class="media-pill mp-am" id="avg-b">—</span></div>
         <div style="font-size:11px;color:var(--teamb);font-weight:700;opacity:.7;margin-bottom:7px" id="mod-label-b"></div>
         <div id="chips-b"></div>
@@ -1835,115 +1835,247 @@ function renderResult(){
 /* ════════════════════════════════════
    CONDIVIDI FORMAZIONI (PNG)
 ════════════════════════════════════ */
-async function shareTeams(){
-  if(!allCombos.length){toast('Genera prima le squadre');return}
-  const c=allCombos[currentIdx];
-  const roleOrder={ATT:0,MED:1,DIF:2};
-  const sortTeam=t=>t.map(i=>({name:players[i].name,score:wScore(players[i]),role:primaryRole(players[i])}))
-    .sort((a,b)=>roleOrder[a.role]-roleOrder[b.role]);
-  const tA=sortTeam(c.tA), tB=sortTeam(c.tB);
-
-  // ── canvas geometry (retina) ──
-  const W=900, scale=2;
-  const padX=50, colGap=40;
-  const headerH=190, rowH=58, footH=70;
-  const bodyRows=Math.max(tA.length,tB.length);
-  const H=headerH + bodyRows*rowH + footH + 30;
-  const canvas=document.createElement('canvas');
-  canvas.width=W*scale; canvas.height=H*scale;
-  const ctx=canvas.getContext('2d');
-  ctx.scale(scale,scale);
-
-  const BLUE='#3a8fef', WHITE='#e9ecf2', BG='#0f1620', CARD='#1a2230', TXT='#eef2f8', SUB='#8a94a6';
-
-  // background
-  ctx.fillStyle=BG; ctx.fillRect(0,0,W,H);
-
-  // header
-  ctx.textAlign='center';
-  ctx.fillStyle=TXT;
-  ctx.font='800 38px system-ui,-apple-system,sans-serif';
-  ctx.fillText('⚽ CalcioLercio', W/2, 56);
-  ctx.fillStyle=SUB;
-  ctx.font='600 19px system-ui,-apple-system,sans-serif';
-  const today=new Date();
-  const dstr=String(today.getDate()).padStart(2,'0')+'/'+String(today.getMonth()+1).padStart(2,'0')+'/'+today.getFullYear();
-  ctx.fillText('Formazioni del '+dstr, W/2, 86);
-
-  // column geometry
-  const colW=(W-2*padX-colGap)/2;
-  const xA=padX, xB=padX+colW+colGap;
-  const headerBlockY=110, headerBlockH=58;
-
-  const drawTeamHeader=(x,color,textCol,label,avg,mod)=>{
-    ctx.fillStyle=color;
-    roundRect(ctx,x,headerBlockY,colW,headerBlockH,12); ctx.fill();
-    ctx.fillStyle=textCol;
-    ctx.textAlign='left';
-    ctx.font='800 24px system-ui,-apple-system,sans-serif';
-    ctx.fillText(label, x+18, headerBlockY+27);
-    ctx.font='600 15px system-ui,-apple-system,sans-serif';
-    ctx.globalAlpha=0.92;
-    ctx.fillText((mod?mod+'  ·  ':'')+'Media '+avg.toFixed(1), x+18, headerBlockY+48);
-    ctx.globalAlpha=1;
-  };
-  drawTeamHeader(xA,BLUE,'#fff','🔵 Blu',c.sA,c.modA?c.modA.notation:'');
-  drawTeamHeader(xB,WHITE,'#16202c','⚪ Bianchi',c.sB,c.modB?c.modB.notation:'');
-
-  // player rows
-  const drawRows=(x,team,accent)=>{
-    let y=headerH-8;
-    team.forEach(p=>{
-      ctx.fillStyle=CARD;
-      roundRect(ctx,x,y,colW,rowH-8,10); ctx.fill();
-      // role dot
-      const rc=p.role==='ATT'?'#ef5350':p.role==='DIF'?'#42a5f5':'#66bb6a';
-      ctx.fillStyle=rc;
-      ctx.beginPath(); ctx.arc(x+22,y+(rowH-8)/2,7,0,7); ctx.fill();
-      // name
-      ctx.fillStyle=TXT; ctx.textAlign='left';
-      ctx.font='700 21px system-ui,-apple-system,sans-serif';
-      let nm=p.name; if(nm.length>20)nm=nm.slice(0,19)+'…';
-      ctx.fillText(nm, x+40, y+(rowH-8)/2+7);
-      // score
-      ctx.fillStyle=accent; ctx.textAlign='right';
-      ctx.font='800 20px system-ui,-apple-system,sans-serif';
-      ctx.fillText(p.score.toFixed(1), x+colW-16, y+(rowH-8)/2+7);
-      y+=rowH;
-    });
-  };
-  drawRows(xA,tA,BLUE);
-  drawRows(xB,tB,WHITE);
-
-  // footer (balance)
-  const fy=H-footH+10;
-  ctx.textAlign='center';
-  const balOk=c.diff<=0.5;
-  ctx.fillStyle=balOk?'#2e7d32':'#b8860b';
-  roundRect(ctx,W/2-180,fy,360,40,20); ctx.fill();
-  ctx.fillStyle='#fff';
-  ctx.font='700 18px system-ui,-apple-system,sans-serif';
-  ctx.fillText((balOk?'✓ Squadre bilanciate':'⚠ Differenza media')+'  ·  diff '+c.diff.toFixed(2), W/2, fy+26);
-
-  // export
+/* ── Shared image export: Web Share API on mobile, download fallback ── */
+function shareCanvas(canvas, filename, text){
   toast('⏳ Genero immagine...');
   canvas.toBlob(async(blob)=>{
     if(!blob){toast('Errore immagine');return}
-    const file=new File([blob],'formazioni.png',{type:'image/png'});
-    const shareData={files:[file],title:'CalcioLercio',text:'⚽ Formazioni di oggi'};
-    // Web Share API (mobile) with file support
+    const file=new File([blob],filename,{type:'image/png'});
+    const shareData={files:[file],title:'CalcioLercio',text};
     if(navigator.canShare && navigator.canShare({files:[file]})){
       try{ await navigator.share(shareData); return; }
       catch(e){ if(e.name==='AbortError')return; }
     }
-    // fallback: download
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url; a.download='formazioni.png'; a.style.display='none';
+    a.href=url; a.download=filename; a.style.display='none';
     document.body.appendChild(a); a.click();
     setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},200);
     toast('Immagine salvata');
   },'image/png');
+}
+
+// shared palette + helpers for the share images
+const SHARE_C={BLUE:'#3a8fef', WHITE:'#e9ecf2', BG:'#0f1620', CARD:'#1a2230', TXT:'#eef2f8', SUB:'#8a94a6'};
+const SHARE_FONT=w=>`${w} system-ui,-apple-system,sans-serif`;
+function newShareCanvas(W,H){
+  const scale=2, canvas=document.createElement('canvas');
+  canvas.width=W*scale; canvas.height=H*scale;
+  const ctx=canvas.getContext('2d'); ctx.scale(scale,scale);
+  ctx.fillStyle=SHARE_C.BG; ctx.fillRect(0,0,W,H);
+  return {canvas,ctx};
+}
+// truncate text with … so it fits maxW at the current ctx.font
+function fitText(ctx,txt,maxW){
+  let t=String(txt||'');
+  if(ctx.measureText(t).width<=maxW)return t;
+  while(t.length>1 && ctx.measureText(t+'…').width>maxW) t=t.slice(0,-1);
+  return t+'…';
+}
+function drawShareHeader(ctx,W,subtitle){
+  ctx.textAlign='center';
+  ctx.fillStyle=SHARE_C.TXT; ctx.font=SHARE_FONT('800 38px');
+  ctx.fillText('⚽ CalcioLercio', W/2, 56);
+  ctx.fillStyle=SHARE_C.SUB; ctx.font=SHARE_FONT('600 19px');
+  ctx.fillText(subtitle, W/2, 86);
+}
+// coloured team block (Blu = blue/white text, Bianchi = silver/dark text)
+function drawTeamBlock(ctx,x,y,w,h,isBlue,line2){
+  ctx.fillStyle=isBlue?SHARE_C.BLUE:SHARE_C.WHITE;
+  roundRect(ctx,x,y,w,h,12); ctx.fill();
+  ctx.fillStyle=isBlue?'#fff':'#16202c'; ctx.textAlign='left';
+  ctx.font=SHARE_FONT('800 24px');
+  ctx.fillText(isBlue?'🔵 Blu':'⚪ Bianchi', x+18, y+27);
+  ctx.font=SHARE_FONT('600 15px'); ctx.globalAlpha=0.92;
+  ctx.fillText(line2, x+18, y+48);
+  ctx.globalAlpha=1;
+}
+
+/* ── Formations image (used by Gioca and by saved matches) ──
+   o = {tA,tB:[{name,score|null,role}], sA,sB (num|null), modA,modB (notation), diff (num|null), subtitle} */
+function drawFormationsCanvas(o){
+  const W=900, padX=50, colGap=40, headerH=190, rowH=58, footH=70;
+  const bodyRows=Math.max(o.tA.length,o.tB.length);
+  const H=headerH + bodyRows*rowH + (o.diff!=null?footH:20) + 30;
+  const {canvas,ctx}=newShareCanvas(W,H);
+  drawShareHeader(ctx,W,o.subtitle);
+
+  const colW=(W-2*padX-colGap)/2, xA=padX, xB=padX+colW+colGap;
+  const avgTxt=v=>'Media '+(v!=null?v.toFixed(1):'—');
+  drawTeamBlock(ctx,xA,110,colW,58,true,(o.modA?o.modA+'  ·  ':'')+avgTxt(o.sA));
+  drawTeamBlock(ctx,xB,110,colW,58,false,(o.modB?o.modB+'  ·  ':'')+avgTxt(o.sB));
+
+  const drawRows=(x,team,accent)=>{
+    let y=headerH-8;
+    team.forEach(p=>{
+      ctx.fillStyle=SHARE_C.CARD; roundRect(ctx,x,y,colW,rowH-8,10); ctx.fill();
+      ctx.fillStyle=p.role==='ATT'?'#ef5350':p.role==='DIF'?'#42a5f5':'#66bb6a';
+      ctx.beginPath(); ctx.arc(x+22,y+(rowH-8)/2,7,0,7); ctx.fill();
+      ctx.fillStyle=SHARE_C.TXT; ctx.textAlign='left'; ctx.font=SHARE_FONT('700 21px');
+      ctx.fillText(fitText(ctx,p.name,colW-110), x+40, y+(rowH-8)/2+7);
+      ctx.fillStyle=accent; ctx.textAlign='right'; ctx.font=SHARE_FONT('800 20px');
+      ctx.fillText(p.score!=null?p.score.toFixed(1):'—', x+colW-16, y+(rowH-8)/2+7);
+      y+=rowH;
+    });
+  };
+  drawRows(xA,o.tA,SHARE_C.BLUE);
+  drawRows(xB,o.tB,SHARE_C.WHITE);
+
+  if(o.diff!=null){
+    const fy=H-footH+10, balOk=o.diff<=0.5;
+    ctx.textAlign='center';
+    ctx.fillStyle=balOk?'#2e7d32':'#b8860b';
+    roundRect(ctx,W/2-180,fy,360,40,20); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font=SHARE_FONT('700 18px');
+    ctx.fillText((balOk?'✓ Squadre bilanciate':'⚠ Differenza media')+'  ·  diff '+o.diff.toFixed(2), W/2, fy+26);
+  }
+  return canvas;
+}
+
+const ROLE_ORDER={ATT:0,MED:1,DIF:2};
+
+// Gioca → share the currently displayed combination
+function shareTeams(){
+  if(!allCombos.length){toast('Genera prima le squadre');return}
+  const c=allCombos[currentIdx];
+  const sortTeam=t=>t.map(i=>({name:players[i].name,score:wScore(players[i]),role:primaryRole(players[i])}))
+    .sort((a,b)=>ROLE_ORDER[a.role]-ROLE_ORDER[b.role]);
+  const today=new Date();
+  const dstr=String(today.getDate()).padStart(2,'0')+'/'+String(today.getMonth()+1).padStart(2,'0')+'/'+today.getFullYear();
+  const canvas=drawFormationsCanvas({
+    tA:sortTeam(c.tA), tB:sortTeam(c.tB), sA:c.sA, sB:c.sB,
+    modA:c.modA?c.modA.notation:'', modB:c.modB?c.modB.notation:'',
+    diff:c.diff, subtitle:'Formazioni del '+dstr
+  });
+  shareCanvas(canvas,'formazioni.png','⚽ Formazioni di oggi');
+}
+
+// resolve a saved {id,name} team entry to the current roster player (id first, then name)
+function rosterPlayerFor(pl){
+  return players.find(p=>pl.id && p.id===pl.id) || players.find(p=>p.name===pl.name) || null;
+}
+
+// Storico → share the formations of a saved match
+function shareMatchFormations(id){
+  const m=matches.find(x=>x.id===id);
+  if(!m){toast('Partita non trovata');return}
+  const build=team=>normalizeTeam(team).map(pl=>{
+    const p=rosterPlayerFor(pl);
+    return {name:p?p.name:pl.name, score:p?wScore(p):null, role:p?primaryRole(p):'MED'};
+  }).sort((a,b)=>ROLE_ORDER[a.role]-ROLE_ORDER[b.role]);
+  const tA=build(m.teamA), tB=build(m.teamB);
+  const avg=t=>{const v=t.filter(p=>p.score!=null); return v.length?v.reduce((s,p)=>s+p.score,0)/v.length:null;};
+  const sA=avg(tA), sB=avg(tB);
+  const canvas=drawFormationsCanvas({
+    tA, tB, sA, sB, modA:'', modB:'',
+    diff:(sA!=null&&sB!=null)?Math.abs(sA-sB):null,
+    subtitle:'Formazioni del '+formatDate(m.date)
+  });
+  shareCanvas(canvas,'formazioni_'+(m.date||'partita')+'.png','⚽ Formazioni della partita del '+formatDate(m.date));
+}
+
+// Storico → share a match summary: score, highlights, per-player pagelle with gol/assist
+function shareMatchSummary(id){
+  const m=matches.find(x=>x.id===id);
+  if(!m){toast('Partita non trovata');return}
+  const C=SHARE_C;
+  const ratings=(matchesCache.data?.ratings||[]).filter(r=>r.matchId===id);
+  const h=matchHighlights(m);
+  const rowsFor=team=>normalizeTeam(team).map(pl=>{
+    const k=playerKey(pl.id,pl.name).key;
+    const r=ratings.find(x=>playerKey(x.playerId,x.player).key===k);
+    const v=r?parseFloat(r.rating):NaN;
+    return {
+      name:playerKey(pl.id,pl.name).name,
+      v:(!isNaN(v)&&v>=1)?v:null,
+      g:r?parseInt(r.goals)||0:0, a:r?parseInt(r.assist)||0:0,
+      ag:r?parseInt(r.autogol)||0:0, mt:r?parseInt(r.meta)||0:0
+    };
+  }).sort((x,y)=>(y.v??-1)-(x.v??-1) || x.name.localeCompare(y.name)); // best voto first
+  const tA=rowsFor(m.teamA), tB=rowsFor(m.teamB);
+
+  // geometry
+  const W=900, padX=50, colGap=40, colW=(W-2*padX-colGap)/2;
+  const notes=(m.notes||'').trim();
+  const sbY=notes?130:110, sbH=128;           // scoreboard
+  const hlY=sbY+sbH+18, hlH=84;               // highlights tiles
+  const tbY=hlY+hlH+22, tbH=58;               // team blocks
+  const rowH=64, rowsY=tbY+tbH+10;
+  const bodyRows=Math.max(tA.length,tB.length);
+  const H=rowsY+bodyRows*rowH+56;
+  const {canvas,ctx}=newShareCanvas(W,H);
+  drawShareHeader(ctx,W,'Partita del '+formatDate(m.date));
+  if(notes){
+    ctx.fillStyle=C.SUB; ctx.font=SHARE_FONT('italic 500 17px');
+    ctx.fillText(fitText(ctx,notes,W-2*padX), W/2, 112);
+  }
+
+  // ── scoreboard ──
+  ctx.fillStyle=C.CARD; roundRect(ctx,padX,sbY,W-2*padX,sbH,16); ctx.fill();
+  const hasScore=(m.scoreA!==''&&m.scoreA!=null&&m.scoreB!==''&&m.scoreB!=null);
+  const a=parseInt(m.scoreA), b=parseInt(m.scoreB);
+  ctx.font=SHARE_FONT('800 26px');
+  ctx.textAlign='left';  ctx.fillStyle=C.BLUE;  ctx.fillText('🔵 Blu', padX+28, sbY+56);
+  ctx.textAlign='right'; ctx.fillStyle=C.WHITE; ctx.fillText('Bianchi ⚪', W-padX-28, sbY+56);
+  ctx.font=SHARE_FONT('600 15px'); ctx.fillStyle=C.SUB;
+  ctx.textAlign='left';  ctx.fillText('Media voto '+(h.avgA!=null?h.avgA.toFixed(1):'—'), padX+28, sbY+82);
+  ctx.textAlign='right'; ctx.fillText('Media voto '+(h.avgB!=null?h.avgB.toFixed(1):'—'), W-padX-28, sbY+82);
+  ctx.textAlign='center'; ctx.fillStyle=C.TXT; ctx.font=SHARE_FONT('800 64px');
+  ctx.fillText(hasScore?`${a} – ${b}`:'– : –', W/2, sbY+78);
+  let win='Risultato non inserito', winCol=C.SUB;
+  if(hasScore){
+    if(a>b){win='🏆 Vince Blu'; winCol=C.BLUE;}
+    else if(b>a){win='🏆 Vince Bianchi'; winCol=C.WHITE;}
+    else {win='🤝 Pareggio'; winCol=C.SUB;}
+  }
+  ctx.font=SHARE_FONT('800 18px'); ctx.fillStyle=winCol;
+  ctx.fillText(win, W/2, sbY+112);
+
+  // ── highlights tiles ──
+  const tiles=[
+    ['⭐ MVP', h.mvp?h.mvp.name:null, h.mvp?'voto '+h.mvp.v.toFixed(1):'', '#3aad5e'],
+    ['⚽ Capocannoniere', h.topScorer?h.topScorer.name:null, h.topScorer?h.topScorer.g+' gol':'', '#3aad5e'],
+    ['🅰️ Assistman', h.topAssist?h.topAssist.name:null, h.topAssist?h.topAssist.a+' assist':'', '#3aad5e'],
+    ['🥴 Peggiore', (h.worst&&!(h.mvp&&h.worst.name===h.mvp.name))?h.worst.name:null, (h.worst&&!(h.mvp&&h.worst.name===h.mvp.name))?'voto '+h.worst.v.toFixed(1):'', '#e05c5c']
+  ];
+  const tGap=12, tW=(W-2*padX-3*tGap)/4;
+  tiles.forEach(([lbl,name,val,col],i)=>{
+    const x=padX+i*(tW+tGap);
+    ctx.fillStyle=C.CARD; roundRect(ctx,x,hlY,tW,hlH,12); ctx.fill();
+    ctx.textAlign='left'; ctx.fillStyle=C.SUB; ctx.font=SHARE_FONT('600 14px');
+    ctx.fillText(fitText(ctx,lbl,tW-24), x+12, hlY+24);
+    ctx.fillStyle=name?C.TXT:C.SUB; ctx.font=SHARE_FONT('800 19px');
+    ctx.fillText(fitText(ctx,name||'—',tW-24), x+12, hlY+50);
+    if(val){ ctx.fillStyle=col; ctx.font=SHARE_FONT('700 15px'); ctx.fillText(val, x+12, hlY+72); }
+  });
+
+  // ── team pagelle ──
+  const xA=padX, xB=padX+colW+colGap;
+  const cntPlayed=t=>t.filter(p=>p.v!=null).length;
+  drawTeamBlock(ctx,xA,tbY,colW,tbH,true, hasScore?`${a} gol · ${cntPlayed(tA)} votati`:`${cntPlayed(tA)} votati`);
+  drawTeamBlock(ctx,xB,tbY,colW,tbH,false,hasScore?`${b} gol · ${cntPlayed(tB)} votati`:`${cntPlayed(tB)} votati`);
+  const voteCol=v=>v==null?C.SUB:v>=6.5?'#3aad5e':v<5.5?'#e05c5c':'#e0a92e';
+  const drawRows=(x,team)=>{
+    let y=rowsY;
+    team.forEach(p=>{
+      ctx.fillStyle=C.CARD; roundRect(ctx,x,y,colW,rowH-8,10); ctx.fill();
+      const isMvp=h.mvp && p.name===h.mvp.name;
+      ctx.textAlign='left'; ctx.fillStyle=C.TXT; ctx.font=SHARE_FONT('700 20px');
+      ctx.fillText(fitText(ctx,(isMvp?'⭐ ':'')+p.name,colW-90), x+16, y+25);
+      const chips=[p.g?`⚽ ${p.g}`:'', p.a?`🅰️ ${p.a}`:'', p.ag?`🙃 ${p.ag}`:'', p.mt?`🚀 ${p.mt}`:''].filter(Boolean).join('   ');
+      if(chips){ ctx.fillStyle=C.SUB; ctx.font=SHARE_FONT('600 15px'); ctx.fillText(fitText(ctx,chips,colW-90), x+16, y+46); }
+      ctx.textAlign='right'; ctx.fillStyle=voteCol(p.v); ctx.font=SHARE_FONT('800 28px');
+      ctx.fillText(p.v!=null?(Number.isInteger(p.v)?String(p.v):p.v.toFixed(1)):'—', x+colW-16, y+(rowH-8)/2+10);
+      y+=rowH;
+    });
+  };
+  drawRows(xA,tA); drawRows(xB,tB);
+
+  // footer
+  ctx.textAlign='center'; ctx.fillStyle=C.SUB; ctx.font=SHARE_FONT('italic 500 14px');
+  ctx.fillText('✒️ pagelle a cura della Redazione Avv. Peppe Rella', W/2, H-22);
+
+  shareCanvas(canvas,'riepilogo_'+(m.date||'partita')+'.png','⚽ Riepilogo della partita del '+formatDate(m.date));
 }
 
 // rounded-rect helper for canvas
@@ -3136,7 +3268,7 @@ function matchHighlights(m){
   const teamA=normalizeTeam(m.teamA), teamB=normalizeTeam(m.teamB);
   const inTeam=(pl,team)=>team.some(t=>(t.id&&pl.id&&t.id===pl.id)||t.name===pl.name);
 
-  let mvp=null, worst=null, topScorer=null;
+  let mvp=null, worst=null, topScorer=null, topAssist=null;
   let sumA=0,cntA=0, sumB=0,cntB=0;
 
   ratings.forEach(r=>{
@@ -3156,10 +3288,11 @@ function matchHighlights(m){
       else if(inTeam(pl,teamB)){sumB+=rt;cntB++;}
     }
     if(g>0 && (!topScorer||g>topScorer.g)) topScorer={name,g};
+    if(ast>0 && (!topAssist||ast>topAssist.a)) topAssist={name,a:ast};
   });
 
   return {
-    mvp, worst, topScorer,
+    mvp, worst, topScorer, topAssist,
     avgA: cntA?sumA/cntA:null,
     avgB: cntB?sumB/cntB:null
   };
@@ -3210,7 +3343,7 @@ function openMatch(id){
 
   const renderTeam=(title, team, isBlue)=>{
     const cls=isBlue?'bl':'am';
-    const bg=isBlue?'var(--blue-light)':'var(--amber-light)';
+    const bg=isBlue?'var(--blue-light)':'var(--teamb-light)';
     const col=isBlue?'var(--blue)':'var(--teamb)';
     return `<div style="background:${bg};border-radius:var(--radius-sm);padding:10px;flex:1">
       <div style="font-size:12px;font-weight:800;color:${col};margin-bottom:8px">${title}</div>
@@ -3274,7 +3407,11 @@ function openMatch(id){
     </div>`;
 
   document.getElementById('match-modal-body').innerHTML=`
-    <div id="match-edit-bar" style="display:flex;justify-content:flex-end;margin-bottom:10px">
+    <div id="match-edit-bar" style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-primary btn-sm" onclick="shareMatchFormations('${id}')" style="background:#25D366;border-color:#25D366">📲 Formazioni</button>
+        <button class="btn btn-primary btn-sm" onclick="shareMatchSummary('${id}')">🖼️ Riepilogo</button>
+      </div>
       <button id="edit-toggle-btn" class="btn btn-secondary btn-sm" onclick="setMatchEditable(true)" style="border:2px solid var(--green);color:var(--green)">✏️ Edita</button>
     </div>
     <div id="match-fields">
