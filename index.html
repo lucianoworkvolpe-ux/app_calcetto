@@ -417,6 +417,7 @@ input[type=file]{display:none}
 
     <div style="display:flex;gap:8px;margin:4px 0 14px">
       <button class="btn btn-primary" style="flex:1;background:#25D366;border-color:#25D366" onclick="shareTeams()">📲 Condividi</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="shareTeamsSheet()" title="Foglio A4 in bianco e nero da stampare e compilare in campo">🖨️ Foglio</button>
       <button class="btn btn-primary" style="flex:1" onclick="newMatch()">📅 Crea partita</button>
     </div>
 
@@ -2076,6 +2077,18 @@ function shareMatchSummary(id){
   ctx.fillText('✒️ pagelle a cura della Redazione Avv. Peppe Rella', W/2, H-22);
 
   shareCanvas(canvas,'riepilogo_'+(m.date||'partita')+'.png','⚽ Riepilogo della partita del '+formatDate(m.date));
+}
+
+// Gioca → printable field sheet of the combination on screen (no need to create the match first).
+// Player order matches the match that "Crea partita" will save, so copying back is quick.
+function shareTeamsSheet(){
+  if(!allCombos.length){toast('Genera prima le squadre');return}
+  const c=allCombos[currentIdx];
+  const today=new Date().toISOString().substring(0,10);
+  const m={date:today, notes:'',
+    teamA:c.tA.map(i=>({id:players[i].id,name:players[i].name})),
+    teamB:c.tB.map(i=>({id:players[i].id,name:players[i].name}))};
+  shareCanvas(drawFieldSheet(m),'foglio_partita_'+today+'.png','📋 Foglio partita del '+formatDate(today));
 }
 
 // Storico → printable B&W "foglio partita" (A4) to mark gol/assist/autogol with an X during the match
