@@ -279,6 +279,13 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 .goal-stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .goal-stepper.goal-warn{outline:2px solid var(--red);outline-offset:1px;border-radius:8px}
 .goal-stepper.goal-warn input{border-color:var(--red);background:#fde8e8;color:#a82020}
+/* compact counters in match modal (gol / assist / autogol / meta): 2x2 on mobile, 4 in a row when wide */
+.mcnt-row{display:flex;flex-wrap:wrap;gap:5px 6px}
+.mcnt{display:flex;flex-direction:column;align-items:center;gap:2px;width:62px}
+.mcnt-lbl{font-size:12px;line-height:1}
+.mcnt .goal-stepper{gap:1px}
+.mcnt .rate-btn{width:18px;height:22px;font-size:15px}
+.mcnt .goal-stepper input{width:22px;padding:3px 0;font-size:12px;border-width:1px}
 
 /* ─── compact weight pills ─── */
 .w-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}
@@ -1198,6 +1205,7 @@ function drawPagelle(i,player,container){
   // ── new stats: autogol + meta totals (from rating rows) ──
   const rrows=ratingsForPlayer(player);
   const totAutogol=rrows.reduce((s,r)=>s+(parseInt(r.autogol)||0),0);
+  const totAssist=rrows.reduce((s,r)=>s+(parseInt(r.assist)||0),0);
   const totMeta=rrows.reduce((s,r)=>s+(parseInt(r.meta)||0),0);
 
   // ── W/D/L from saved teams (for win% and last-5 form) ──
@@ -1350,6 +1358,10 @@ function drawPagelle(i,player,container){
       <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol/P</div>
         <div style="font-size:15px;font-weight:800;color:var(--green)">${goalsPerMatch.toFixed(2)}</div>
+      </div>
+      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">🅰️ Assist</div>
+        <div style="font-size:15px;font-weight:800;color:var(--green)">${totAssist}</div>
       </div>
       <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">% Vittorie</div>
@@ -2572,11 +2584,11 @@ function getMatches() {
 }
 
 function getRatings() {
-  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta']);
+  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist']);
   const data = sh.getDataRange().getValues();
   if (data.length < 2) return [];
   return data.slice(1).map(r => ({
-    matchId: r[0], player: r[1], rating: parseFloat(r[2]) || 0, notes: r[3] || '', playerId: r[4] || '', goals: parseInt(r[5]) || 0, autogol: parseInt(r[6]) || 0, meta: parseInt(r[7]) || 0
+    matchId: r[0], player: r[1], rating: parseFloat(r[2]) || 0, notes: r[3] || '', playerId: r[4] || '', goals: parseInt(r[5]) || 0, autogol: parseInt(r[6]) || 0, meta: parseInt(r[7]) || 0, assist: parseInt(r[8]) || 0
   })).filter(r => r.matchId && (r.player || r.playerId));
 }
 
@@ -2597,7 +2609,7 @@ function deleteMatch(id) {
     if (data[i][0] === id) sh.deleteRow(i + 1);
   }
   // delete ratings too
-  const rs = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta']);
+  const rs = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist']);
   const rd = rs.getDataRange().getValues();
   for (let i = rd.length - 1; i >= 1; i--) {
     if (rd[i][0] === id) rs.deleteRow(i + 1);
@@ -2606,7 +2618,7 @@ function deleteMatch(id) {
 }
 
 function saveRatings(payload) {
-  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta']);
+  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist']);
   const data = sh.getDataRange().getValues();
   // remove old ratings for this match
   for (let i = data.length - 1; i >= 1; i--) {
@@ -2614,7 +2626,7 @@ function saveRatings(payload) {
   }
   // append new ones
   (payload.ratings || []).forEach(r => {
-    sh.appendRow([payload.matchId, r.player, r.rating, r.notes || '', r.playerId || '', r.goals || 0, r.autogol || 0, r.meta || 0]);
+    sh.appendRow([payload.matchId, r.player, r.rating, r.notes || '', r.playerId || '', r.goals || 0, r.autogol || 0, r.meta || 0, r.assist || 0]);
   });
   return (payload.ratings || []).length;
 }
@@ -2718,17 +2730,29 @@ function renderMatchesList(){
   renderScorers();
 }
 
-// Top-scorers ranking aggregated from all ratings (goals column)
+// Ranking mode in the Marcatori tab: 'goals' (marcatori) | 'assist' (assistman)
+let scorersMode='goals';
+function setScorersMode(mode){ scorersMode=mode; renderScorersList(); }
+
+// Top-scorers / top-assist ranking aggregated from ratings + saved teams
 function renderScorers(){
+  renderScorersList();
+  // always render the stats table (independent of goals)
+  renderStatsTable();
+  renderSeasonDash();
+  renderLastMatch();
+}
+
+function renderScorersList(){
   const el=document.getElementById('scorers-list');
   if(!el)return;
   const ratings=matchesCache.data?.ratings||[];
   const allMatches=matches||[];
-
   const keyFor=playerKey;
+  const isAst=(scorersMode==='assist');
 
-  const tally={}; // key → {name, goals, pres}
-  const ensure=(key,name)=>{ if(!tally[key])tally[key]={name,goals:0,pres:0}; return tally[key]; };
+  const tally={}; // key → {name, goals, assist, pres}
+  const ensure=(key,name)=>{ if(!tally[key])tally[key]={name,goals:0,assist:0,pres:0}; return tally[key]; };
 
   // presenze → dalle squadre salvate (una volta per partita)
   const seen=new Set();
@@ -2741,39 +2765,44 @@ function renderScorers(){
       ensure(key,name).pres++;
     });
   });
-  // gol → dalle righe pagelle
+  // gol + assist → dalle righe pagelle
   ratings.forEach(r=>{
     const {key,name}=keyFor(r.playerId, r.player);
-    ensure(key,name).goals+=parseInt(r.goals)||0;
+    const t=ensure(key,name);
+    t.goals+=parseInt(r.goals)||0;
+    t.assist+=parseInt(r.assist)||0;
   });
 
-  // only players who actually scored appear in the marcatori ranking
-  const ranked=Object.values(tally).filter(s=>s.goals>0)
-    .sort((a,b)=>b.goals-a.goals||a.name.localeCompare(b.name));
+  const field=isAst?'assist':'goals';
+  // only players with at least one goal/assist appear; ties → better per-match ratio, then name
+  const ranked=Object.values(tally).filter(s=>s[field]>0)
+    .sort((a,b)=>b[field]-a[field] || (b[field]/(b.pres||1))-(a[field]/(a.pres||1)) || a.name.localeCompare(b.name));
+
+  const tabs=`<div class="sub-tabs" style="margin-bottom:10px">
+    <button onclick="setScorersMode('goals')" class="sub-tab ${!isAst?'active':''}" style="font-size:11px;padding:6px 4px">⚽ Gol</button>
+    <button onclick="setScorersMode('assist')" class="sub-tab ${isAst?'active':''}" style="font-size:11px;padding:6px 4px">🅰️ Assist</button>
+  </div>`;
+  const title=`<div class="section-header" style="margin:0 0 10px">${isAst?'🅰️ Classifica assistman':'⚽ Classifica marcatori'}</div>`;
 
   if(!ranked.length){
-    el.innerHTML='<div class="section-header" style="margin:0 0 10px">⚽ Classifica marcatori</div><div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">Nessun gol registrato ancora</div>';
-  }else{
-    const medal=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span style="display:inline-block;width:20px;text-align:center;font-weight:800;color:var(--text3);font-size:12px">${i+1}</span>`;
-    el.innerHTML='<div class="section-header" style="margin:0 0 10px">⚽ Classifica marcatori</div>'+ranked.map((s,i)=>{
-      const perMatch=s.pres?(s.goals/s.pres).toFixed(2):'0.00';
-      const pIdx=players.findIndex(p=>p.name===s.name);
-      const clickable=pIdx>=0;
-      return `<div ${clickable?`onclick="openPlayerCardByIdx(${pIdx})" style="cursor:pointer;`:'style="'}display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);background:${i<3?'var(--green-light)':'var(--gray)'};margin-bottom:6px">
-        <span style="font-size:16px;width:24px;text-align:center">${medal(i)}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:700;color:${clickable?'var(--green)':'var(--text)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}${clickable?' <span style="font-size:9px;opacity:.6">›</span>':''}</div>
-          <div style="font-size:11px;color:var(--text3)">${s.pres} ${s.pres===1?'presenza':'presenze'} · ${perMatch} gol/partita</div>
-        </div>
-        <span style="font-size:15px;font-weight:800;color:var(--green)">${s.goals} ⚽</span>
-      </div>`;
-    }).join('');
+    el.innerHTML=title+tabs+`<div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">${isAst?'Nessun assist registrato ancora':'Nessun gol registrato ancora'}</div>`;
+    return;
   }
-
-  // always render the stats table (independent of goals)
-  renderStatsTable();
-  renderSeasonDash();
-  renderLastMatch();
+  const medal=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span style="display:inline-block;width:20px;text-align:center;font-weight:800;color:var(--text3);font-size:12px">${i+1}</span>`;
+  el.innerHTML=title+tabs+ranked.map((s,i)=>{
+    const val=s[field];
+    const perMatch=s.pres?(val/s.pres).toFixed(2):'0.00';
+    const pIdx=players.findIndex(p=>p.name===s.name);
+    const clickable=pIdx>=0;
+    return `<div ${clickable?`onclick="openPlayerCardByIdx(${pIdx})" style="cursor:pointer;`:'style="'}display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);background:${i<3?'var(--green-light)':'var(--gray)'};margin-bottom:6px">
+      <span style="font-size:16px;width:24px;text-align:center">${medal(i)}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:700;color:${clickable?'var(--green)':'var(--text)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}${clickable?' <span style="font-size:9px;opacity:.6">›</span>':''}</div>
+        <div style="font-size:11px;color:var(--text3)">${s.pres} ${s.pres===1?'presenza':'presenze'} · ${perMatch} ${isAst?'assist':'gol'}/partita</div>
+      </div>
+      <span style="font-size:15px;font-weight:800;color:var(--green)">${val} ${isAst?'🅰️':'⚽'}</span>
+    </div>`;
+  }).join('');
 }
 
 // ── Sub-tab switching in Storico ──
@@ -3115,9 +3144,10 @@ function matchHighlights(m){
     const rt=parseFloat(r.rating);
     const g=parseInt(r.goals)||0;
     const ag=parseInt(r.autogol)||0;
+    const ast=parseInt(r.assist)||0;
     if(!isNaN(rt)&&rt>=1){
-      // composite performance: voto + 0.5·gol − 0.5·autogol
-      const perf=rt + g*0.5 - ag*0.5;
+      // composite performance: voto + 0.5·gol + 0.3·assist − 0.5·autogol
+      const perf=rt + g*0.5 + ast*0.3 - ag*0.5;
       if(!mvp||perf>mvp.perf)   mvp={name, v:rt, perf};
       if(!worst||perf<worst.perf) worst={name, v:rt, perf};
       // team averages (which side is this player on?)
@@ -3189,44 +3219,35 @@ function openMatch(id){
         const val=r?r.rating:'';
         const goals=r&&r.goals?r.goals:'';
         const localIdx=allPlayers.indexOf(pl);
-        const rid='rate-'+cls+'-'+localIdx, gid='goal-'+cls+'-'+localIdx, aid='og-'+cls+'-'+localIdx, mid='meta-'+cls+'-'+localIdx;
+        const rid='rate-'+cls+'-'+localIdx, gid='goal-'+cls+'-'+localIdx, xid='ast-'+cls+'-'+localIdx, aid='og-'+cls+'-'+localIdx, mid='meta-'+cls+'-'+localIdx;
         const og=r&&r.autogol?r.autogol:'';
         const meta=r&&r.meta?r.meta:'';
+        const ast=r&&r.assist?r.assist:'';
+        const chk=`checkGoalRating('${rid}','${gid}');checkGoalRating('${rid}','${xid}')`;
+        // compact counter: emoji label on top, [−][value][+] below
+        const cnt=(id,emoji,title,val,max,withWarn)=>`<div class="mcnt" title="${title}">
+              <span class="mcnt-lbl">${emoji}</span>
+              <div class="goal-stepper"${withWarn?` id="${id}-wrap"`:''}>
+                <button type="button" onclick="goalStep('${id}',-1);${withWarn?chk:''}" class="rate-btn rate-btn-minus">−</button>
+                <input type="number" min="0" max="${max}" step="1" placeholder="0" value="${val}" id="${id}" inputmode="numeric"${withWarn?` oninput="${chk}"`:''}>
+                <button type="button" onclick="goalStep('${id}',1);${withWarn?chk:''}" class="rate-btn rate-btn-plus">+</button>
+              </div>
+            </div>`;
         return `<div style="padding:7px 0;border-bottom:1px solid rgba(128,128,128,0.12)">
           <div style="font-size:12px;font-weight:700;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(pl.name)}</div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <div style="display:flex;align-items:center;gap:4px">
-              <span style="font-size:10px;color:var(--text2);font-weight:700">VOTO</span>
-              <div class="rate-stepper">
-                <button type="button" onclick="rateStep('${rid}',-1)" class="rate-btn rate-btn-minus">−</button>
-                <input type="number" min="1" max="10" step="0.5" placeholder="—" value="${val}" id="${rid}" inputmode="decimal" oninput="rateColor(this);checkGoalRating('${rid}','${gid}')">
-                <button type="button" onclick="rateStep('${rid}',1)" class="rate-btn rate-btn-plus">+</button>
-              </div>
+          <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px">
+            <span style="font-size:10px;color:var(--text2);font-weight:700">VOTO</span>
+            <div class="rate-stepper">
+              <button type="button" onclick="rateStep('${rid}',-1);${chk}" class="rate-btn rate-btn-minus">−</button>
+              <input type="number" min="1" max="10" step="0.5" placeholder="—" value="${val}" id="${rid}" inputmode="decimal" oninput="rateColor(this);${chk}">
+              <button type="button" onclick="rateStep('${rid}',1);${chk}" class="rate-btn rate-btn-plus">+</button>
             </div>
-            <div style="display:flex;align-items:center;gap:4px">
-              <span style="font-size:12px">⚽</span>
-              <div class="goal-stepper" id="${gid}-wrap">
-                <button type="button" onclick="goalStep('${gid}',-1);checkGoalRating('${rid}','${gid}')" class="rate-btn rate-btn-minus">−</button>
-                <input type="number" min="0" max="20" step="1" placeholder="0" value="${goals}" id="${gid}" inputmode="numeric" oninput="checkGoalRating('${rid}','${gid}')">
-                <button type="button" onclick="goalStep('${gid}',1);checkGoalRating('${rid}','${gid}')" class="rate-btn rate-btn-plus">+</button>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:4px">
-              <span style="font-size:12px" title="Autogol">🙃</span>
-              <div class="goal-stepper">
-                <button type="button" onclick="goalStep('${aid}',-1)" class="rate-btn rate-btn-minus">−</button>
-                <input type="number" min="0" max="20" step="1" placeholder="0" value="${og}" id="${aid}" inputmode="numeric">
-                <button type="button" onclick="goalStep('${aid}',1)" class="rate-btn rate-btn-plus">+</button>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:4px">
-              <span style="font-size:12px" title="Meta — tiri alle stelle">🚀</span>
-              <div class="goal-stepper">
-                <button type="button" onclick="goalStep('${mid}',-1)" class="rate-btn rate-btn-minus">−</button>
-                <input type="number" min="0" max="50" step="1" placeholder="0" value="${meta}" id="${mid}" inputmode="numeric">
-                <button type="button" onclick="goalStep('${mid}',1)" class="rate-btn rate-btn-plus">+</button>
-              </div>
-            </div>
+          </div>
+          <div class="mcnt-row">
+            ${cnt(gid,'⚽','Gol',goals,20,true)}
+            ${cnt(xid,'🅰️','Assist',ast,20,true)}
+            ${cnt(aid,'🙃','Autogol',og,20,false)}
+            ${cnt(mid,'🚀','Meta — tiri alle stelle',meta,50,false)}
           </div>
         </div>`;
       }).join('')}
@@ -3359,23 +3380,29 @@ async function saveRatings(matchId){
   const all=[...teamA,...teamB];
   const ratings=[];
   const goalNoRating=[]; // players with goals but no valid rating
+  const teamTot={A:{goals:0,assist:0},B:{goals:0,assist:0}};
   all.forEach((pl,i)=>{
     const teamCls=i<teamA.length?'bl':'am';
     const el=document.getElementById('rate-'+teamCls+'-'+i);
     const gEl=document.getElementById('goal-'+teamCls+'-'+i);
     const aEl=document.getElementById('og-'+teamCls+'-'+i);
     const mEl=document.getElementById('meta-'+teamCls+'-'+i);
+    const xEl=document.getElementById('ast-'+teamCls+'-'+i);
     const v=clampRating(el?.value);          // null if empty/invalid, else 1–10 snapped to .5
     const g=clampInt(gEl?.value, 0, 20, 0);  // 0–20 integer
+    const asv=clampInt(xEl?.value, 0, 20, 0); // assist 0–20
     const ag=clampInt(aEl?.value, 0, 20, 0); // autogol 0–20
     const mt=clampInt(mEl?.value, 0, 50, 0); // meta (tiri alle stelle) 0–50
     const hasRating=(v!==null);
-    // RULE: chi ha segnato (gol o autogol) deve avere un voto (ha per forza giocato)
-    if((g>0||ag>0) && !hasRating){
+    // RULE: chi ha gol, assist o autogol deve avere un voto (ha per forza giocato)
+    if((g>0||asv>0||ag>0) && !hasRating){
       goalNoRating.push(pl.name);
       return;
     }
-    // save the row only if there's a valid rating (goals/autogol/meta optional)
+    // per-team totals for the assist coherence check
+    const side=i<teamA.length?'A':'B';
+    teamTot[side].goals+=g; teamTot[side].assist+=asv;
+    // save the row only if there's a valid rating (goals/assist/autogol/meta optional)
     if(hasRating){
       ratings.push({
         playerId:pl.id||'',
@@ -3384,14 +3411,15 @@ async function saveRatings(matchId){
         notes:'',
         goals:g,
         autogol:ag,
-        meta:mt
+        meta:mt,
+        assist:asv
       });
     }
   });
 
-  // block save if any scorer is missing a rating
+  // block save if anyone with gol/assist/autogol is missing a rating
   if(goalNoRating.length){
-    toast(`⚠️ Metti il voto a: ${goalNoRating.join(', ')} (ha segnato)`);
+    toast(`⚠️ Metti il voto a: ${goalNoRating.join(', ')} (ha gol/assist registrati)`);
     return;
   }
 
@@ -3405,6 +3433,25 @@ async function saveRatings(matchId){
   const notes=notesEl?notesEl.value.trim():(m.notes||'');
   const scoreChanged=(scoreA!==(m.scoreA??'')||scoreB!==(m.scoreB??''));
   const notesChanged=(notes!==(m.notes||''));
+
+  // soft coherence check: a team can't have more assists than goals scored
+  // (bound = team score if entered, otherwise the sum of its players' goals)
+  const over=[];
+  [['A','🔵 Blu',scoreA],['B','⚪ Bianchi',scoreB]].forEach(([k,label,sc])=>{
+    const bound=(sc!=='')?sc:teamTot[k].goals;
+    if(teamTot[k].assist>bound) over.push(`${label}: ${teamTot[k].assist} assist ma ${bound} gol`);
+  });
+  if(over.length){
+    const go=await confirmModal({
+      icon:'🅰️',
+      title:'Assist più dei gol?',
+      msg:over.map(esc).join('<br>')+'<br><br>Controlla i dati inseriti. Vuoi salvare comunque?',
+      okLabel:'Salva comunque',
+      cancelLabel:'Correggi'
+    });
+    if(!go) return;
+  }
+
   try{
     toast('⏳ Salvataggio...');
     await backendCall('saveRatings',{matchId,ratings});
