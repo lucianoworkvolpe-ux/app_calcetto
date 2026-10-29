@@ -99,6 +99,42 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .rec-who{font-size:12px;color:var(--text);line-height:1.5}
 .rec-v{font-size:15px;font-weight:900;color:var(--green);white-space:nowrap}
 .cl-date{color:var(--text3);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+/* ⚔️ Confronto */
+.vs-pick{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.vs-sel{flex:1;min-width:0;display:flex;align-items:center;gap:7px;padding:6px 8px;border:1.5px solid var(--gray2);border-radius:12px;background:var(--gray);color:var(--text);font-weight:800;font-size:13px;cursor:pointer;font-family:inherit}
+.vs-sel .avatar.avatar-ini{width:30px;height:30px;font-size:11px}
+.vs-sel span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.vs-sel b{color:var(--text3);font-size:11px}
+.vs-pick .vs-sel:first-child{border-color:#c99a1f}.vs-pick .vs-sel:last-child{border-color:#2f7fd8}
+.vs-swap{flex:0 0 36px;height:36px;border-radius:50%;border:1.5px solid var(--gray2);background:var(--gray);color:var(--text);font-size:16px;cursor:pointer}
+.vs-cards{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-bottom:10px}
+.vs-cards>div:not(.vs-vs){display:flex;justify-content:center}
+.vs-cards .fut-mini{max-width:96px}
+.vs-vs{font-size:22px;font-weight:900;color:var(--text3)}
+.h2h{background:rgba(128,128,128,.08);border-radius:var(--radius-sm);padding:10px;text-align:center;margin-bottom:8px}
+.h2h-t{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.h2h-score{font-size:36px;font-weight:900;line-height:1.1;margin:2px 0}
+.h2h-score .ha{color:#c99a1f}.h2h-score .hb{color:#2f7fd8}.h2h-score .hsep{color:var(--text3);margin:0 12px}
+.h2h-sub{font-size:12px;color:var(--text2);line-height:1.4}
+.vs-sum{text-align:center;font-size:12px;color:var(--text);margin:6px 0 8px}
+.vs-row{display:grid;grid-template-columns:58px 1fr 58px;align-items:center;gap:8px;padding:5px 0;border-top:1px solid rgba(128,128,128,.12)}
+.vs-v{font-size:15px;font-weight:700;color:var(--text2);text-align:center}
+.vs-row .vs-v.lead{font-weight:900}
+.vs-row .vs-v:first-child.lead{color:#c99a1f}.vs-row .vs-v:last-child.lead{color:#2f7fd8}
+.vs-lbl{font-size:11px;color:var(--text2);text-align:center;font-weight:700}
+.vs-lbl small{font-weight:500;color:var(--text3)}
+.vs-bars{display:grid;grid-template-columns:1fr 1fr;gap:3px;height:5px;margin-top:4px}
+.vs-bars span{display:flex;height:100%}.vs-bars span:first-child{justify-content:flex-end}
+.vs-bars i{display:block;height:100%;border-radius:3px;background:var(--gray2)}
+.vs-bars .ba.lead{background:#c99a1f}.vs-bars .bb.lead{background:#2f7fd8}
+.vs-futgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:10px}
+.vs-fut{display:flex;align-items:baseline;justify-content:center;gap:6px;background:rgba(128,128,128,.08);border-radius:8px;padding:5px 2px;font-size:13px;font-weight:800;color:var(--text2)}
+.vs-fut em{font-style:normal;font-size:10px;color:var(--text3)}
+.vs-fut span:first-child.lead{color:#c99a1f}.vs-fut span:last-child.lead{color:#2f7fd8}
+.vs-opt{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);background:rgba(128,128,128,.08);margin-bottom:5px;cursor:pointer}
+.vs-opt.dis{opacity:.35;cursor:default}
+.vs-opt-n{flex:1;font-weight:800;color:var(--text)}
+.pe-cmp{float:right;border:none;background:var(--gray2);color:var(--text);font-size:11px;font-weight:800;border-radius:99px;padding:3px 10px;cursor:pointer;text-transform:none;letter-spacing:0;font-family:inherit}
 /* Partite: season headers and last-match actions */
 .season-head{font-size:12px;font-weight:800;color:var(--text);margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--gray2)}
 .season-head:first-of-type{margin-top:2px}
@@ -693,7 +729,7 @@ input[type=file]{display:none}
 ════════════════════════════════════ */
 // Version of the code that is RUNNING (bump at every release). The installed home-screen app has no reload
 // button and iOS keeps it frozen in memory: comparing this with the file on GitHub tells if it's outdated.
-const APP_VERSION='2026.10.29-e';
+const APP_VERSION='2026.10.29-g';
 let BUILD_DATE='—'; // date of the file ON THE SERVER (Last-Modified of index.html), not of the running code
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
@@ -950,30 +986,55 @@ async function fetchBuildDate(){
 
 // ── Aggiornamenti: avvisa se su GitHub c'è una versione diversa da quella in uso ──
 let _lastUpdateCheck=0;
-async function checkForUpdate(force){
+/* Why updates need care on iPhone: the home-screen app always opens the SAME address (saved when it was
+   added to Home), and both GitHub's CDN and iOS keep a copy of that address for a while. A check made with a
+   unique address (?_v=…) sees the new file, but loading another address doesn't refresh the copy of the normal
+   one → at the next launch the old copy came back. Now we (1) re-download the normal address so its saved copy
+   is renewed, and (2) at launch switch to the new version by ourselves (with loop protection). */
+async function checkForUpdate(force, auto){
   if(!(location.protocol==='http:'||location.protocol==='https:')) return null;
   if(!force && Date.now()-_lastUpdateCheck<5*60*1000) return null;   // at most every 5 minutes
   _lastUpdateCheck=Date.now();
   try{
     const res=await fetch(location.pathname+'?_v='+Date.now(),{cache:'no-store'});
     const m=(await res.text()).match(/const APP_VERSION='([\w.\-]+)'/);
-    if(m && m[1]!==APP_VERSION){ showUpdateBanner(m[1]); return m[1]; }
+    if(m && m[1]!==APP_VERSION){
+      const v=m[1];
+      await refreshStartPage();
+      let tried=null; try{ tried=sessionStorage.getItem('calcio_upd_try'); }catch(e){}
+      if(auto && tried!==v){                       // once per version per session → no endless reloads
+        try{ sessionStorage.setItem('calcio_upd_try',v); }catch(e){}
+        goToVersion(v); return v;
+      }
+      showUpdateBanner(v); return v;
+    }
   }catch(e){}
   return null;
 }
+// download again the normal address (the one the home-screen app opens) so its saved copy is the new one
+async function refreshStartPage(){
+  try{ await fetch(location.pathname,{cache:'reload'}); }catch(e){}
+}
+// open the new version at an address that no cache has ever seen
+function goToVersion(v){ location.replace(location.pathname+'?v='+encodeURIComponent(v||Date.now())); }
 function showUpdateBanner(v){
   let el=document.getElementById('update-banner');
   if(!el){ el=document.createElement('div'); el.id='update-banner'; document.body.appendChild(el); }
+  el.dataset.v=v;
   el.innerHTML=`<span>🆕 Nuova versione disponibile <small>(${esc(v)})</small></span><button onclick="forceReload()">Aggiorna</button>`;
 }
-// reload bypassing every cache (a new query string = a URL never seen before)
-function forceReload(){ location.replace(location.pathname+'?_v='+Date.now()); }
+async function forceReload(){
+  const v=document.getElementById('update-banner')?.dataset.v;
+  await refreshStartPage();
+  goToVersion(v);
+}
 async function manualUpdate(){
   toast('⏳ Controllo aggiornamenti…');
-  const v=await checkForUpdate(true);
+  const v=await checkForUpdate(true,false);
   if(v){ forceReload(); } else { toast('✓ Hai già l\'ultima versione ('+APP_VERSION+')'); }
 }
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') checkForUpdate(); });
+// coming back to the app while using it: only the banner (never reload under your fingers)
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') checkForUpdate(false,false); });
 
 function updateBuildDateLabel(){
   const el=document.getElementById('build-date');
@@ -1086,7 +1147,10 @@ function getBackupSizeInfo(){
   if(typeof ensureMatchesCachedForRosa==='function') ensureMatchesCachedForRosa();
   // read real upload date of index.html from GitHub Pages
   fetchBuildDate();
-  checkForUpdate(true);   // tell right away if this copy is outdated
+  // opened through an update address (?v=… / ?_v=…, also from older versions' "Aggiorna"):
+  // renew the copy of the normal address right away, so the next launch from Home is already up to date
+  if(/[?&]_?v=/.test(location.search)){ refreshStartPage(); try{ history.replaceState(null,'',location.pathname+location.hash); }catch(e){} }
+  checkForUpdate(true,true);   // at launch: if this copy is outdated, switch to the new version by itself
 })();
 // Nickname initials: first letter of the first two words, CamelCase counts as words
 // ("Vito Azz"→VA, "FabioFicarelli"→FF); single word → first two letters ("Rella"→RE)
@@ -3821,7 +3885,7 @@ function playerExtrasHTML(p){
   return `<div class="pe-sec"><div class="pe-title">🏆 Bacheca</div>
       ${trophies.length||feats?`<div class="trophies">${trophies.join('')}${feats}</div>`:'<div class="pe-empty">Ancora nessun trofeo</div>'}
     </div>
-    <div class="pe-sec"><div class="pe-title">🤝 Compagni e avversari</div>
+    <div class="pe-sec"><div class="pe-title">🤝 Compagni e avversari<button class="pe-cmp" onclick="compareFrom(${players.indexOf(p)})">⚔️ Confronta</button></div>
       ${pairs||'<div class="pe-empty">Servono almeno 3 partite con o contro lo stesso giocatore, e un bilancio di più di metà</div>'}
     </div>`;
 }
@@ -3831,7 +3895,7 @@ function playerExtrasHTML(p){
 let clScope=null;          // season key ('2026-AUT') or 'all'; null → the most recent season
 let clTab='marcatori';
 const CL_TABS=[['marcatori','⚽ Marcatori'],['assist','🅰️ Assist'],['media','⭐ Media voto'],['statistiche','📈 Statistiche'],
-               ['coppie','🤝 Coppie'],['albo',"🏆 Albo d'oro"],['record','🏅 Record']];
+               ['coppie','🤝 Coppie'],['confronto','⚔️ Confronto'],['albo',"🏆 Albo d'oro"],['record','🏅 Record']];
 function clCurrentScope(){
   if(clScope) return clScope;
   const ss=seasonsList(); return ss.length?ss[ss.length-1].key:'all';
@@ -3849,12 +3913,13 @@ function renderClassifiche(){
   document.getElementById('cl-tabs').innerHTML=CL_TABS.map(([k,l])=>`<button class="chip tab${k===clTab?' active':''}" onclick="setClTab('${k}')">${l}</button>`).join('');
   renderSeasonDash();
   const show=(id,on)=>{ const e=document.getElementById(id); if(e) e.style.display=on?'block':'none'; };
-  show('cl-list-card',['marcatori','assist','media','coppie','record'].includes(clTab));
+  show('cl-list-card',['marcatori','assist','media','coppie','record','confronto'].includes(clTab));
   show('stats-card',clTab==='statistiche'); show('albo-card',clTab==='albo');
   if(clTab==='marcatori'||clTab==='assist') renderScorersList();
   else if(clTab==='media') renderMediaList();
   else if(clTab==='coppie') renderCoppie();
   else if(clTab==='record') renderRecord();
+  else if(clTab==='confronto') renderConfronto();
   else if(clTab==='statistiche') renderStatsTable();
   else if(clTab==='albo') renderAlbo();
   // keep the selected chips visible
@@ -3960,6 +4025,194 @@ function renderRecord(){
   const head=`<div class="section-header" style="margin:0 0 8px">🏅 Record${scope==='all'?' di sempre':' della stagione'}</div>`;
   el.innerHTML=head+(recs.length?recs.map(([ic,t,v,who])=>`<div class="rec-row"><span class="rec-ic">${ic}</span>
     <div style="flex:1;min-width:0"><div class="rec-t">${t}</div><div class="rec-who">${who}</div></div><span class="rec-v">${v}</span></div>`).join(''):clEmpty('Nessuna partita con risultato'));
+}
+
+/* ════ ⚔️ CONFRONTO testa a testa ════ */
+let cmpA=null, cmpB=null;   // player ids (stable when the roster order changes)
+const idxById=id=>players.findIndex(p=>p.id===id);
+function cmpIdx(){
+  const order=rosaOrder();
+  let a=idxById(cmpA); if(a<0){ a=order[0]; cmpA=players[a]?.id; }
+  let b=idxById(cmpB); if(b<0||b===a){ b=order.find(i=>i!==a); cmpB=players[b]?.id; }
+  return [a,b];
+}
+// matches of the scope where both played: as opponents and as team-mates
+function headToHead(pa,pb,scope){
+  const ka=playerKey(pa.id,pa.name).key, kb=playerKey(pb.id,pb.name).key, num=v=>{const n=parseInt(v);return isNaN(n)?null:n;};
+  const r={vs:{a:0,b:0,d:0,n:0,gd:0},tog:{w:0,d:0,l:0,n:0}};
+  scopeMatches(scope).forEach(m=>{
+    const sa=num(m.scoreA), sb=num(m.scoreB); if(sa==null||sb==null) return;
+    const A=new Set(normalizeTeam(m.teamA).map(x=>playerKey(x.id,x.name).key)), B=new Set(normalizeTeam(m.teamB).map(x=>playerKey(x.id,x.name).key));
+    const sideA=A.has(ka)?1:B.has(ka)?-1:0, sideB=A.has(kb)?1:B.has(kb)?-1:0; if(!sideA||!sideB) return;
+    const gdA=sideA*(sa-sb);
+    if(sideA!==sideB){ r.vs.n++; r.vs.gd+=gdA; if(gdA>0)r.vs.a++; else if(gdA<0)r.vs.b++; else r.vs.d++; }
+    else { r.tog.n++; if(gdA>0)r.tog.w++; else if(gdA===0)r.tog.d++; else r.tog.l++; }
+  });
+  return r;
+}
+// MVP titles per player in the scope (same formula and tie rule as the match highlights)
+function scopeMvp(scope){
+  const ids=new Set(scopeMatches(scope).map(m=>m.id)), best={}, c={};
+  (matchesCache.data?.ratings||[]).forEach(r=>{ if(!ids.has(r.matchId)) return; const pf=mvpPerf(r); if(pf==null) return;
+    if(!best[r.matchId]||pf>best[r.matchId].pf) best[r.matchId]={pf,key:playerKey(r.playerId,r.player).key}; });
+  Object.values(best).forEach(b=>c[b.key]=(c[b.key]||0)+1); return c;
+}
+// trophies of the scope: prizes, shame prizes, feats
+function scopeTrophies(p,scope){
+  const name=playerKey(p.id,p.name).name, out={prize:0,shame:0,feats:0,emojis:[]};
+  alboSeasons().filter(S=>scope==='all'||S.key===scope).forEach(S=>{
+    S.awards.forEach(a=>{ if(a.winners.some(w=>w===name||w.split(' & ').includes(name))){ a.shame?out.shame++:out.prize++; if(!a.shame) out.emojis.push(noVS(a.t.split(' ')[0])); } });
+    FEATS.forEach(f=>{ out.feats+=((S.feats[f.k]||[]).find(x=>x.name===name)?.count||0); });
+  });
+  return out;
+}
+// every compared line: [label, valueA, valueB, text(v), lowerIsBetter]
+function compareRows(ia,ib,scope){
+  const pa=players[ia], pb=players[ib], S=seasonStats(scope), mv=scopeMvp(scope);
+  const g=p=>S[playerKey(p.id,p.name).key]||{pres:0,w:0,d:0,l:0,goals:0,assist:0,autogol:0,rigori:0,meta:0,voteAvg:null};
+  const A=g(pa), B=g(pb), ta=scopeTrophies(pa,scope), tb=scopeTrophies(pb,scope);
+  const wp=x=>x.w+x.d+x.l?x.w/(x.w+x.d+x.l):null, gp=x=>x.pres?x.goals/x.pres:null;
+  const kA=playerKey(pa.id,pa.name).key, kB=playerKey(pb.id,pb.name).key;
+  return [
+    ['Presenze',A.pres,B.pres,v=>String(v)],
+    ['% Vittorie',wp(A),wp(B),v=>v==null?'—':Math.round(v*100)+'%'],
+    ['⚽ Gol',A.goals,B.goals,v=>String(v)],
+    ['⚽ Gol a partita',gp(A),gp(B),v=>v==null?'—':v.toFixed(2)],
+    ['🅰️ Assist',A.assist,B.assist,v=>String(v)],
+    ['⭐ Media voto',A.voteAvg,B.voteAvg,v=>v==null?'—':v.toFixed(2)],
+    ['👑 Volte MVP',mv[kA]||0,mv[kB]||0,v=>String(v)],
+    ['🚀 Mete',A.meta,B.meta,v=>String(v)],
+    ['🏆 Premi vinti',ta.prize,tb.prize,v=>String(v)],
+    ['🎩 Imprese',ta.feats,tb.feats,v=>String(v)],
+    ['🙃 Autogol',A.autogol,B.autogol,v=>String(v),true],
+    ['❌ Rigori sbagliati',A.rigori,B.rigori,v=>String(v),true],
+  ];
+}
+const cmpLead=(a,b,low)=>(a==null||b==null||Math.abs(a-b)<1e-9)?0:((low?a<b:a>b)?1:-1);   // 1 = A ahead, -1 = B ahead
+// the rival proposed when you start from a player's card: the one he met most often as an opponent
+function defaultRival(i){
+  const p=players[i]; let best=null, bn=-1;
+  rosaOrder().filter(j=>j!==i).forEach(j=>{ const n=headToHead(p,players[j],'all').vs.n; if(n>bn){ bn=n; best=j; } });
+  return best;
+}
+function compareFrom(i){
+  cmpA=players[i].id; const r=defaultRival(i); cmpB=r!=null?players[r].id:null;
+  closeMatchModal(); clTab='confronto'; showPage('classifiche');
+}
+function swapCmp(){ [cmpA,cmpB]=[cmpB,cmpA]; renderClassifiche(); }
+function pickCmp(slot){
+  const [a,b]=cmpIdx(), other=slot==='A'?b:a;
+  document.getElementById('match-modal-title').textContent='Scegli il giocatore';
+  document.getElementById('match-modal-body').innerHTML=rosaOrder().map(i=>{ const p=players[i], dis=i===other;
+    return `<div class="vs-opt${dis?' dis':''}" ${dis?'':`onclick="setCmp('${slot}','${p.id}')"`}>
+      ${initialsAvatar(p,'avatar avatar-ini','')}<span class="vs-opt-n">${esc(p.name)}</span><span class="ovr-badge">OVR ${calcOvr(p.stats).toFixed(1)}</span></div>`; }).join('');
+  document.getElementById('match-modal').style.display='block';
+}
+function setCmp(slot,id){ if(slot==='A') cmpA=id; else cmpB=id; closeMatchModal(); renderClassifiche(); }
+
+function renderConfronto(){
+  const el=document.getElementById('scorers-list'); if(!el) return;
+  if(players.length<2){ el.innerHTML=clEmpty('Servono almeno due giocatori'); return; }
+  const scope=clCurrentScope(), [ia,ib]=cmpIdx(), pa=players[ia], pb=players[ib];
+  [pa,pb].forEach(futPreload);
+  const h=headToHead(pa,pb,scope), rows=compareRows(ia,ib,scope);
+  const leads=rows.map(r=>cmpLead(r[1],r[2],r[4])), la=leads.filter(x=>x===1).length, lb=leads.filter(x=>x===-1).length;
+  const sel=(slot,p)=>`<button class="vs-sel" onclick="pickCmp('${slot}')">${initialsAvatar(p,'avatar avatar-ini','')}<span>${esc(p.name)}</span><b>▾</b></button>`;
+  const nm=n=>`<b>${esc(n)}</b>`;
+  const vsTxt=h.vs.n
+    ? `<div class="h2h-score"><span class="ha">${h.vs.a}</span><span class="hsep">–</span><span class="hb">${h.vs.b}</span></div>
+       <div class="h2h-sub">vittorie in ${h.vs.n} ${h.vs.n===1?'sfida':'sfide'}${h.vs.d?` · ${h.vs.d} ${h.vs.d===1?'pareggio':'pareggi'}`:''} · differenza reti ${h.vs.gd===0?'pari':(h.vs.gd>0?nm(pa.name):nm(pb.name))+' +'+Math.abs(h.vs.gd)}</div>`
+    : `<div class="h2h-sub">Non si sono mai affrontati${scope==='all'?'':' in questa stagione'}</div>`;
+  const togTxt=h.tog.n?`insieme ${h.tog.w} ${h.tog.w===1?'vinta':'vinte'} su ${h.tog.n} (${h.tog.w}V · ${h.tog.d}N · ${h.tog.l}P)`:`mai nella stessa squadra${scope==='all'?'':' in questa stagione'}`;
+  const row=(r,k)=>{ const [lbl,a,b,fmt,low]=r, L=leads[k], va=Math.abs(a??0), vb=Math.abs(b??0), mx=Math.max(va,vb);
+    const wa=mx?Math.round(va/mx*100):0, wb=mx?Math.round(vb/mx*100):0;
+    return `<div class="vs-row"><span class="vs-v${L===1?' lead':''}">${fmt(a)}</span>
+      <div class="vs-mid"><div class="vs-lbl">${lbl}${low?' <small>(meno è meglio)</small>':''}</div>
+        <div class="vs-bars"><span><i class="ba${L===1?' lead':''}" style="width:${wa}%"></i></span><span><i class="bb${L===-1?' lead':''}" style="width:${wb}%"></i></span></div></div>
+      <span class="vs-v${L===-1?' lead':''}">${fmt(b)}</span></div>`; };
+  const fut=FUT_STATS.map(([l,idx])=>[l,futStat(pa,idx),futStat(pb,idx),v=>String(v)]);
+  const futLeads=fut.map(r=>cmpLead(r[1],r[2]));
+  const futRow=(r,k)=>`<div class="vs-fut"><span class="${futLeads[k]===1?'lead':''}">${r[1]}</span><em>${r[0]}</em><span class="${futLeads[k]===-1?'lead':''}">${r[2]}</span></div>`;
+  el.innerHTML=`<div class="section-header" style="margin:0 0 8px">⚔️ Confronto testa a testa · ${scopeLabel(scope)}</div>
+    <div class="vs-pick">${sel('A',pa)}<button class="vs-swap" onclick="swapCmp()" title="Inverti">⇄</button>${sel('B',pb)}</div>
+    <div class="vs-cards"><div>${futMiniHTML(ia)}</div><div class="vs-vs">VS</div><div>${futMiniHTML(ib)}</div></div>
+    <div class="h2h"><div class="h2h-t">⚔️ Da avversari</div>${vsTxt}<div class="h2h-t" style="margin-top:8px">🤝 Da compagni</div><div class="h2h-sub">${togTxt}</div></div>
+    <div class="vs-sum">📊 ${la===lb?`Parità: ${la} voci a testa`:`${nm(la>lb?pa.name:pb.name)} avanti in ${Math.max(la,lb)} voci su ${rows.length}`}</div>
+    ${rows.map(row).join('')}
+    <div class="vs-futgrid">${fut.map(futRow).join('')}</div>
+    <button class="btn btn-primary btn-full" style="margin-top:12px;background:#25D366;border-color:#25D366" onclick="shareCompare()">📲 Condividi il confronto</button>`;
+}
+const scopeLabel=scope=>scope==='all'?'Sempre':(seasonsList().find(s=>s.key===scope)?.label||scope);
+async function shareCompare(){
+  const scope=clCurrentScope(), [ia,ib]=cmpIdx(), ims=[];
+  for(const i of [ia,ib]){ const p=players[i]; futPreload(p); const im=p.photo?futPhotoCache[p.id]:null;
+    if(im&&!im.complete){ try{ await im.decode(); }catch(e){} } ims.push(im&&im.complete&&im.naturalWidth?im:null); }
+  const pa=players[ia], pb=players[ib];
+  shareCanvas(drawCompareCard(ia,ib,scope,ims), `confronto_${pa.name}_vs_${pb.name}.png`.replace(/\s+/g,'_'), `⚔️ ${pa.name} vs ${pb.name}`);
+}
+// "manifesto" image. Safari-safe: no emoji inside centred text, numbers anchored (right/left aligned) to fixed points
+function drawCompareCard(ia,ib,scope,ims){
+  const pa=players[ia], pb=players[ib], h=headToHead(pa,pb,scope), rows=compareRows(ia,ib,scope);
+  const W=720, H=1290, {canvas,ctx}=newShareCanvas(W,H), F=SHARE_FONT, CA='#f2c94c', CB='#5aa9ff';
+  const txt=(t,x,y,font,col,align,shadow)=>{ ctx.save(); ctx.font=font; ctx.textAlign=align||'center'; ctx.fillStyle=col;
+    if(shadow){ ctx.shadowColor='rgba(0,0,0,0.55)'; ctx.shadowBlur=8; ctx.shadowOffsetY=2; } ctx.fillText(t,x,y); ctx.restore(); };
+  // backdrop: dark stage, two coloured halos, light rays
+  const bg=ctx.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#0b1020'); bg.addColorStop(1,'#111a2c'); ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  ctx.save(); ctx.translate(W/2,300); for(let k=0;k<24;k++){ ctx.rotate(Math.PI/12); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-40,-1000); ctx.lineTo(40,-1000); ctx.closePath(); ctx.fillStyle=k%2?'rgba(255,255,255,0.035)':'rgba(255,255,255,0.012)'; ctx.fill(); } ctx.restore();
+  [[200,CA],[520,CB]].forEach(([hx,c])=>{ const g=ctx.createRadialGradient(hx,300,20,hx,300,260); g.addColorStop(0,c+'55'); g.addColorStop(1,c+'00'); ctx.fillStyle=g; ctx.fillRect(0,0,W,700); });
+  // title
+  txt('TESTA A TESTA'.split('').join(' '),W/2,64,F('900 26px'),'#ffffff','center',true);
+  txt(scope==='all'?'Di sempre':scopeLabel(scope),W/2,96,F('700 18px'),'#9aa6ba');
+  // players
+  const face=(i,im,cx,c)=>{ const p=players[i], r=100, cy=300;
+    ctx.save(); ctx.shadowColor=c; ctx.shadowBlur=30; ctx.beginPath(); ctx.arc(cx,cy,r+7,0,Math.PI*2); ctx.fillStyle=c; ctx.fill(); ctx.restore();
+    ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.clip();
+    if(im){ const s=Math.max(2*r/im.naturalWidth,2*r/im.naturalHeight), iw=im.naturalWidth*s, ih=im.naturalHeight*s; ctx.drawImage(im,cx-iw/2,cy-ih/2,iw,ih); }
+    else { const g=ctx.createLinearGradient(cx,cy-r,cx,cy+r); g.addColorStop(0,'#2c3550'); g.addColorStop(1,'#151b2b'); ctx.fillStyle=g; ctx.fillRect(cx-r,cy-r,2*r,2*r);
+      txt(ini(p.name).replace(/&#0?39;/g,"'"),cx,cy+30,F('900 84px'),'#ffffff'); }
+    ctx.restore();
+    // long names: shrink the font first, truncate only if it still doesn't fit
+    let fs=34; const N=p.name.toUpperCase(); ctx.font=F('900 '+fs+'px');
+    while(ctx.measureText(N).width>300 && fs>22){ fs-=2; ctx.font=F('900 '+fs+'px'); }
+    txt(fitText(ctx,N,300),cx,448,F('900 '+fs+'px'),'#ffffff','center',true);
+    const pag=playerSeason(p)?.voteAvg;
+    txt(`OVR ${futRating(p)}   ·   PAG ${pag!=null?pag.toFixed(1):'—'}`,cx,484,F('800 19px'),c);
+  };
+  face(ia,ims[0],200,CA); face(ib,ims[1],520,CB);
+  txt('VS',W/2,322,F('900 60px'),'#ffffff','center',true);
+  // head to head
+  const box=(y,hh)=>{ roundRect(ctx,60,y,600,hh,22); ctx.fillStyle='rgba(255,255,255,0.06)'; ctx.fill(); ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.lineWidth=1.5; ctx.stroke(); };
+  box(520,200);
+  txt('DA AVVERSARI'.split('').join(' '),W/2,556,F('800 17px'),'#9aa6ba');
+  if(h.vs.n){
+    txt(String(h.vs.a),W/2-34,640,F('900 86px'),CA,'right',true);
+    txt('–',W/2,632,F('900 60px'),'#6b778c');
+    txt(String(h.vs.b),W/2+34,640,F('900 86px'),CB,'left',true);
+    const gd=h.vs.gd===0?'differenza reti in parità':`differenza reti +${Math.abs(h.vs.gd)} per ${h.vs.gd>0?pa.name:pb.name}`;
+    ctx.font=F('600 18px'); txt(fitText(ctx,`vittorie in ${h.vs.n} ${h.vs.n===1?'sfida':'sfide'}${h.vs.d?` · ${h.vs.d} pari`:''} · ${gd}`,560),W/2,676,F('600 18px'),'#c9d2e3');
+  }else txt('mai affrontati',W/2,630,F('800 30px'),'#c9d2e3');
+  txt(h.tog.n?`Da compagni: ${h.tog.w} ${h.tog.w===1?'vinta':'vinte'} su ${h.tog.n}`:'Mai nella stessa squadra',W/2,706,F('700 18px'),'#9aa6ba');
+  // verdict
+  const leads=rows.map(r=>cmpLead(r[1],r[2],r[4])), la=leads.filter(x=>x===1).length, lb=leads.filter(x=>x===-1).length;
+  const verdict=la===lb?`Parità: ${la} voci a testa`:`${la>lb?pa.name:pb.name} avanti in ${Math.max(la,lb)} voci su ${rows.length}`;
+  ctx.font=F('900 22px'); const vw=Math.min(600,ctx.measureText(verdict).width+44);
+  roundRect(ctx,W/2-vw/2,742,vw,42,21); ctx.fillStyle=la===lb?'rgba(255,255,255,0.12)':(la>lb?CA:CB)+'33'; ctx.fill();
+  ctx.strokeStyle=la===lb?'rgba(255,255,255,0.3)':(la>lb?CA:CB); ctx.lineWidth=2; ctx.stroke();
+  txt(verdict,W/2,771,F('900 22px'),'#ffffff');
+  // rows: plain labels (no emoji), values anchored left/right
+  const plain=l=>l.replace(/^[^\p{L}\p{N}%]+/u,'').trim();
+  rows.forEach((r,k)=>{ const [lbl,a,b,fmt,low]=r, L=leads[k], y=826+k*34;
+    if(k%2===0){ ctx.fillStyle='rgba(255,255,255,0.035)'; ctx.fillRect(60,y-23,600,32); }
+    txt(fmt(a),150,y,F((L===1?'900':'700')+' 22px'),L===1?CA:'#c9d2e3','right');
+    txt(fmt(b),570,y,F((L===-1?'900':'700')+' 22px'),L===-1?CB:'#c9d2e3','left');
+    txt(plain(lbl)+(low?' (meno è meglio)':''),W/2,y,F('700 17px'),'#9aa6ba');
+    if(L===1){ ctx.beginPath(); ctx.arc(170,y-7,5,0,Math.PI*2); ctx.fillStyle=CA; ctx.fill(); }
+    if(L===-1){ ctx.beginPath(); ctx.arc(550,y-7,5,0,Math.PI*2); ctx.fillStyle=CB; ctx.fill(); }
+  });
+  // footer
+  txt('CalcioLercio · Redazione Avv. Peppe Rella',W/2,H-40,F('italic 500 18px'),'#8a94a6');
+  txt('v'+APP_VERSION,W/2,H-16,F('500 12px'),'#5d6676');
+  return canvas;
 }
 
 // 🎯 Precisione bilanciamento → in Gioca, under the generated teams
