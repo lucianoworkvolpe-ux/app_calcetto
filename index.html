@@ -78,6 +78,33 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 @media(max-width:340px){#players-list{grid-template-columns:1fr}}
 #players-list .card{margin-bottom:0}
 #players-list .card.card-compact:active{transform:scale(0.97)}
+/* ── Classifiche: scrollable chips (season selector + tabs) ── */
+.chips-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:2px 2px 8px;margin:0 -2px 4px}
+.chips-row::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:1.5px solid var(--gray2);background:var(--gray);color:var(--text2);border-radius:99px;padding:7px 13px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;font-family:inherit;transition:background var(--tr),color var(--tr),border-color var(--tr)}
+.chip.active{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.chip.tab{border-radius:10px;padding:8px 12px}
+#cl-seasons{margin-bottom:6px}
+#cl-tabs{margin-top:4px}
+.cl-note{font-size:10px;color:var(--text3);margin-bottom:8px;line-height:1.35}
+.cl-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);background:var(--gray);margin-bottom:5px}
+.cl-pos{font-size:16px;width:24px;text-align:center;flex-shrink:0}
+.cl-name{font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cl-name.link{color:var(--green);cursor:pointer}
+.cl-sub{font-size:11px;color:var(--text3)}
+.cl-val{font-size:15px;font-weight:800;color:var(--green);white-space:nowrap}
+.rec-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);background:var(--gray);margin-bottom:5px}
+.rec-ic{font-size:20px;width:26px;text-align:center;flex-shrink:0}
+.rec-t{font-size:12px;font-weight:800;color:var(--text2)}
+.rec-who{font-size:12px;color:var(--text);line-height:1.5}
+.rec-v{font-size:15px;font-weight:900;color:var(--green);white-space:nowrap}
+.cl-date{color:var(--text3);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+/* Partite: season headers and last-match actions */
+.season-head{font-size:12px;font-weight:800;color:var(--text);margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--gray2)}
+.season-head:first-of-type{margin-top:2px}
+.season-head span{color:var(--text3);font-weight:600}
+.lm-actions{display:flex;justify-content:center;gap:5px;flex-wrap:wrap;margin-top:10px}
+#gioca-precision .prec-card{margin-top:2px}
 /* 🏆 albo d'oro */
 .albo-note{font-size:10px;color:var(--text3);margin-bottom:10px;line-height:1.35}
 .albo-season{background:rgba(128,128,128,0.07);border-radius:var(--radius-sm);padding:10px 11px;margin-bottom:10px}
@@ -553,10 +580,12 @@ input[type=file]{display:none}
       </div>
       <button class="combo-btn" onclick="nextC()">▶</button>
     </div>
+    <!-- 🎯 precisione del bilanciamento: utile proprio mentre scegli quale proposta giocare -->
+    <div id="gioca-precision" style="margin-top:12px"></div>
   </div>
 </div>
 
-<!-- ══════════ STORICO PARTITE ══════════ -->
+<!-- ══════════ PARTITE (ultima + elenco per stagione) ══════════ -->
 <div id="page-partite" class="page">
   <div id="partite-status" class="card" style="display:none;cursor:pointer" onclick="goToBackendSettings()">
     <div style="display:flex;align-items:center;gap:11px">
@@ -570,39 +599,39 @@ input[type=file]{display:none}
   </div>
 
   <div id="partite-content" style="display:none">
-
-    <!-- dashboard riepilogo stagione -->
-    <div id="season-dash"></div>
-
-    <!-- ultima partita in evidenza -->
+    <!-- ultima partita in evidenza, con Formazioni / Riepilogo / Foglio -->
     <div id="last-match"></div>
-
-    <!-- sotto-tab -->
-    <div class="sub-tabs" id="storico-tabs">
-      <button class="sub-tab active" id="stab-marcatori" onclick="showStoricoTab('marcatori')">⚽ Marcatori</button>
-      <button class="sub-tab" id="stab-statistiche" onclick="showStoricoTab('statistiche')">📈 Statistiche</button>
-      <button class="sub-tab" id="stab-partite" onclick="showStoricoTab('partite')">📋 Partite</button>
-      <button class="sub-tab" id="stab-albo" onclick="showStoricoTab('albo')">🏆 Albo</button>
-    </div>
-
-    <div class="card storico-sec" id="scorers-card">
-      <div id="scorers-list">
-        <div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">⏳ Caricamento...</div>
-      </div>
-    </div>
-    <div class="card storico-sec" id="stats-card" style="display:none">
-      <div id="stats-table">
-        <div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">⏳ Caricamento...</div>
-      </div>
-    </div>
-    <div class="card storico-sec" id="albo-card" style="display:none">
-      <div id="albo-list"></div>
-    </div>
-    <div class="card storico-sec" id="matches-card" style="display:none">
+    <!-- tutte le partite, divise per stagione -->
+    <div class="card" id="matches-card">
       <div id="matches-list">
         <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">⏳ Caricamento...</div>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="page-classifiche" class="page">
+  <div id="cl-status" class="card" style="display:none;cursor:pointer" onclick="goToBackendSettings()">
+    <div style="display:flex;align-items:center;gap:11px">
+      <span style="font-size:28px">📊</span>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:800;margin-bottom:3px">Classifiche non disponibili</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.4">Tocca qui per configurare il foglio Google nei <strong>Settings → Backend</strong>.</div>
+      </div>
+      <span style="color:var(--text3);font-size:18px">›</span>
+    </div>
+  </div>
+
+  <div id="cl-content" style="display:none">
+    <!-- selettore di stagione: tutto ciò che sta sotto si aggiorna -->
+    <div class="chips-row" id="cl-seasons"></div>
+    <!-- i quattro numeri della stagione scelta -->
+    <div id="season-dash"></div>
+    <!-- schede scorrevoli -->
+    <div class="chips-row" id="cl-tabs"></div>
+    <div class="card cl-sec" id="cl-list-card"><div id="scorers-list"></div></div>
+    <div class="card cl-sec" id="stats-card" style="display:none"><div id="stats-table"></div></div>
+    <div class="card cl-sec" id="albo-card" style="display:none"><div id="albo-list"></div></div>
   </div>
 </div>
 
@@ -648,7 +677,10 @@ input[type=file]{display:none}
     <span class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5l4.3 3.1-1.6 5H9.3l-1.6-5z"/><path d="M12 3v4.5M4.5 9.3l3.2 1.3M6.9 18.5l2.4-3.5M17.1 18.5l-2.4-3.5M19.5 9.3l-3.2 1.3"/></svg></span>Gioca
   </button>
   <button class="bnav-item" id="bnav-partite" onclick="showPage('partite')">
-    <span class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l3.5 2"/></svg></span>Storico
+    <span class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18"/><path d="M8 2.5v4"/><path d="M16 2.5v4"/><path d="M8 14h3"/></svg></span>Partite
+  </button>
+  <button class="bnav-item" id="bnav-classifiche" onclick="showPage('classifiche')">
+    <span class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3"/><path d="M7 5H4v2a3 3 0 0 0 3 3"/></svg></span>Classifiche
   </button>
 </nav>
 
@@ -661,7 +693,7 @@ input[type=file]{display:none}
 ════════════════════════════════════ */
 // Version of the code that is RUNNING (bump at every release). The installed home-screen app has no reload
 // button and iOS keeps it frozen in memory: comparing this with the file on GitHub tells if it's outdated.
-const APP_VERSION='2026.10.29-d';
+const APP_VERSION='2026.10.29-e';
 let BUILD_DATE='—'; // date of the file ON THE SERVER (Last-Modified of index.html), not of the running code
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
@@ -731,7 +763,7 @@ const SLOT_FALLBACK={
 let players=[], weights=STATS.map(()=>1);
 let sizeA=5, sizeB=5, asymMode=false;
 let backendUrl='', matches=[], matchesCache={timestamp:0, data:null};
-let _seasonMemo=null;   // memo of seasonStats(), rebuilt only when matches/pagelle/rosa change
+let _seasonMemo={};     // memo of seasonStats(scope) per scope, rebuilt only when matches/pagelle/rosa change
 let selected=new Set(), allCombos=[], currentIdx=0;
 
 /* ── Cache persistente (localStorage) — stale-while-revalidate ── */
@@ -1176,10 +1208,12 @@ function playerKey(pid, pname){
    • voti, gol, assist, autogol, rigori sbagliati, mete → dalle pagelle di partite esistenti
    Risultato: { chiaveGiocatore → record }, chiave = playerKey (id in rosa, poi nome). */
 function validVote(v){ const n=parseFloat(v); return (!isNaN(n)&&n>=1&&n<=10)?n:null; }
-function seasonStats(){
-  const ms=matches||[], ratings=matchesCache.data?.ratings||[];
-  const memo=_seasonMemo;
-  if(memo && memo.ms===ms && memo.rs===ratings && memo.pl===players && memo.n===players.length) return memo.by;
+// scope: a season key ('2026-AUT') → only that season; nothing / 'all' → every match (player cards, figurina…)
+function seasonStats(scope){
+  const all=matches||[], ratings=matchesCache.data?.ratings||[], key=(scope&&scope!=='all')?scope:'all';
+  const memo=_seasonMemo[key];
+  if(memo && memo.ms===all && memo.rs===ratings && memo.pl===players && memo.n===players.length) return memo.by;
+  const ms=key==='all'?all:all.filter(m=>{const s=seasonOf(m.date);return s&&s.key===key;});
   const byMatch={}; ms.forEach(m=>{byMatch[m.id]=m;});
   const by={};
   const ensure=(key,name)=>by[key]||(by[key]={key,name,pres:0,w:0,d:0,l:0,results:[],
@@ -1212,7 +1246,7 @@ function seasonStats(){
     a.votes.sort((x,y)=>(x.date||'').localeCompare(y.date||''));     // chronological (chart)
     a.voteAvg=a.votes.length?a.voteSum/a.votes.length:null;
   });
-  _seasonMemo={ms,rs:ratings,pl:players,n:players.length,by};
+  _seasonMemo[key]={ms:all,rs:ratings,pl:players,n:players.length,by};
   return by;
 }
 // Composite match performance used for MVP / Peggiore (and for the "Re degli MVP" award):
@@ -2237,6 +2271,7 @@ function renderResult(){
   }
 
   renderPitch(pA,pB,c.modA,c.modB);
+  renderGiocaPrecision();
 }
 
 /* ════════════════════════════════════
@@ -3321,12 +3356,13 @@ function showPage(name){
   const nav=document.getElementById('bnav-'+name);
   if(nav)nav.classList.add('active');
   if(name==='rosa') ensureMatchesCachedForRosa();
-  if(name==='partita'){buildConvList();updateFormatUI();}
+  if(name==='partita'){buildConvList();updateFormatUI();renderGiocaPrecision();ensureMatchesCachedForRosa();}
   if(name==='partite')buildPartitePage();
+  if(name==='classifiche')buildClassifichePage();
   if(name==='settings')buildSettings();
-  // header refresh button only relevant on Storico (and only with a backend)
+  // header refresh button only on Partite / Classifiche (and only with a backend)
   const hr=document.getElementById('header-refresh');
-  if(hr)hr.style.display=(name==='partite'&&backendUrl)?'flex':'none';
+  if(hr)hr.style.display=((name==='partite'||name==='classifiche')&&backendUrl)?'flex':'none';
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -3352,6 +3388,7 @@ async function ensureMatchesCachedForRosa(){
         const fw=document.getElementById('fw'+i);   // ⚖️ Peso voti cell
         if(fw) fw.innerHTML=formWeightCellInner(p);
       });
+      renderGiocaPrecision();
     }
   }catch(e){/* silent */}
 }
@@ -3602,7 +3639,14 @@ function buildPartitePage(){
   }
   document.getElementById('partite-status').style.display='none';
   document.getElementById('partite-content').style.display='block';
-  showStoricoTab(storicoTab||'marcatori');   // restore/init active sub-tab
+  loadMatches();
+}
+function buildClassifichePage(){
+  const on=!!backendUrl;
+  document.getElementById('cl-status').style.display=on?'none':'block';
+  document.getElementById('cl-content').style.display=on?'block':'none';
+  if(!on) return;
+  renderClassifiche();   // instantly from the cache, then refreshed by loadMatches
   loadMatches();
 }
 
@@ -3644,7 +3688,7 @@ async function loadMatches(force){
 
 function renderMatchesList(){
   const list=document.getElementById('matches-list');
-  const title='<div class="section-header" style="margin:0 0 10px">📋 Partite registrate</div>';
+  const title='<div class="section-header" style="margin:0 0 10px">📋 Tutte le partite</div>';
   if(!matches.length){
     list.innerHTML=title+'<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Nessuna partita ancora. Crea la prima!</div>';
     renderScorers();   // still clear the loading state of scorers + stats
@@ -3654,7 +3698,7 @@ function renderMatchesList(){
   const sorted=[...matches].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const ratings=matchesCache.data?.ratings||[];
 
-  list.innerHTML=title+sorted.map(m=>{
+  const row=m=>{
     const ratedCount=ratings.filter(r=>r.matchId===m.id).length;
     const totalPlayers=(m.teamA?.length||0)+(m.teamB?.length||0);
     const hasRatings=ratedCount>0;
@@ -3671,42 +3715,39 @@ function renderMatchesList(){
       ${hasRatings?'<span style="font-size:18px">📊</span>':'<span style="font-size:18px;opacity:.4">📝</span>'}
       <span style="color:var(--text3);font-size:16px">›</span>
     </div>`;
-  }).join('');
+  };
+  // grouped by season, newest first: 🍂 Autunno 2026 · 7 partite
+  const groups=[];
+  sorted.forEach(m=>{ const S=seasonOf(m.date)||{key:'?',label:'Senza data'};
+    let g=groups.find(x=>x.key===S.key); if(!g){ g={key:S.key,label:S.label,items:[]}; groups.push(g); } g.items.push(m); });
+  list.innerHTML=title+groups.map(g=>`<div class="season-head">${SEASON_ICON[String(g.key).slice(-3)]||'📅'} ${g.label} <span>· ${g.items.length} ${g.items.length===1?'partita':'partite'}</span></div>`+g.items.map(row).join('')).join('');
 
   renderScorers();
 }
 
-// Ranking mode in the Marcatori tab: 'goals' (marcatori) | 'assist' (assistman)
-let scorersMode='goals';
-function setScorersMode(mode){ scorersMode=mode; renderScorersList(); }
 
 // Top-scorers / top-assist ranking aggregated from ratings + saved teams
+// everything that depends on matches/pagelle: Partite, Classifiche, precision in Gioca
 function renderScorers(){
-  renderScorersList();
-  // always render the stats table (independent of goals)
-  renderStatsTable();
-  renderSeasonDash();
   renderLastMatch();
-  if(storicoTab==='albo') renderAlbo();
+  renderClassifiche();
+  renderGiocaPrecision();
 }
 
 function renderScorersList(){
   const el=document.getElementById('scorers-list');
   if(!el)return;
-  const isAst=(scorersMode==='assist');
+  const isAst=(clTab==='assist');
 
-  // presenze, gol e assist dalla fonte unica delle statistiche di stagione
-  const tally=Object.values(seasonStats());
+  // presenze, gol e assist dalla fonte unica delle statistiche (stagione scelta)
+  const tally=Object.values(seasonStats(clCurrentScope()));
 
   const field=isAst?'assist':'goals';
   // only players with at least one goal/assist appear; ties → better per-match ratio, then name
   const ranked=tally.filter(s=>s[field]>0)
     .sort((a,b)=>b[field]-a[field] || (b[field]/(b.pres||1))-(a[field]/(a.pres||1)) || a.name.localeCompare(b.name));
 
-  const tabs=`<div class="sub-tabs" style="margin-bottom:10px">
-    <button onclick="setScorersMode('goals')" class="sub-tab ${!isAst?'active':''}" style="font-size:11px;padding:6px 4px">⚽ Gol</button>
-    <button onclick="setScorersMode('assist')" class="sub-tab ${isAst?'active':''}" style="font-size:11px;padding:6px 4px">🅰️ Assist</button>
-  </div>`;
+  const tabs='';   // Gol / Assist are now two tabs of the Classifiche page
   const title=`<div class="section-header" style="margin:0 0 10px">${isAst?'🅰️ Classifica assistman':'⚽ Classifica marcatori'}</div>`;
 
   if(!ranked.length){
@@ -3740,7 +3781,7 @@ function nameLink(n){
 const winnersHTML=(ws,sep)=>ws.map(w=>w.split(' & ').map(nameLink).join(' & ')).join(sep||', ');
 function renderAlbo(){
   const el=document.getElementById('albo-list'); if(!el) return;
-  const seasons=alboSeasons();
+  const scope=clCurrentScope(), seasons=alboSeasons().filter(S=>scope==='all'||S.key===scope);
   if(!seasons.length){ el.innerHTML='<div class="section-header" style="margin:0 0 10px">🏆 Albo d\'oro</div><div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">Nessuna partita ancora</div>'; return; }
   const chip={'in corso':'<span class="albo-chip live">in corso</span>','in chiusura':'<span class="albo-chip soon">in chiusura</span>','chiusa':'<span class="albo-chip done">🔒 chiusa</span>'};
   const row=a=>`<div class="albo-row"><span class="albo-t">${a.t}</span><span class="albo-w">${winnersHTML(a.winners,a.k==='coppia'?'<br>':', ')}</span><span class="albo-v">${esc(a.value)}</span></div>`;
@@ -3786,29 +3827,158 @@ function playerExtrasHTML(p){
 }
 
 // ── Sub-tab switching in Storico ──
-let storicoTab='marcatori';
-function showStoricoTab(tab){
-  storicoTab=tab;
-  document.querySelectorAll('#storico-tabs .sub-tab').forEach(b=>b.classList.remove('active'));   // only the Storico tabs
-  document.getElementById('stab-'+tab)?.classList.add('active');
-  document.getElementById('albo-card').style.display=tab==='albo'?'block':'none';
-  if(tab==='albo') renderAlbo();
-  document.getElementById('scorers-card').style.display=tab==='marcatori'?'block':'none';
-  document.getElementById('stats-card').style.display=tab==='statistiche'?'block':'none';
-  document.getElementById('matches-card').style.display=tab==='partite'?'block':'none';
+/* ════ 🏆 CLASSIFICHE: selettore di stagione + schede scorrevoli ════ */
+let clScope=null;          // season key ('2026-AUT') or 'all'; null → the most recent season
+let clTab='marcatori';
+const CL_TABS=[['marcatori','⚽ Marcatori'],['assist','🅰️ Assist'],['media','⭐ Media voto'],['statistiche','📈 Statistiche'],
+               ['coppie','🤝 Coppie'],['albo',"🏆 Albo d'oro"],['record','🏅 Record']];
+function clCurrentScope(){
+  if(clScope) return clScope;
+  const ss=seasonsList(); return ss.length?ss[ss.length-1].key:'all';
+}
+const scopeMatches=scope=>(scope==='all')?(matches||[]):(matches||[]).filter(m=>{const s=seasonOf(m.date);return s&&s.key===scope;});
+const scopeMinPres=scope=>Math.max(2,Math.ceil(scopeMatches(scope).length*0.4));   // same rule as the albo d'oro
+function setClScope(k){ clScope=k; renderClassifiche(); }
+function setClTab(t){ clTab=t; renderClassifiche(); }
+function renderClassifiche(){
+  const sc=document.getElementById('cl-seasons'); if(!sc) return;
+  const scope=clCurrentScope();
+  const seasons=seasonsList().slice().reverse();
+  sc.innerHTML=seasons.map(s=>`<button class="chip${s.key===scope?' active':''}" onclick="setClScope('${s.key}')">${SEASON_ICON[s.key.slice(-3)]||''} ${s.label}</button>`).join('')
+    +`<button class="chip${scope==='all'?' active':''}" onclick="setClScope('all')">♾️ Sempre</button>`;
+  document.getElementById('cl-tabs').innerHTML=CL_TABS.map(([k,l])=>`<button class="chip tab${k===clTab?' active':''}" onclick="setClTab('${k}')">${l}</button>`).join('');
+  renderSeasonDash();
+  const show=(id,on)=>{ const e=document.getElementById(id); if(e) e.style.display=on?'block':'none'; };
+  show('cl-list-card',['marcatori','assist','media','coppie','record'].includes(clTab));
+  show('stats-card',clTab==='statistiche'); show('albo-card',clTab==='albo');
+  if(clTab==='marcatori'||clTab==='assist') renderScorersList();
+  else if(clTab==='media') renderMediaList();
+  else if(clTab==='coppie') renderCoppie();
+  else if(clTab==='record') renderRecord();
+  else if(clTab==='statistiche') renderStatsTable();
+  else if(clTab==='albo') renderAlbo();
+  // keep the selected chips visible
+  [sc,document.getElementById('cl-tabs')].forEach(row=>{ const a=row.querySelector('.chip.active'); if(a&&a.scrollIntoView) a.scrollIntoView({block:'nearest',inline:'nearest'}); });
+}
+const clEmpty=msg=>`<div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">${msg}</div>`;
+const clMedal=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`<span style="display:inline-block;width:20px;text-align:center;font-weight:800;color:var(--text3);font-size:12px">${i+1}</span>`;
+function clRow(i,name,sub,value){
+  const pIdx=players.findIndex(p=>p.name===name);
+  return `<div class="cl-row"${pIdx>=0?` onclick="openPlayerCardByIdx(${pIdx})" style="cursor:pointer"`:''}>
+    <span class="cl-pos">${clMedal(i)}</span>
+    <div style="flex:1;min-width:0"><div class="cl-name${pIdx>=0?' link':''}">${esc(name)}</div><div class="cl-sub">${sub}</div></div>
+    <span class="cl-val">${value}</span></div>`;
+}
+
+// ⭐ Media voto (only who played at least 40% of the matches of the scope)
+function renderMediaList(){
+  const el=document.getElementById('scorers-list'); if(!el) return;
+  const scope=clCurrentScope(), minP=scopeMinPres(scope);
+  const all=Object.values(seasonStats(scope)).filter(p=>p.votes.length);
+  const ok=all.filter(p=>p.pres>=minP).sort((a,b)=>b.voteAvg-a.voteAvg||b.votes.length-a.votes.length||a.name.localeCompare(b.name));
+  const out=all.filter(p=>p.pres<minP).length;
+  const head=`<div class="section-header" style="margin:0 0 4px">⭐ Classifica media voto</div>
+    <div class="cl-note">Conta chi ha giocato almeno ${minP} partite${out?` · ${out} ${out===1?'giocatore escluso':'giocatori esclusi'} per poche presenze`:''}.</div>`;
+  if(!ok.length){ el.innerHTML=head+clEmpty('Nessun voto ancora'); return; }
+  const col=v=>v>=6.5?'var(--green)':v<5.5?'var(--red)':'var(--amber)';
+  el.innerHTML=head+ok.map((p,i)=>clRow(i,p.name,`${p.votes.length} pagelle · ${p.pres} presenze`,`<span style="color:${col(p.voteAvg)}">${p.voteAvg.toFixed(2)}</span>`)).join('');
+}
+
+// 🤝 Coppie: who wins (and loses) the most when playing in the same team (min 3 matches together)
+function scopePairs(scope){
+  const pairs={}, num=v=>{const n=parseInt(v);return isNaN(n)?null:n;};
+  scopeMatches(scope).forEach(m=>{
+    const a=num(m.scoreA), b=num(m.scoreB); if(a==null||b==null) return;
+    [[m.teamA,a-b],[m.teamB,b-a]].forEach(([team,gd])=>{
+      const ks=[...new Map(normalizeTeam(team).map(pl=>{const k=playerKey(pl.id,pl.name);return [k.key,k.name];})).entries()];
+      for(let x=0;x<ks.length;x++) for(let y=x+1;y<ks.length;y++){
+        const [p1,p2]=[ks[x],ks[y]].sort((u,v)=>u[0]<v[0]?-1:1), id=p1[0]+'|'+p2[0];
+        const c=pairs[id]||(pairs[id]={a:p1[1],b:p2[1],w:0,d:0,l:0,gd:0});
+        if(gd>0)c.w++; else if(gd===0)c.d++; else c.l++; c.gd+=gd;
+      }
+    });
+  });
+  return Object.values(pairs).map(c=>({...c,n:c.w+c.d+c.l})).filter(c=>c.n>=3);
+}
+function renderCoppie(){
+  const el=document.getElementById('scorers-list'); if(!el) return;
+  const ps=scopePairs(clCurrentScope());
+  const link=n=>{ const i=players.findIndex(p=>p.name===n); return i>=0?`<span class="cl-name link" style="display:inline" onclick="event.stopPropagation();openPlayerCardByIdx(${i})">${esc(n)}</span>`:esc(n); };
+  const row=(i,c,val,good)=>`<div class="cl-row"><span class="cl-pos">${clMedal(i)}</span>
+    <div style="flex:1;min-width:0"><div class="cl-name">${link(c.a)} <span style="color:var(--text3);font-weight:600">&</span> ${link(c.b)}</div>
+    <div class="cl-sub">${c.w}V · ${c.d}N · ${c.l}P · ${c.gd>0?'+':''}${c.gd} gol</div></div>
+    <span class="cl-val" style="color:${good?'var(--green)':'var(--red)'}">${val}</span></div>`;
+  const gold=ps.filter(c=>c.w>0).sort((x,y)=>y.w-x.w||y.w/y.n-x.w/x.n||y.gd-x.gd).slice(0,8);
+  const bad=ps.filter(c=>c.l>0).sort((x,y)=>y.l-x.l||y.l/y.n-x.l/x.n||x.gd-y.gd).slice(0,5);
+  const head=`<div class="section-header" style="margin:0 0 4px">🤝 Coppie d'oro</div><div class="cl-note">Chi vince di più giocando nella stessa squadra (almeno 3 partite insieme).</div>`;
+  if(!ps.length){ el.innerHTML=head+clEmpty('Servono almeno 3 partite giocate insieme'); return; }
+  el.innerHTML=head+gold.map((c,i)=>row(i,c,`${c.w} ${c.w===1?'vinta':'vinte'}`,true)).join('')
+    +`<div class="section-header" style="margin:14px 0 4px">💔 Coppie maledette</div><div class="cl-note">Chi perde di più insieme.</div>`
+    +(bad.length?bad.map((c,i)=>row(i,c,`${c.l} ${c.l===1?'persa':'perse'}`,false)).join(''):clEmpty('Nessuna'));
+}
+
+// 🏅 Record of the scope
+function renderRecord(){
+  const el=document.getElementById('scorers-list'); if(!el) return;
+  const scope=clCurrentScope(), num=v=>{const n=parseInt(v);return isNaN(n)?null:n;};
+  const ms=scopeMatches(scope).filter(m=>num(m.scoreA)!=null&&num(m.scoreB)!=null)
+    .sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.id).localeCompare(String(b.id)));
+  const ids=new Set(ms.map(m=>m.id)), byId={}; ms.forEach(m=>byId[m.id]=m);
+  const rs=(matchesCache.data?.ratings||[]).filter(r=>ids.has(r.matchId));
+  const recs=[];
+  const best=(items,val)=>{ const v=items.length?Math.max(...items.map(val)):0; return {v,items:items.filter(x=>val(x)===v)}; };
+  const mlink=m=>`<span class="cl-date" onclick="openMatch('${m.id}')">${formatDate(m.date)}</span>`;
+  const plink=n=>{ const i=players.findIndex(p=>p.name===n); return i>=0?`<span class="cl-name link" style="display:inline" onclick="openPlayerCardByIdx(${i})">${esc(n)}</span>`:esc(n); };
+  if(ms.length){
+    let b=best(ms,m=>num(m.scoreA)+num(m.scoreB));
+    recs.push(['🔥','Partita con più gol',`${b.v} gol`,b.items.map(m=>`${m.scoreA}-${m.scoreB} · ${mlink(m)}`).join('<br>')]);
+    b=best(ms,m=>Math.abs(num(m.scoreA)-num(m.scoreB)));
+    if(b.v>0) recs.push(['💥','Vittoria più larga',`+${b.v}`,b.items.map(m=>`${m.scoreA}-${m.scoreB} · ${mlink(m)}`).join('<br>')]);
+  }
+  const pr=fn=>rs.map(r=>({r,name:playerKey(r.playerId,r.player).name,v:fn(r)})).filter(x=>x.v!=null&&x.v>0);
+  [['🎯','Più gol in una partita',r=>parseInt(r.goals)||0,v=>`${v} gol`],
+   ['🅰️','Più assist in una partita',r=>parseInt(r.assist)||0,v=>`${v} assist`],
+   ['🌟','Voto più alto',r=>validVote(r.rating),v=>String(v)]].forEach(([ic,t,fn,fmt])=>{
+    const items=pr(fn); if(!items.length) return;
+    const b=best(items,x=>x.v); recs.push([ic,t,fmt(b.v),b.items.slice(0,4).map(x=>`${plink(x.name)} · ${mlink(byId[x.r.matchId])}`).join('<br>')]);
+  });
+  // streaks inside the scope (per player, chronological)
+  const st={};
+  ms.forEach(m=>{ const a=num(m.scoreA), b=num(m.scoreB);
+    [[m.teamA,Math.sign(a-b)],[m.teamB,Math.sign(b-a)]].forEach(([team,res])=>{
+      new Map(normalizeTeam(team).map(pl=>{const k=playerKey(pl.id,pl.name);return [k.key,k.name];})).forEach((name,k)=>{
+        const s=st[k]||(st[k]={name,un:0,w:0,l:0,bu:0,bw:0,bl:0});
+        s.un=res>=0?s.un+1:0; s.w=res>0?s.w+1:0; s.l=res<0?s.l+1:0;
+        s.bu=Math.max(s.bu,s.un); s.bw=Math.max(s.bw,s.w); s.bl=Math.max(s.bl,s.l);
+      });
+    });
+  });
+  const S=Object.values(st);
+  [['🧱','Più partite di fila senza sconfitte','bu'],['🔥','Più vittorie di fila','bw'],['🧊','Più sconfitte di fila','bl']].forEach(([ic,t,f])=>{
+    const b=best(S,s=>s[f]); if(b.v>=2) recs.push([ic,t,`${b.v} partite`,b.items.slice(0,4).map(s=>plink(s.name)).join(', ')]);
+  });
+  const head=`<div class="section-header" style="margin:0 0 8px">🏅 Record${scope==='all'?' di sempre':' della stagione'}</div>`;
+  el.innerHTML=head+(recs.length?recs.map(([ic,t,v,who])=>`<div class="rec-row"><span class="rec-ic">${ic}</span>
+    <div style="flex:1;min-width:0"><div class="rec-t">${t}</div><div class="rec-who">${who}</div></div><span class="rec-v">${v}</span></div>`).join(''):clEmpty('Nessuna partita con risultato'));
+}
+
+// 🎯 Precisione bilanciamento → in Gioca, under the generated teams
+function renderGiocaPrecision(){
+  const el=document.getElementById('gioca-precision'); if(!el) return;
+  el.innerHTML=(backendUrl && (matches||[]).length)?balancePrecisionHTML(matches):'';
 }
 
 // ── Dashboard riepilogo stagione ──
 function renderSeasonDash(){
   const el=document.getElementById('season-dash');
   if(!el)return;
-  const ms=matches||[];
+  const scope=clCurrentScope(), ms=scopeMatches(scope);
   if(!ms.length){el.innerHTML='';return;}
   const totMatches=ms.length;
-  const totGoals=Object.values(seasonStats()).reduce((s,p)=>s+p.goals,0);   // = somma dei gol in classifica
+  const totGoals=Object.values(seasonStats(scope)).reduce((s,p)=>s+p.goals,0);   // = somma dei gol in classifica
   const avgGoals=totMatches?(totGoals/totMatches):0;
   // presenze e voti per giocatore dalla fonte unica delle statistiche di stagione
-  const stat=seasonStats();
+  const stat=seasonStats(scope);
   // best average rating, but only among players who played enough matches
   // (threshold scales with season length so early data isn't skewed by 1-match wonders)
   const minPres=Math.max(2, Math.ceil(totMatches*0.4));
@@ -3827,7 +3997,7 @@ function renderSeasonDash(){
     <div class="dash-cell"><div class="dash-val">${totGoals}</div><div class="dash-lbl">Gol totali</div></div>
     <div class="dash-cell"><div class="dash-val">${avgGoals.toFixed(1)}</div><div class="dash-lbl">Gol/partita</div></div>
     <div class="dash-cell"><div class="dash-val" style="font-size:13px">${topVal}</div><div class="dash-lbl">⭐ Miglior media</div></div>
-  </div>${balancePrecisionHTML(ms)}`;
+  </div>`;
 }
 
 // ── 🎯 Precisione bilanciamento ──
@@ -3899,7 +4069,12 @@ function renderLastMatch(){
       <span style="font-size:13px;font-weight:700;color:var(--teamb)">⚪ Bianchi</span>
     </div>
     <div style="text-align:center;font-size:12px;margin-top:4px">${winTxt}</div>
-    <div style="text-align:center;font-size:10px;color:var(--text3);margin-top:6px">Tocca per i dettagli e le pagelle</div>
+    <div class="lm-actions" onclick="event.stopPropagation()">
+      <button class="btn btn-primary btn-sm mbar-btn" onclick="shareMatchFormations('${m.id}')" style="background:#25D366;border-color:#25D366">📲 Formazioni</button>
+      <button class="btn btn-primary btn-sm mbar-btn" onclick="shareMatchSummary('${m.id}')">🖼️ Riepilogo</button>
+      <button class="btn btn-secondary btn-sm mbar-btn" onclick="shareMatchSheet('${m.id}')">🖨️ Foglio</button>
+    </div>
+    <div style="text-align:center;font-size:10px;color:var(--text3);margin-top:6px">Tocca la partita per i dettagli e le pagelle</div>
   </div>`;
 }
 
@@ -3939,10 +4114,10 @@ function statsFilterTabs(minPres){
 function renderStatsTable(){
   const el=document.getElementById('stats-table');
   if(!el)return;
-  const allMatches=matches||[];
+  const scope=clCurrentScope(), allMatches=scopeMatches(scope);
 
-  // presenze, V/N/P, forma, gol e voti dalla fonte unica delle statistiche di stagione
-  const agg=seasonStats();
+  // presenze, V/N/P, forma, gol e voti dalla fonte unica delle statistiche di stagione (stagione scelta)
+  const agg=seasonStats(scope);
 
   let rows=Object.values(agg).map(s=>({...s, ratingSum:s.voteSum, ratingCount:s.votes.length}));
   const totMatches=allMatches.length;
