@@ -139,6 +139,11 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .fut-mini-ovr{font-size:34px;font-weight:900;line-height:1;text-shadow:0 1px 0 rgba(255,255,255,.45),0 2px 6px rgba(0,0,0,.25);position:relative}
 .fut-mini-tier{font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:.85}
 .fut-mini-cta{font-size:10px;font-weight:800;margin-top:7px;opacity:.9}
+/* "new version" banner */
+#update-banner{position:fixed;left:10px;right:10px;bottom:calc(74px + env(safe-area-inset-bottom,0px));z-index:700;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 12px;border-radius:12px;background:#1a4a8f;color:#fff;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+#update-banner small{opacity:.75;font-weight:600}
+#update-banner button{border:none;border-radius:99px;padding:7px 14px;background:#fff;color:#1a4a8f;font-weight:800;font-size:13px;cursor:pointer}
 /* full-screen (home-screen) mode: keep overlays below the iPhone status bar */
 #match-modal{padding-top:calc(14px + env(safe-area-inset-top,0px)) !important}
 #app-modal{padding-top:calc(18px + env(safe-area-inset-top,0px)) !important}
@@ -654,7 +659,10 @@ input[type=file]{display:none}
 /* ════════════════════════════════════
    CONSTANTS
 ════════════════════════════════════ */
-let BUILD_DATE='—'; // popolata da fetchBuildDate() leggendo l'header Last-Modified di index.html
+// Version of the code that is RUNNING (bump at every release). The installed home-screen app has no reload
+// button and iOS keeps it frozen in memory: comparing this with the file on GitHub tells if it's outdated.
+const APP_VERSION='2026.10.29-d';
+let BUILD_DATE='—'; // date of the file ON THE SERVER (Last-Modified of index.html), not of the running code
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
 const ROLES=['ATT','MED','DIF'];
@@ -908,6 +916,33 @@ async function fetchBuildDate(){
   updateBuildDateLabel();
 }
 
+// ── Aggiornamenti: avvisa se su GitHub c'è una versione diversa da quella in uso ──
+let _lastUpdateCheck=0;
+async function checkForUpdate(force){
+  if(!(location.protocol==='http:'||location.protocol==='https:')) return null;
+  if(!force && Date.now()-_lastUpdateCheck<5*60*1000) return null;   // at most every 5 minutes
+  _lastUpdateCheck=Date.now();
+  try{
+    const res=await fetch(location.pathname+'?_v='+Date.now(),{cache:'no-store'});
+    const m=(await res.text()).match(/const APP_VERSION='([\w.\-]+)'/);
+    if(m && m[1]!==APP_VERSION){ showUpdateBanner(m[1]); return m[1]; }
+  }catch(e){}
+  return null;
+}
+function showUpdateBanner(v){
+  let el=document.getElementById('update-banner');
+  if(!el){ el=document.createElement('div'); el.id='update-banner'; document.body.appendChild(el); }
+  el.innerHTML=`<span>🆕 Nuova versione disponibile <small>(${esc(v)})</small></span><button onclick="forceReload()">Aggiorna</button>`;
+}
+// reload bypassing every cache (a new query string = a URL never seen before)
+function forceReload(){ location.replace(location.pathname+'?_v='+Date.now()); }
+async function manualUpdate(){
+  toast('⏳ Controllo aggiornamenti…');
+  const v=await checkForUpdate(true);
+  if(v){ forceReload(); } else { toast('✓ Hai già l\'ultima versione ('+APP_VERSION+')'); }
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') checkForUpdate(); });
+
 function updateBuildDateLabel(){
   const el=document.getElementById('build-date');
   if(el)el.textContent='📅 '+BUILD_DATE;
@@ -1019,6 +1054,7 @@ function getBackupSizeInfo(){
   if(typeof ensureMatchesCachedForRosa==='function') ensureMatchesCachedForRosa();
   // read real upload date of index.html from GitHub Pages
   fetchBuildDate();
+  checkForUpdate(true);   // tell right away if this copy is outdated
 })();
 // Nickname initials: first letter of the first two words, CamelCase counts as words
 // ("Vito Azz"→VA, "FabioFicarelli"→FF); single word → first two letters ("Rella"→RE)
@@ -2636,6 +2672,8 @@ const FUT_SHORT={goleador:'Goleador',assistman:'Assist',media:'Top media',mvp:'R
   coppia:'Coppia',flop:'Flop media',cucchiaio:'Cucchiaio',rigori:'Rigori',autogol:'Autogol'};
 const seasonShort=label=>label.replace('Primavera','Pri').replace('Estate','Est').replace('Autunno','Aut').replace('Inverno','Inv').replace(/ 20(\d\d)/,' $1').replace(/\/(\d\d)$/,'/$1');
 
+// strip U+FE0F (emoji variation selector): it doesn't change the look but breaks Safari's canvas text measuring
+const noVS=s=>String(s).replace(/\uFE0F/g,'');
 function drawFutCard(p, photoImg){
   const tk=futTier(p), t=FUT_TIERS[tk], a=playerSeason(p), tr=playerTrophies(p);
   const W=720, H=1140, {canvas,ctx}=newShareCanvas(W,H);
@@ -2766,27 +2804,30 @@ function drawFutCard(p, photoImg){
   sep(y+490,x+60,x+w-60);
 
   // ── 6 stats in two columns ──
-  // measure with the font that will actually draw (iPhone ≠ desktop) → two equal columns, symmetric around the centre
+  // measured with the font that actually draws (iPhone ≠ desktop). Each column gets ITS OWN width
+  // (a "100" only widens its own column) and both sit at the same distance from the centre divider.
   const VF=F('900 48px'), LF=F('700 34px'), inGap=12, midGap=56;
-  ctx.font=VF; const valW=Math.max(...FUT_STATS.map(([,idx])=>ctx.measureText(String(futStat(p,idx))).width));
-  ctx.font=LF; const labW=Math.max(...FUT_STATS.map(([l])=>ctx.measureText(l).width));
-  const colW=valW+inGap+labW;
+  const colOf=c=>FUT_STATS.filter((_,k)=>(k<3?0:1)===c);
+  const measure=(items,font,f)=>{ ctx.font=font; return Math.max(...items.map(it=>ctx.measureText(f(it)).width)); };
+  const cols=[0,1].map(c=>{ const it=colOf(c);
+    const vw=measure(it,VF,([,idx])=>String(futStat(p,idx))), lw=measure(it,LF,([l])=>l); return {vw,lw,w:vw+inGap+lw}; });
+  // divider exactly under the (centred) name; both columns at the same distance from it
+  const divX=cx, lefts=[cx-midGap/2-cols[0].w, cx+midGap/2];
   FUT_STATS.forEach(([lbl,idx],k)=>{
-    const col=k<3?0:1, row=k%3, by=y+560+row*66;
-    const left=col?cx+midGap/2:cx-midGap/2-colW;
-    etext(String(futStat(p,idx)),left+valW,by,VF,t.text,'right');
-    etext(lbl,left+valW+inGap,by,LF,t.sub,'left');
+    const c=k<3?0:1, row=k%3, by=y+560+row*66, L=lefts[c], C=cols[c];
+    etext(String(futStat(p,idx)),L+C.vw,by,VF,t.text,'right');
+    etext(lbl,L+C.vw+inGap,by,LF,t.sub,'left');
   });
   ctx.save(); const vl=ctx.createLinearGradient(0,y+516,0,y+700); vl.addColorStop(0,'rgba(0,0,0,0)'); vl.addColorStop(0.5,t.sub); vl.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.globalAlpha=0.6; ctx.strokeStyle=vl; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx,y+516); ctx.lineTo(cx,y+700); ctx.stroke(); ctx.restore();
+  ctx.globalAlpha=0.6; ctx.strokeStyle=vl; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(divX,y+516); ctx.lineTo(divX,y+700); ctx.stroke(); ctx.restore();
   sep(y+722,x+60,x+w-60);
 
   // ── trophies: award medals (same award in several seasons → one medal ×N), feats on their own line ──
   const grouped=[];
   tr.awards.forEach(m=>{ const g=grouped.find(x=>x.k===m.k);
-    if(g){ g.count++; } else grouped.push({k:m.k,shame:m.shame,emoji:m.t.split(' ')[0],cap:FUT_SHORT[m.k],sub:seasonShort(m.season),count:1}); });
+    if(g){ g.count++; } else grouped.push({k:m.k,shame:m.shame,emoji:noVS(m.t.split(' ')[0]),cap:FUT_SHORT[m.k],sub:seasonShort(m.season),count:1}); });
   grouped.sort((u,v)=>u.shame-v.shame);                       // prizes first, then shame
-  const featItems=tr.feats.map(f=>({k:f.k,emoji:f.t.split(' ')[0],count:f.count}));
+  const featItems=tr.feats.map(f=>({k:f.k,emoji:noVS(f.t.split(' ')[0]),count:f.count}));
   // no awards yet → the feats become the medals
   let medals=grouped.map(m=>({...m,kind:m.shame?'shame':'gold',sub:m.count>1?m.count+' stagioni':m.sub}));
   let featLine=featItems;
@@ -2817,12 +2858,14 @@ function drawFutCard(p, photoImg){
   if(featLine.length) etext(featLine.map(f=>`${f.emoji} ×${f.count}`).join('    '),cx,y+870,F('800 24px'),t.text);
 
   // ── season numbers ──
-  const season=a&&a.pres ? `${a.pres} PG  ·  ${a.w} V  ·  ⚽ ${a.goals}  ·  🅰️ ${a.assist}` : 'Nessuna partita ancora';
+  // text only: Safari mis-measures (and so mis-centres) canvas text containing emoji like "🅰️"
+  const season=a&&a.pres ? `${a.pres} PG  ·  ${a.w} V  ·  ${a.goals} GOL  ·  ${a.assist} ASSIST` : 'Nessuna partita ancora';
   etext(season,cx,y+926,F('800 26px'),t.text);
 
   // caption under the card
   ctx.fillStyle='#8a94a6'; ctx.font=F('italic 500 18px'); ctx.textAlign='center';
-  ctx.fillText('CalcioLercio · figurina ufficiale della Redazione Avv. Peppe Rella',W/2,H-30);
+  ctx.fillText('CalcioLercio · figurina ufficiale della Redazione Avv. Peppe Rella',W/2,H-38);
+  ctx.font=F('500 12px'); ctx.fillStyle='#5d6676'; ctx.fillText('v'+APP_VERSION,W/2,H-16);
   return canvas;
 }
 
@@ -3049,8 +3092,9 @@ function buildSettings(){
   let html='';
 
   // ── Build date (top-right) ──
-  html+=`<div style="display:flex;justify-content:flex-end;margin-bottom:4px">
-    <span style="font-size:10px;color:var(--text3)" id="build-date">📅 ${BUILD_DATE}</span>
+  html+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+    <span style="font-size:11px;color:var(--text2)">Versione in uso: <strong>${APP_VERSION}</strong><br><span style="font-size:10px;color:var(--text3)" id="build-date">📅 ${BUILD_DATE}</span> <span style="font-size:10px;color:var(--text3)">(file sul server)</span></span>
+    <button class="btn btn-secondary btn-sm" onclick="manualUpdate()">🔄 Aggiorna app</button>
   </div>`;
 
   // ── Backup / Sync ──
