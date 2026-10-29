@@ -43,7 +43,8 @@
   --def:#4ab8f0;   --def-light:#061828; --def-mid:#38a8e0;
 }}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{font-size:16px;overflow-x:hidden}
+html{font-size:16px;overflow-x:hidden;background:#eef1f6}
+@media(prefers-color-scheme:dark){html{background:#151a24}}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--text);min-height:100vh}
 /* fixed gradient as a separate layer (background-attachment:fixed breaks position:fixed on iOS Safari) */
 body::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(160deg,#eef3fb 0%,#f2f4f7 45%,#e9edf5 100%)}
@@ -672,7 +673,7 @@ input[type=file]{display:none}
 </div>
 
 <!-- Match detail modal -->
-<div id="match-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;padding:14px;overflow-y:auto">
+<div id="match-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;padding:14px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch">
   <div style="max-width:600px;margin:0 auto;background:var(--gray);border-radius:var(--radius);padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.3)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;min-height:24px">
       <div style="font-size:16px;font-weight:800" id="match-modal-title">Partita</div>
@@ -729,7 +730,7 @@ input[type=file]{display:none}
 ════════════════════════════════════ */
 // Version of the code that is RUNNING (bump at every release). The installed home-screen app has no reload
 // button and iOS keeps it frozen in memory: comparing this with the file on GitHub tells if it's outdated.
-const APP_VERSION='2026.10.29-g';
+const APP_VERSION='2026.10.29-h';
 let BUILD_DATE='—'; // date of the file ON THE SERVER (Last-Modified of index.html), not of the running code
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
@@ -1047,7 +1048,25 @@ function updateBuildDateLabel(){
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 
 /* ── App modals (replace native confirm/prompt) ── */
-function closeAppModal(){document.getElementById('app-modal').style.display='none';}
+/* iOS: if a field is still focused when its window disappears, the keyboard closes badly and iOS keeps the
+   page laid out for the smaller "keyboard open" screen → the bottom bar floats mid-screen. So: release the
+   keyboard BEFORE hiding, then nudge the scroll so iOS re-aligns fixed elements (bottom bar, background). */
+function releaseKeyboard(){
+  const a=document.activeElement;
+  if(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) a.blur();
+}
+function repairViewport(){
+  requestAnimationFrame(()=>{ window.scrollTo(window.scrollX, window.scrollY); });
+  setTimeout(()=>{ window.scrollTo(window.scrollX, window.scrollY); },300);   // after the keyboard animation
+}
+document.addEventListener('focusout',e=>{ if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) repairViewport(); });
+if(window.visualViewport){
+  let vvH=window.visualViewport.height;
+  window.visualViewport.addEventListener('resize',()=>{ const h=window.visualViewport.height;
+    if(h>vvH+80) repairViewport();               // the screen grew back (keyboard closed)
+    vvH=h; });
+}
+function closeAppModal(){ releaseKeyboard(); document.getElementById('app-modal').style.display='none'; repairViewport(); }
 // confirmModal({title, msg, icon, okLabel, cancelLabel, danger}) → Promise<boolean>
 function confirmModal(opts={}){
   return new Promise(resolve=>{
@@ -4906,8 +4925,10 @@ async function deleteMatch(id){
 }
 
 function closeMatchModal(){
+  releaseKeyboard();                                   // close the keyboard first (iOS)
   document.getElementById('match-modal').style.display='none';
   if(rosaCardIdx!=null){ rosaCardIdx=null; buildRosa({noAnim:true}); buildConvList(); }   // apply edited OVR order/badges
+  repairViewport();
 }
 
 function goToBackendSettings(){
