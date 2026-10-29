@@ -68,14 +68,11 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 #players-list{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:start}
 @media(max-width:340px){#players-list{grid-template-columns:1fr}}
 #players-list .card{margin-bottom:0}
-#players-list .card.card-compact:not(.expanded):active{transform:scale(0.97)}
-#players-list .card.expanded{grid-column:1 / -1 !important;background:rgba(255,255,255,0.85);box-shadow:0 8px 30px rgba(0,0,0,0.16);border-left:4px solid var(--role-accent,var(--green));transform:none}
-@media(prefers-color-scheme:dark){
-  #players-list .card.expanded{background:rgba(38,46,62,0.82);box-shadow:0 8px 30px rgba(0,0,0,0.45)}
-}
+#players-list .card.card-compact:active{transform:scale(0.97)}
 /* entrance animation for rosa cards */
 @keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 #players-list .card.card-compact{animation:cardIn 0.32s ease both}
+#players-list.no-anim .card.card-compact{animation:none}
 @media(prefers-reduced-motion:reduce){#players-list .card.card-compact{animation:none}}
 
 /* ─── player card ─── */
@@ -1112,97 +1109,100 @@ function neededTotal(){return sizeA+sizeB}
 /* ════════════════════════════════════
    ROSA
 ════════════════════════════════════ */
-function buildRosa(){
+// Rosa list: compact cards only; tapping one opens the full, editable card ON TOP
+// (same overlay as the Storico player card). opts.noAnim → rebuild without the entrance animation.
+function buildRosa(opts){
   const c=document.getElementById('players-list');c.innerHTML='';
+  c.classList.toggle('no-anim',!!(opts&&opts.noAnim));
   rosaOrder().forEach((i,rank)=>{   // strongest first; archived players excluded
     const p=players[i];
     const ovr=calcOvr(p.stats).toFixed(1);
-    const toggles=ROLES.map(r=>{
-      const on=p.roles.includes(r);
-      const baseCls=`role-toggle role-${ROLE_CLS[r]}${on?' tog-'+ROLE_CLS[r]:''}`;
-      return `<button class="${baseCls}" onclick="toggleRole(${i},'${r}',event)">
-        <span class="rt-label">${RLBL[r]}</span>
-        ${on?'<span class="rt-tick">✓</span>':''}
-      </button>`;
-    }).join('');
-    let sg='<div class="stats-grid">';
-    STATS.forEach((s,j)=>{
-      sg+=`<div class="stat-row">
-        <span class="stat-icon">${ICONS[j]}</span>
-        <span class="stat-name">${s}</span>
-        <input class="stat-input" type="number" min="1" max="10" step="1" value="${p.stats[j]}" inputmode="numeric" oninput="upStat(${i},${j},this.value)">
-        <div class="mini-bar"><div class="mini-bar-fill" id="b${i}-${j}" style="width:${p.stats[j]*10}%"></div></div>
-      </div>`;
-    });
-    sg+=formWeightCell(p,'fw'+i);   // 12° valore, non modificabile
-    sg+='</div>';
     const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
     const pagInfo=getPlayerPagInfo(p);
-    // role accent for the expanded glass border (multi-role = purple)
-    const accent=p.roles.length>1?'#8b5cf6':(p.roles[0]==='ATT'?'var(--att)':p.roles[0]==='DIF'?'var(--def)':'var(--mid)');
     const d=document.createElement('div');d.className='card card-compact';
-    d.style.setProperty('--role-accent',accent);
     d.style.animationDelay=(Math.min(rank,12)*0.03)+'s';   // subtle stagger, in display order
-    d.innerHTML=`<div class="player-header" onclick="toggleCard(${i})">
+    d.innerHTML=`<div class="player-header" onclick="openRosaCard(${i})">
       <div class="ph-top">
         <div class="avatar-stack">
           <span class="pag-badge ${pagInfo.cls}" id="pag${i}" title="Media pagelle">${pagInfo.label}</span>
-          ${initialsAvatar(p,'avatar avatar-ini','av'+i)}
+          ${initialsAvatar(p,'avatar avatar-ini','')}
           <span class="ovr-badge" id="ov${i}">OVR ${ovr}</span>
         </div>
         <div class="ph-info">
           <div class="ph-name-row">
             <span class="player-name-display">${esc(p.name)}</span>
           </div>
-          <div class="role-pills-display" id="rpills${i}">${pills}</div>
+          <div class="role-pills-display">${pills}</div>
         </div>
-      </div>
-    </div>
-    <div id="cd${i}" style="display:none">
-      <div class="photo-roles">
-        <div class="photo-row">
-          <div class="photo-edit" onclick="photoActions(${i},event)" title="${p.photo?'Tocca per cambiare o rimuovere la foto':'Tocca per caricare una foto'}">
-            ${avatarHTML(p,'avatar avatar-xl','')}
-            <span class="photo-badge">📷</span>
-          </div>
-        </div>
-        <div class="role-section">
-          <div class="role-section-label">Ruoli</div>
-          <div class="role-toggles">${toggles}</div>
-        </div>
-        <div class="photo-slot" id="pslot-${i}"></div><!-- terza colonna libera per usi futuri -->
-      </div>${sg}
-      <div id="pagelle-${i}" style="margin-top:4px;padding-top:6px;border-top:1px solid var(--gray2)"></div>
-      <div style="text-align:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--gray2)">
-        <button onclick="delPlayer(${i},event)" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:4px 8px;text-decoration:underline;text-underline-offset:2px">🗄️ Archivia giocatore</button>
       </div>
     </div>`;
     c.appendChild(d);
   });
 }
-function toggleCard(i){
-  const e=document.getElementById('cd'+i),o=e.style.display!=='none';
-  // accordion: when opening this card, close any other open one for a clean grid
-  if(!o){
-    document.querySelectorAll('#players-list .card.expanded').forEach(card=>{
-      card.classList.remove('expanded');
-      const body=card.querySelector('[id^="cd"]');
-      if(body)body.style.display='none';
-    });
-  }
-  e.style.display=o?'none':'block';
-  // expand card to full width of the grid while open
-  const card=e.closest('.card');
-  if(card) card.classList.toggle('expanded', !o);
-  if(!o){
-    renderPlayerPagelle(i);
-    const fw=document.getElementById('fw'+i);   // keep ⚖️ Peso voti in sync with the latest pagelle
-    if(fw) fw.innerHTML=formWeightCellInner(players[i]);
-  }
+
+let rosaCardIdx=null;   // roster index of the Rosa card open on top (null = none)
+// Full editable player card (photo, roles, stats, pagelle, archive), opened on top of the Rosa list
+function openRosaCard(i){
+  const p=players[i]; if(!p)return;
+  rosaCardIdx=i;
+  const ovr=calcOvr(p.stats).toFixed(1);
+  const toggles=ROLES.map(r=>{
+    const on=p.roles.includes(r);
+    const baseCls=`role-toggle role-${ROLE_CLS[r]}${on?' tog-'+ROLE_CLS[r]:''}`;
+    return `<button class="${baseCls}" onclick="toggleRole(${i},'${r}',event)">
+      <span class="rt-label">${RLBL[r]}</span>
+      ${on?'<span class="rt-tick">✓</span>':''}
+    </button>`;
+  }).join('');
+  let sg='<div class="stats-grid">';
+  STATS.forEach((s,j)=>{
+    sg+=`<div class="stat-row">
+      <span class="stat-icon">${ICONS[j]}</span>
+      <span class="stat-name">${s}</span>
+      <input class="stat-input" type="number" min="1" max="10" step="1" value="${p.stats[j]}" inputmode="numeric" oninput="upStat(${i},${j},this.value)">
+      <div class="mini-bar"><div class="mini-bar-fill" id="b${i}-${j}" style="width:${p.stats[j]*10}%"></div></div>
+    </div>`;
+  });
+  sg+=formWeightCell(p,'fw'+i);   // 12° valore, non modificabile
+  sg+='</div>';
+  const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
+  const pagInfo=getPlayerPagInfo(p);
+  document.getElementById('match-modal-title').textContent='';
+  document.getElementById('match-modal-body').innerHTML=`
+    <div class="player-header" style="margin:0 0 6px">
+      <div class="ph-top">
+        <div class="avatar-stack">
+          <span class="pag-badge ${pagInfo.cls}" title="Media pagelle">${pagInfo.label}</span>
+          ${initialsAvatar(p,'avatar avatar-ini','')}
+          <span class="ovr-badge" id="mov${i}">OVR ${ovr}</span>
+        </div>
+        <div class="ph-info">
+          <div class="ph-name-row"><span class="player-name-display">${esc(p.name)}</span></div>
+          <div class="role-pills-display">${pills}</div>
+        </div>
+      </div>
+    </div>
+    <div class="photo-roles">
+      <div class="photo-row">
+        <div class="photo-edit" onclick="photoActions(${i},event)" title="${p.photo?'Tocca per cambiare o rimuovere la foto':'Tocca per caricare una foto'}">
+          ${avatarHTML(p,'avatar avatar-xl','')}
+          <span class="photo-badge">📷</span>
+        </div>
+      </div>
+      <div class="role-section">
+        <div class="role-section-label">Ruoli</div>
+        <div class="role-toggles">${toggles}</div>
+      </div>
+      <div class="photo-slot" id="pslot-${i}"></div><!-- terza colonna libera per usi futuri -->
+    </div>${sg}
+    <div id="pagelle-${i}" style="margin-top:4px;padding-top:6px;border-top:1px solid var(--gray2)"></div>
+    <div style="text-align:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--gray2)">
+      <button onclick="delPlayer(${i},event)" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:4px 8px;text-decoration:underline;text-underline-offset:2px">🗄️ Archivia giocatore</button>
+    </div>`;
+  document.getElementById('match-modal').style.display='block';
+  renderPlayerPagelle(i);
 }
 
-// Open a read-only player profile in a modal (used from the stats/scorers tables).
-// Mirrors the Rosa expanded-card layout exactly, minus the editing controls.
 function openPlayerCardByIdx(idx){
   if(idx<0||!players[idx]){toast('Giocatore non in rosa');return;}
   const p=players[idx];
@@ -1439,7 +1439,9 @@ function upStat(i,j,v){
   const n=Math.min(10,Math.max(1,parseFloat(v)||1));
   players[i].stats[j]=n;
   document.getElementById('b'+i+'-'+j).style.width=(n*10)+'%';
-  document.getElementById('ov'+i).textContent='OVR '+calcOvr(players[i].stats).toFixed(1);
+  const o='OVR '+calcOvr(players[i].stats).toFixed(1);
+  const ov=document.getElementById('ov'+i); if(ov) ov.textContent=o;
+  const mov=document.getElementById('mov'+i); if(mov) mov.textContent=o;
   save();
 }
 function toggleRole(i,r,e){
@@ -1447,9 +1449,8 @@ function toggleRole(i,r,e){
   const idx=players[i].roles.indexOf(r);
   if(idx>=0){if(players[i].roles.length===1){toast('Almeno un ruolo è richiesto');return}players[i].roles.splice(idx,1);}
   else players[i].roles.push(r);
-  save();buildRosa();buildConvList();
-  const cd=document.getElementById('cd'+i);
-  if(cd){cd.style.display='block';const card=cd.closest('.card');if(card)card.classList.add('expanded');}
+  save();buildRosa({noAnim:true});buildConvList();
+  if(rosaCardIdx===i) openRosaCard(i);   // refresh toggles + pills in the open card
 }
 function delPlayer(i,e){
   e.stopPropagation();
@@ -1466,7 +1467,7 @@ function delPlayer(i,e){
     if(!ok)return;
     players[i].archived=true;
     selected.delete(i);
-    save();buildRosa();buildConvList();
+    save();closeMatchModal();buildRosa({noAnim:true});buildConvList();
     toast('Giocatore archiviato');
   });
 }
@@ -1515,8 +1516,7 @@ function choosePhoto(i){
   document.getElementById('photo-input').click();
 }
 function reopenCard(i){
-  const cd=document.getElementById('cd'+i);
-  if(cd){cd.style.display='block';const c=cd.closest('.card');if(c)c.classList.add('expanded');renderPlayerPagelle(i);}
+  if(rosaCardIdx===i) openRosaCard(i);   // re-render the open card (e.g. after a photo change)
 }
 function onPhotoSelected(e){
   const f=e.target.files[0];
@@ -3831,6 +3831,7 @@ async function deleteMatch(id){
 
 function closeMatchModal(){
   document.getElementById('match-modal').style.display='none';
+  if(rosaCardIdx!=null){ rosaCardIdx=null; buildRosa({noAnim:true}); buildConvList(); }   // apply edited OVR order/badges
 }
 
 function goToBackendSettings(){
