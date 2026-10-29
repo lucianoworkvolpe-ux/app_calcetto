@@ -109,9 +109,15 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .pair-v{color:var(--text3);font-size:11px;white-space:nowrap}
 /* 🃏 figurina preview (third column of the player card) */
 .photo-slot{display:flex;justify-content:center;align-items:flex-start}
-.fut-mini{width:100%;max-width:112px;aspect-ratio:3/4;border:none;border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;box-shadow:0 4px 14px rgba(0,0,0,.35);font-family:inherit;transition:transform var(--tr)}
+.fut-mini{width:100%;max-width:112px;aspect-ratio:3/4;border:none;border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;box-shadow:0 4px 14px rgba(0,0,0,.35);font-family:inherit;transition:transform var(--tr);position:relative;overflow:hidden;border:1.5px solid rgba(255,255,255,.55)}
+.fut-mini::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.10) 0 2px,transparent 2px 9px);pointer-events:none}
+.fut-mini::after{content:"";position:absolute;top:-40%;left:-60%;width:60%;height:180%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);transform:rotate(20deg);animation:futShine 3.2s ease-in-out infinite;pointer-events:none}
+.fut-mini.holo::before{background:linear-gradient(120deg,rgba(255,77,109,.28),rgba(255,183,3,.22),rgba(138,201,38,.22),rgba(0,187,249,.24),rgba(155,93,229,.28))}
+@keyframes futShine{0%,55%{left:-60%}100%{left:130%}}
+@media(prefers-reduced-motion:reduce){.fut-mini::after{animation:none;display:none}}
+.fut-mini-cups{font-size:10px;font-weight:900;margin-top:4px;position:relative}
 .fut-mini:active{transform:scale(0.95)}
-.fut-mini-ovr{font-size:34px;font-weight:900;line-height:1}
+.fut-mini-ovr{font-size:34px;font-weight:900;line-height:1;text-shadow:0 1px 0 rgba(255,255,255,.45),0 2px 6px rgba(0,0,0,.25);position:relative}
 .fut-mini-tier{font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:.85}
 .fut-mini-cta{font-size:10px;font-weight:800;margin-top:7px;opacity:.9}
 /* full-screen (home-screen) mode: keep overlays below the iPhone status bar */
@@ -2548,12 +2554,17 @@ function drawFieldSheet(m){
 
 /* ── 🃏 Figurina stile FIFA ──
    Valutazione = OVR × 10. Oro ≥ 70, Argento ≥ 60, Bronzo sotto.
-   "In forma" (nera e oro) se la media delle ultime 3 pagelle è almeno 7. */
+   "In forma" (nera e oro, olografica) se la media delle ultime 3 pagelle è almeno 7.
+   In basso le medaglie dei trofei vinti (stessa fonte della bacheca: playerTrophies). */
 const FUT_TIERS={
-  inform:{label:'IN FORMA', bg:['#3a4560','#1a2030','#07090e'], text:'#f5d76e', sub:'#d7deeb', line:'#f5d76e'},
-  gold:  {label:'ORO',      bg:['#fbeaa0','#e0b93c','#9a7414'], text:'#2b1d00', sub:'#4a3810', line:'#fff6c4'},
-  silver:{label:'ARGENTO',  bg:['#f7f9fc','#c6cdd8','#7f8998'], text:'#141a24', sub:'#323b4a', line:'#ffffff'},
-  bronze:{label:'BRONZO',   bg:['#f3c79c','#c4834b','#7c4723'], text:'#2a1405', sub:'#4a2a12', line:'#ffe0c2'}
+  inform:{label:'IN FORMA', metal:['#46557a','#1d2538','#0b0f18','#2c3654','#05070b'], text:'#f7d774', sub:'#dfe6f2', line:'#f7d774',
+          glow:'#f7d774', spark:'#ffe9a0', emboss:'rgba(0,0,0,0.65)', stripe:'rgba(255,255,255,0.045)', holo:true},
+  gold:  {label:'ORO',      metal:['#fff4c2','#f0cc55','#c4951c','#f8df85','#8a650e'], text:'#2a1c00', sub:'#4b3810', line:'#fff7d6',
+          glow:'#f2c94c', spark:'#fff2a8', emboss:'rgba(255,250,220,0.75)', stripe:'rgba(255,255,255,0.10)'},
+  silver:{label:'ARGENTO',  metal:['#ffffff','#e1e6ee','#a7b0be','#eff2f7','#6c7788'], text:'#111721', sub:'#333c4b', line:'#ffffff',
+          glow:'#c9d4e6', spark:'#ffffff', emboss:'rgba(255,255,255,0.85)', stripe:'rgba(255,255,255,0.14)'},
+  bronze:{label:'BRONZO',   metal:['#ffdcb5','#e39f62','#a5612d','#ecb57f','#66371a'], text:'#291304', sub:'#4a2a12', line:'#ffe6cd',
+          glow:'#e39b5c', spark:'#ffd6ad', emboss:'rgba(255,232,210,0.65)', stripe:'rgba(255,255,255,0.10)'}
 };
 // FIFA-style 6 stats from our 11 (indices of STATS)
 const FUT_STATS=[['VEL',[3]],['TIR',[4]],['PAS',[5]],['DRI',[2]],['DIF',[7]],['FIS',[0,1]]];
@@ -2566,11 +2577,12 @@ function futTier(p){
 }
 // small card preview used as the button (third column of the player card)
 function futMiniHTML(i){
-  const p=players[i], t=FUT_TIERS[futTier(p)];
-  return `<button class="fut-mini" onclick="shareFutCard(${i})" title="Condividi la figurina"
-    style="background:linear-gradient(160deg,${t.bg.join(',')});color:${t.text}">
+  const p=players[i], t=FUT_TIERS[futTier(p)], tr=playerTrophies(p), n=tr.awards.filter(a=>!a.shame).length;
+  return `<button class="fut-mini${t.holo?' holo':''}" onclick="shareFutCard(${i})" title="Condividi la figurina"
+    style="background:linear-gradient(150deg,${t.metal.join(',')});color:${t.text}">
     <span class="fut-mini-ovr">${futRating(p)}</span>
     <span class="fut-mini-tier">${t.label}</span>
+    ${n?`<span class="fut-mini-cups">🏆×${n}</span>`:''}
     <span class="fut-mini-cta">🃏 Figurina</span>
   </button>`;
 }
@@ -2589,29 +2601,85 @@ async function shareFutCard(i){
   if(im && !im.complete){ try{ await im.decode(); }catch(e){} }
   shareCanvas(drawFutCard(p, im&&im.complete&&im.naturalWidth?im:null), 'figurina_'+p.name.replace(/\s+/g,'_')+'.png', '🃏 La figurina di '+p.name);
 }
+// short captions for the medals
+const FUT_SHORT={goleador:'Goleador',assistman:'Assist',media:'Top media',mvp:'Re MVP',stelle:'Re Stelle',stakanov:'Presenze',
+  coppia:'Coppia',flop:'Flop media',cucchiaio:'Cucchiaio',rigori:'Rigori',autogol:'Autogol'};
+const seasonShort=label=>label.replace('Primavera','Pri').replace('Estate','Est').replace('Autunno','Aut').replace('Inverno','Inv').replace(/ 20(\d\d)/,' $1').replace(/\/(\d\d)$/,'/$1');
+
 function drawFutCard(p, photoImg){
-  const tk=futTier(p), t=FUT_TIERS[tk], a=playerSeason(p);
-  const W=720, H=1010, {canvas,ctx}=newShareCanvas(W,H);
-  const F=SHARE_FONT, x=60, y=50, w=600, h=880;
-  // background glow in the card's colour
-  const glow=ctx.createRadialGradient(W/2,H*0.45,40,W/2,H*0.45,520);
-  glow.addColorStop(0,t.bg[1]+'55'); glow.addColorStop(1,'#0f162000');
+  const tk=futTier(p), t=FUT_TIERS[tk], a=playerSeason(p), tr=playerTrophies(p);
+  const W=720, H=1140, {canvas,ctx}=newShareCanvas(W,H);
+  const F=SHARE_FONT, x=60, y=48, w=600, h=1000, cx=x+w/2;
+  // deterministic sparkle positions (same card → same picture)
+  let seed=[...p.name].reduce((s,c)=>(s*31+c.charCodeAt(0))>>>0,7);
+  const rnd=()=>{ seed=(seed*1664525+1013904223)>>>0; return seed/4294967296; };
+
+  // ── backdrop: dark stage, light rays, glow, sparkles ──
+  ctx.fillStyle='#0a0e16'; ctx.fillRect(0,0,W,H);
+  ctx.save(); ctx.translate(W/2,H*0.42);
+  for(let k=0;k<24;k++){ ctx.rotate(Math.PI*2/24); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-38,-900); ctx.lineTo(38,-900); ctx.closePath();
+    ctx.fillStyle=k%2?t.glow+'0d':t.glow+'05'; ctx.fill(); }
+  ctx.restore();
+  const glow=ctx.createRadialGradient(W/2,H*0.42,60,W/2,H*0.42,560);
+  glow.addColorStop(0,t.glow+'66'); glow.addColorStop(0.55,t.glow+'1a'); glow.addColorStop(1,t.glow+'00');
   ctx.fillStyle=glow; ctx.fillRect(0,0,W,H);
-  // shield silhouette (inset > 0 → inner border line)
-  const shield=(k)=>{ const X=x+k, Y=y+k, Wd=w-2*k, Ht=h-2*k, c=44-k*0.6;
+  const star=(sx,sy,r,alpha)=>{ ctx.save(); ctx.globalAlpha=alpha; ctx.fillStyle=t.spark; ctx.beginPath();
+    ctx.moveTo(sx,sy-r); ctx.quadraticCurveTo(sx,sy,sx+r,sy); ctx.quadraticCurveTo(sx,sy,sx,sy+r); ctx.quadraticCurveTo(sx,sy,sx-r,sy); ctx.quadraticCurveTo(sx,sy,sx,sy-r);
+    ctx.fill(); ctx.restore(); };
+  for(let k=0;k<16;k++){ const side=k%2, sx=side?W-12-rnd()*52:12+rnd()*52, sy=40+rnd()*(H-120); star(sx,sy,4+rnd()*9,0.35+rnd()*0.5); }
+
+  // ── shield silhouette (k = inset) ──
+  const shield=(k)=>{ const X=x+k, Y=y+k, Wd=w-2*k, Ht=h-2*k, c=46-k*0.6;
     ctx.beginPath(); ctx.moveTo(X+c,Y); ctx.lineTo(X+Wd-c,Y); ctx.lineTo(X+Wd,Y+c);
     ctx.lineTo(X+Wd,Y+Ht-140); ctx.quadraticCurveTo(X+Wd,Y+Ht-40,X+Wd/2,Y+Ht);
     ctx.quadraticCurveTo(X,Y+Ht-40,X,Y+Ht-140); ctx.lineTo(X,Y+c); ctx.closePath(); };
-  ctx.save(); ctx.shadowColor='rgba(0,0,0,0.55)'; ctx.shadowBlur=40; ctx.shadowOffsetY=14;
-  const g=ctx.createLinearGradient(x,y,x+w,y+h); g.addColorStop(0,t.bg[0]); g.addColorStop(0.55,t.bg[1]); g.addColorStop(1,t.bg[2]);
+  // body: coloured halo + drop shadow + banded metal
+  ctx.save(); ctx.shadowColor=t.glow+'aa'; ctx.shadowBlur=70; shield(0); ctx.fillStyle=t.metal[1]; ctx.fill(); ctx.restore();
+  ctx.save(); ctx.shadowColor='rgba(0,0,0,0.6)'; ctx.shadowBlur=30; ctx.shadowOffsetY=16;
+  const g=ctx.createLinearGradient(x,y,x+w*0.85,y+h);
+  [0,0.28,0.5,0.68,1].forEach((st,k)=>g.addColorStop(st,t.metal[k]));
   shield(0); ctx.fillStyle=g; ctx.fill(); ctx.restore();
-  // diagonal sheen
+
   ctx.save(); shield(0); ctx.clip();
-  const sh=ctx.createLinearGradient(x,y,x+w*0.9,y+h*0.6);
-  sh.addColorStop(0,'rgba(255,255,255,0)'); sh.addColorStop(0.42,'rgba(255,255,255,0)'); sh.addColorStop(0.5,'rgba(255,255,255,0.28)');
-  sh.addColorStop(0.58,'rgba(255,255,255,0)'); sh.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle=sh; ctx.fillRect(x,y,w,h); ctx.restore();
-  shield(16); ctx.strokeStyle=t.line; ctx.globalAlpha=0.75; ctx.lineWidth=3; ctx.stroke(); ctx.globalAlpha=1;
+  // fine pinstripes
+  ctx.strokeStyle=t.stripe; ctx.lineWidth=2;
+  for(let k=-h;k<w+h;k+=11){ ctx.beginPath(); ctx.moveTo(x+k,y); ctx.lineTo(x+k-h*0.55,y+h); ctx.stroke(); }
+  // FUT-like geometric shards behind rating and photo
+  ctx.fillStyle='rgba(255,255,255,0.13)';
+  ctx.beginPath(); ctx.moveTo(x,y+70); ctx.lineTo(x+250,y); ctx.lineTo(x+300,y); ctx.lineTo(x+70,y+520); ctx.lineTo(x,y+560); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,0.07)';
+  ctx.beginPath(); ctx.moveTo(x+w,y+300); ctx.lineTo(x+w-260,y+h); ctx.lineTo(x+w,y+h); ctx.closePath(); ctx.fill();
+  // spotlight behind the photo
+  const spx=x+392, spy=y+228, sp=ctx.createRadialGradient(spx,spy,20,spx,spy,250);
+  sp.addColorStop(0,t.holo?'rgba(247,215,116,0.30)':'rgba(255,255,255,0.55)'); sp.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=sp; ctx.fillRect(x,y,w,h);
+  // top gloss
+  const gl=ctx.createLinearGradient(0,y,0,y+260); gl.addColorStop(0,'rgba(255,255,255,0.38)'); gl.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=gl; ctx.fillRect(x,y,w,260);
+  // diagonal sheen band
+  const sh=ctx.createLinearGradient(x,y,x+w,y+h*0.7);
+  sh.addColorStop(0.38,'rgba(255,255,255,0)'); sh.addColorStop(0.47,'rgba(255,255,255,0.32)'); sh.addColorStop(0.5,'rgba(255,255,255,0.05)');
+  sh.addColorStop(0.53,'rgba(255,255,255,0.22)'); sh.addColorStop(0.62,'rgba(255,255,255,0)');
+  ctx.fillStyle=sh; ctx.fillRect(x,y,w,h);
+  // holographic rainbow for "In forma"
+  if(t.holo){ ctx.globalCompositeOperation='overlay'; ctx.globalAlpha=0.32;
+    const hg=ctx.createLinearGradient(x,y+h,x+w,y);
+    ['#ff4d6d','#ffb703','#8ac926','#00bbf9','#9b5de5','#ff4d6d'].forEach((c,k)=>hg.addColorStop(k/5,c));
+    ctx.fillStyle=hg; ctx.fillRect(x,y,w,h); ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1; }
+  // vignette
+  const vg=ctx.createRadialGradient(cx,y+h*0.45,h*0.25,cx,y+h*0.45,h*0.75);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.28)');
+  ctx.fillStyle=vg; ctx.fillRect(x,y,w,h);
+  ctx.restore();
+  // embossed double border
+  shield(3);  ctx.strokeStyle='rgba(255,255,255,0.75)'; ctx.lineWidth=3; ctx.stroke();
+  shield(16); ctx.strokeStyle=t.line; ctx.globalAlpha=0.85; ctx.lineWidth=2.5; ctx.stroke();
+  shield(20); ctx.strokeStyle='rgba(0,0,0,0.22)'; ctx.lineWidth=1.5; ctx.stroke(); ctx.globalAlpha=1;
+
+  // embossed text helper
+  const etext=(txt,tx,ty,font,col,align)=>{ ctx.font=font; ctx.textAlign=align||'center';
+    ctx.save(); ctx.fillStyle=t.emboss; ctx.fillText(txt,tx,ty+2.5); ctx.restore();
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,0.25)'; ctx.shadowBlur=4; ctx.fillStyle=col; ctx.fillText(txt,tx,ty); ctx.restore(); };
 
   // ── photo (fades into the card) or big initials ──
   const px=x+232, py=y+64, ps=320;
@@ -2623,55 +2691,88 @@ function drawFutCard(p, photoImg){
     o.globalCompositeOperation='destination-in';
     const m=o.createLinearGradient(0,0,0,ps); m.addColorStop(0,'rgba(0,0,0,0)'); m.addColorStop(0.14,'rgba(0,0,0,1)'); m.addColorStop(0.66,'rgba(0,0,0,1)'); m.addColorStop(1,'rgba(0,0,0,0)');
     o.fillStyle=m; o.fillRect(0,0,ps,ps);
-    o.globalCompositeOperation='destination-in';
     const mx=o.createLinearGradient(0,0,ps,0); mx.addColorStop(0,'rgba(0,0,0,0)'); mx.addColorStop(0.12,'rgba(0,0,0,1)'); mx.addColorStop(0.88,'rgba(0,0,0,1)'); mx.addColorStop(1,'rgba(0,0,0,0)');
     o.fillStyle=mx; o.fillRect(0,0,ps,ps);
-    ctx.drawImage(oc,px,py,ps,ps);
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,0.35)'; ctx.shadowBlur=18; ctx.drawImage(oc,px,py,ps,ps); ctx.restore();
   }else{
-    const cx=px+ps/2, cy=py+ps/2-6;
-    ctx.beginPath(); ctx.arc(cx,cy,128,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,0.16)'; ctx.fill();
-    ctx.fillStyle=t.text; ctx.textAlign='center'; ctx.font=F('900 112px'); ctx.fillText(ini(p.name).replace(/&#0?39;/g,"'"),cx,cy+40);
+    const icx=px+ps/2, icy=py+ps/2-6;
+    const ig=ctx.createRadialGradient(icx-30,icy-40,10,icx,icy,130); ig.addColorStop(0,'rgba(255,255,255,0.45)'); ig.addColorStop(1,'rgba(0,0,0,0.18)');
+    ctx.beginPath(); ctx.arc(icx,icy,128,0,Math.PI*2); ctx.fillStyle=ig; ctx.fill();
+    ctx.strokeStyle=t.line; ctx.lineWidth=3; ctx.stroke();
+    etext(ini(p.name).replace(/&#0?39;/g,"'"),icx,icy+40,F('900 112px'),t.text);
   }
 
-  // ── rating, role, club badge ──
-  ctx.textAlign='center'; ctx.fillStyle=t.text;
+  // ── rating, roles, club badge, tier ──
   const lx=x+128;
-  ctx.font=F('900 118px'); ctx.fillText(String(futRating(p)),lx,y+190);
+  etext(String(futRating(p)),lx,y+190,F('900 118px'),t.text);
   const roles=[primaryRole(p),...p.roles.filter(r=>r!==primaryRole(p))];
-  ctx.font=F('800 42px'); ctx.fillText(roles[0],lx,y+244);
-  if(roles.length>1){ ctx.fillStyle=t.sub; ctx.font=F('700 24px'); ctx.fillText(roles.slice(1).join(' · '),lx,y+280); ctx.fillStyle=t.text; }
+  etext(roles[0],lx,y+244,F('800 42px'),t.text);
+  if(roles.length>1) etext(roles.slice(1).join(' · '),lx,y+280,F('700 24px'),t.sub);
   const logo=document.querySelector('header img');
-  if(logo && logo.complete && logo.naturalWidth){ ctx.drawImage(logo,lx-38,y+302,76,76); }
-  ctx.font=F('800 20px'); ctx.fillStyle=t.sub; ctx.fillText(t.label.split('').join(' '),lx,y+408);
+  if(logo && logo.complete && logo.naturalWidth){ ctx.save(); ctx.shadowColor='rgba(0,0,0,0.35)'; ctx.shadowBlur=8; ctx.drawImage(logo,lx-38,y+302,76,76); ctx.restore(); }
+  etext(t.label.split('').join(' '),lx,y+408,F('800 20px'),t.sub);
 
   // ── name ──
-  ctx.fillStyle=t.text; ctx.font=F('900 52px');
-  ctx.fillText(fitText(ctx,p.name.toUpperCase(),w-90),x+w/2,y+462);
-  const sep=(yy)=>{ ctx.strokeStyle=t.sub; ctx.globalAlpha=0.45; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+90,yy); ctx.lineTo(x+w-90,yy); ctx.stroke(); ctx.globalAlpha=1; };
-  sep(y+490);
+  ctx.font=F('900 52px'); const nm=fitText(ctx,p.name.toUpperCase(),w-90);
+  etext(nm,cx,y+462,F('900 52px'),t.text);
+  const sep=(yy,x1,x2)=>{ const lg=ctx.createLinearGradient(x1,0,x2,0);
+    lg.addColorStop(0,'rgba(0,0,0,0)'); lg.addColorStop(0.5,t.sub); lg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.save(); ctx.globalAlpha=0.6; ctx.strokeStyle=lg; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x1,yy); ctx.lineTo(x2,yy); ctx.stroke(); ctx.restore(); };
+  sep(y+490,x+60,x+w-60);
 
   // ── 6 stats in two columns ──
   FUT_STATS.forEach(([lbl,idx],k)=>{
-    const col=k<3?0:1, row=k%3;
-    const bx=x+(col?w/2+40:100), by=y+560+row*66;   // numbers right-aligned in a fixed column (fits 100)
-    ctx.textAlign='right'; ctx.fillStyle=t.text; ctx.font=F('900 48px'); ctx.fillText(String(futStat(p,idx)),bx+92,by);
-    ctx.textAlign='left'; ctx.font=F('700 34px'); ctx.fillStyle=t.sub; ctx.fillText(lbl,bx+104,by);
+    const col=k<3?0:1, row=k%3, bx=x+(col?w/2+40:100), by=y+560+row*66;
+    etext(String(futStat(p,idx)),bx+92,by,F('900 48px'),t.text,'right');
+    etext(lbl,bx+104,by,F('700 34px'),t.sub,'left');
   });
-  ctx.strokeStyle=t.sub; ctx.globalAlpha=0.45; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+w/2,y+516); ctx.lineTo(x+w/2,y+700); ctx.stroke(); ctx.globalAlpha=1;
-  sep(y+722);
+  ctx.save(); const vl=ctx.createLinearGradient(0,y+516,0,y+700); vl.addColorStop(0,'rgba(0,0,0,0)'); vl.addColorStop(0.5,t.sub); vl.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.globalAlpha=0.6; ctx.strokeStyle=vl; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx,y+516); ctx.lineTo(cx,y+700); ctx.stroke(); ctx.restore();
+  sep(y+722,x+60,x+w-60);
+
+  // ── trophies: award medals (same award in several seasons → one medal ×N), feats on their own line ──
+  const grouped=[];
+  tr.awards.forEach(m=>{ const g=grouped.find(x=>x.k===m.k);
+    if(g){ g.count++; } else grouped.push({k:m.k,shame:m.shame,emoji:m.t.split(' ')[0],cap:FUT_SHORT[m.k],sub:seasonShort(m.season),count:1}); });
+  grouped.sort((u,v)=>u.shame-v.shame);                       // prizes first, then shame
+  const featItems=tr.feats.map(f=>({k:f.k,emoji:f.t.split(' ')[0],count:f.count}));
+  // no awards yet → the feats become the medals
+  let medals=grouped.map(m=>({...m,kind:m.shame?'shame':'gold',sub:m.count>1?m.count+' stagioni':m.sub}));
+  let featLine=featItems;
+  if(!medals.length && featItems.length){ medals=featItems.map(f=>({kind:'feat',emoji:f.emoji,cap:FEATS.find(x=>x.k===f.k).t.split(' ').slice(1).join(' '),count:f.count})); featLine=[]; }
+  const show=medals.length>6?[...medals.slice(0,5),{kind:'more',emoji:'+'+(medals.length-5),cap:'altri'}]:medals;
+  const my=y+776, mr=30;
+  if(show.length){
+    const gap=90, sx=cx-(show.length-1)*gap/2;
+    const MED={gold:['#fff6c2','#e9b931','#9c7415','#5e440a'],shame:['#e3e6eb','#8d95a2','#525965','#2e333b'],
+               feat:['#a9c6ff','#3f74e0','#1d4599','#0f285c'],more:['#ffffff','#cdd3dc','#8c95a3','#4d5562']};
+    show.forEach((m,k)=>{
+      const mx=sx+k*gap, c=MED[m.kind];
+      ctx.save(); ctx.shadowColor='rgba(0,0,0,0.45)'; ctx.shadowBlur=10; ctx.shadowOffsetY=4;
+      const mg=ctx.createRadialGradient(mx-10,my-12,4,mx,my,mr); mg.addColorStop(0,c[0]); mg.addColorStop(0.55,c[1]); mg.addColorStop(1,c[2]);
+      ctx.beginPath(); ctx.arc(mx,my,mr,0,Math.PI*2); ctx.fillStyle=mg; ctx.fill(); ctx.restore();
+      ctx.beginPath(); ctx.arc(mx,my,mr,0,Math.PI*2); ctx.strokeStyle=c[3]; ctx.lineWidth=3; ctx.stroke();
+      ctx.beginPath(); ctx.arc(mx,my,mr-6,0,Math.PI*2); ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.textAlign='center'; ctx.fillStyle=m.kind==='more'?'#2a2f37':'#fff';
+      ctx.font=m.kind==='more'?F('900 22px'):F('400 28px'); ctx.fillText(m.emoji,mx,my+(m.kind==='more'?8:10));
+      if(m.count>1){ ctx.beginPath(); ctx.arc(mx+mr-4,my-mr+6,13,0,Math.PI*2); ctx.fillStyle='#c62828'; ctx.fill();
+        ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle='#fff'; ctx.font=F('900 14px'); ctx.fillText('×'+m.count,mx+mr-4,my-mr+11); }
+      ctx.font=F('800 14px'); ctx.fillStyle=t.text; ctx.fillText(fitText(ctx,m.cap,gap-4),mx,my+mr+19);
+      if(m.sub){ ctx.font=F('700 12px'); ctx.fillStyle=t.sub; ctx.fillText(fitText(ctx,m.sub,gap-4),mx,my+mr+34); }
+    });
+  }else{
+    ctx.font=F('italic 600 20px'); ctx.fillStyle=t.sub; ctx.textAlign='center'; ctx.fillText('Nessun trofeo… per ora',cx,my+8);
+  }
+  if(featLine.length) etext(featLine.map(f=>`${f.emoji} ×${f.count}`).join('    '),cx,y+870,F('800 24px'),t.text);
 
   // ── season numbers ──
-  ctx.textAlign='center'; ctx.fillStyle=t.text; ctx.font=F('800 27px');
-  const season=a&&a.pres
-    ? `${a.pres} PG  ·  ${a.w} V  ·  ⚽ ${a.goals}  ·  🅰️ ${a.assist}`
-    : 'Nessuna partita ancora';
-  ctx.fillText(season,x+w/2,y+768);
-  ctx.font=F('700 22px'); ctx.fillStyle=t.sub;
-  ctx.fillText(a&&a.voteAvg!=null?`Media pagelle ${a.voteAvg.toFixed(1)}`:'CalcioLercio',x+w/2,y+804);
+  const season=a&&a.pres ? `${a.pres} PG  ·  ${a.w} V  ·  ⚽ ${a.goals}  ·  🅰️ ${a.assist}` : 'Nessuna partita ancora';
+  etext(season,cx,y+914,F('800 26px'),t.text);
+  etext(a&&a.voteAvg!=null?`Media pagelle ${a.voteAvg.toFixed(1)}`:'CalcioLercio',cx,y+948,F('700 21px'),t.sub);
 
   // caption under the card
-  ctx.fillStyle='#8a94a6'; ctx.font=F('italic 500 18px');
-  ctx.fillText('CalcioLercio · figurina ufficiale della Redazione Avv. Peppe Rella',W/2,H-28);
+  ctx.fillStyle='#8a94a6'; ctx.font=F('italic 500 18px'); ctx.textAlign='center';
+  ctx.fillText('CalcioLercio · figurina ufficiale della Redazione Avv. Peppe Rella',W/2,H-30);
   return canvas;
 }
 
@@ -3567,13 +3668,18 @@ function renderAlbo(){
 }
 
 // ── player card extras: 🏆 Bacheca + 🤝 Compagni e avversari ──
-function playerExtrasHTML(p){
-  const name=playerKey(p.id,p.name).name, seasons=alboSeasons();
-  const trophies=[];
+// trophies of a player across all seasons (single source for the bacheca and the 🃏 figurina)
+function playerTrophies(p){
+  const name=playerKey(p.id,p.name).name, seasons=alboSeasons(), awards=[];
   seasons.forEach(S=>S.awards.forEach(a=>{ if(a.winners.some(w=>w===name||w.split(' & ').includes(name)))
-    trophies.push(`<span class="trophy${a.shame?' shame':''}">${a.t}<small>${S.label}${S.status!=='chiusa'?' · in corso':''}</small></span>`); }));
-  const feats=FEATS.map(f=>{ const c=seasons.reduce((s,S)=>s+((S.feats[f.k]||[]).find(x=>x.name===name)?.count||0),0);
-    return c?`<span class="feat" title="${f.d}">${f.t.split(' ')[0]} ${f.t.split(' ').slice(1).join(' ')} <b>×${c}</b></span>`:''; }).join('');
+    awards.push({k:a.k,t:a.t,shame:a.shame,season:S.label,live:S.status!=='chiusa'}); }));
+  const feats=FEATS.map(f=>({k:f.k,t:f.t,d:f.d,count:seasons.reduce((s,S)=>s+((S.feats[f.k]||[]).find(x=>x.name===name)?.count||0),0)})).filter(f=>f.count>0);
+  return {awards,feats};
+}
+function playerExtrasHTML(p){
+  const tr=playerTrophies(p);
+  const trophies=tr.awards.map(a=>`<span class="trophy${a.shame?' shame':''}">${a.t}<small>${a.season}${a.live?' · in corso':''}</small></span>`);
+  const feats=tr.feats.map(f=>`<span class="feat" title="${f.d}">${f.t} <b>×${f.count}</b></span>`).join('');
   const q=playerPairs(p), pct=(a,b)=>`${a} ${a===1?(b==='v'?'vinta':'persa'):(b==='v'?'vinte':'perse')}`;
   const line=(ico,lbl,c,kind)=>c?`<div class="pair-line"><span class="pair-l">${ico} ${lbl}</span><span class="pair-n">${nameLink(c.name)}</span><span class="pair-v">${kind==='v'?pct(c.w,'v'):pct(c.l,'p')} su ${c.n}</span></div>`:'';
   const pairs=line('🤝','Compagno d\'oro',q.friend,'v')+line('💔','Compagno maledetto',q.cursed,'p')+line('😈','Bestia nera',q.nemesis,'p')+line('🎯','Vittima preferita',q.victim,'v');
