@@ -116,6 +116,16 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 @keyframes futShine{0%,55%{left:-60%}100%{left:130%}}
 @media(prefers-reduced-motion:reduce){.fut-mini::after{animation:none;display:none}}
 .fut-mini-cups{font-size:10px;font-weight:900;margin-top:4px;position:relative}
+/* Rosa card: the figurina preview is exactly as tall as the photo (width 75% × ratio 3:4 = column width) → no empty band */
+.photo-roles .fut-mini{width:75%;max-width:127px;border-radius:10px;gap:0}
+.photo-roles .fut-mini-ovr{font-size:26px}
+.photo-roles .fut-mini-pag{font-size:9px;padding:1px 5px;margin:2px 0 1px}
+.photo-roles .fut-mini-tier{font-size:7.5px;letter-spacing:1px}
+.photo-roles .fut-mini-cups{font-size:9px;margin-top:2px}
+.photo-roles .fut-mini-cta{font-size:9px;margin-top:3px}
+.photo-roles .role-section .role-toggles{gap:4px}
+.photo-roles .role-section .role-toggle{padding:4px 2px}
+.photo-roles .role-section .role-section-label{margin-bottom:3px}
 .fut-mini-pag{font-size:10px;font-weight:900;padding:2px 7px;border-radius:99px;margin:3px 0 2px;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.35);background:linear-gradient(#2a3243,#0c1018)!important;border:1.5px solid currentColor}
 .fut-mini-pag.pag-good{color:#5fd184}.fut-mini-pag.pag-mid{color:#ffd36b}.fut-mini-pag.pag-bad{color:#f07a6c}.fut-mini-pag.pag-none{color:#c9ced6}
 .fut-mini:active{transform:scale(0.95)}
