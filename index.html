@@ -113,9 +113,10 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .photo-roles{display:grid;grid-template-columns:repeat(3,1fr);gap:5px 6px;align-items:start;margin:4px 0 0}
 .photo-roles .photo-row{margin:0;gap:6px;min-width:0}
 .photo-roles .avatar-xl{width:100%;height:auto;aspect-ratio:1/1;max-width:170px}
-.photo-btns{display:flex;gap:4px;width:100%;max-width:170px}
-.photo-btns .btn{flex:1;padding:6px 4px;min-height:30px;font-size:11px;gap:3px}
-.photo-btns .btn+.btn{flex:0 0 32px}
+.photo-edit{position:relative;width:100%;max-width:170px;cursor:pointer}
+.photo-edit .avatar-xl{transition:transform var(--tr),filter var(--tr)}
+.photo-edit:active .avatar-xl{transform:scale(0.97);filter:brightness(.9)}
+.photo-badge{position:absolute;right:3%;bottom:3%;width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,.35);border:2px solid var(--gray);pointer-events:none}
 .photo-roles .role-section{min-width:0;margin:0;padding-top:0;border-top:none}
 .photo-roles .role-toggles{flex-direction:column;gap:6px}
 .photo-roles .role-toggle{padding:6px 2px}
@@ -168,6 +169,10 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 @media(prefers-color-scheme:dark){.dash-cell{background:rgba(32,38,50,0.62);border-color:rgba(255,255,255,0.08)}}
 .dash-val{font-size:19px;font-weight:800;color:var(--green);line-height:1.1}
 .dash-lbl{font-size:9px;color:var(--text2);margin-top:3px;text-transform:uppercase;letter-spacing:.3px}
+.pg-cell{background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center}
+.pg-lbl{font-size:10px;color:var(--text2);margin-bottom:2px}
+.pg-val{font-size:15px;font-weight:800;color:var(--text)}
+.pg-form{font-size:13px;line-height:9px;padding:3px 0}
 .prec-card{padding:10px 11px;margin-bottom:12px}
 .prec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .prec-cell{background:rgba(128,128,128,0.08);border-radius:var(--radius-sm);padding:7px 4px;text-align:center}
@@ -252,10 +257,10 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 .team-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
 .team-nm{font-size:14px;font-weight:800}
 .team-nm.bl{color:var(--blue)}
-.team-nm.am{color:var(--teamb)}
+.team-nm.bi{color:var(--teamb)}
 .media-pill{font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px}
 .mp-bl{background:#b8d4f5;color:var(--blue)}
-.mp-am{background:var(--teamb-light);color:var(--teamb)}
+.mp-bi{background:var(--teamb-light);color:var(--teamb)}
 .pchip{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;margin-bottom:4px;font-size:13px;font-weight:600;min-height:36px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .pchip:active{cursor:grabbing}
 .pchip-grip{font-size:13px;opacity:.4;flex-shrink:0;line-height:1}
@@ -265,15 +270,15 @@ svg.pitch{display:block;width:100%;border-radius:0 0 var(--radius) var(--radius)
 .pchip-target{outline:2px dashed currentColor;outline-offset:1px}
 .pchip-ghost{position:fixed;z-index:1000;transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,0.3);opacity:.95;margin:0}
 .pc-bl{background:rgba(26,95,168,0.13);color:var(--blue)}
-.pc-am{background:rgba(120,130,145,0.15);color:var(--teamb)}
+.pc-bi{background:rgba(120,130,145,0.15);color:var(--teamb)}
 .cmp-row{display:flex;align-items:center;gap:5px;margin-bottom:5px;font-size:12px}
 .cmp-v{width:28px;text-align:right;font-weight:800}
 .cmp-v.bl{color:var(--blue)}
-.cmp-v.am{color:var(--teamb)}
+.cmp-v.bi{color:var(--teamb)}
 .cmp-bar{flex:1;display:flex;align-items:center;gap:3px}
 .cmp-lbl{font-size:10px;color:var(--text3);min-width:56px;text-align:center}
 .cf-bl{height:6px;background:var(--blue);border-radius:3px 0 0 3px}
-.cf-am{height:6px;background:var(--teamb);border-radius:0 3px 3px 0}
+.cf-bi{height:6px;background:var(--teamb);border-radius:0 3px 3px 0}
 .balance-row{text-align:center;margin:10px 0;font-size:13px}
 .pill-ok{background:#d0f5e0;color:#0e5028;padding:4px 14px;border-radius:99px;font-weight:800}
 .pill-warn{background:#fff0b0;color:#6a4000;padding:4px 14px;border-radius:99px;font-weight:800}
@@ -437,7 +442,7 @@ input[type=file]{display:none}
         <div id="chips-a"></div>
       </div>
       <div class="team-card team-bianchi" id="team-card-B">
-        <div class="team-hd"><span class="team-nm am">⚪ Bianchi</span><span class="media-pill mp-am" id="avg-b">—</span></div>
+        <div class="team-hd"><span class="team-nm bi">⚪ Bianchi</span><span class="media-pill mp-bi" id="avg-b">—</span></div>
         <div style="font-size:11px;color:var(--teamb);font-weight:700;opacity:.7;margin-bottom:7px" id="mod-label-b"></div>
         <div id="chips-b"></div>
       </div>
@@ -533,6 +538,7 @@ input[type=file]{display:none}
     <input id="app-modal-input" type="text" style="display:none;width:100%;padding:11px 13px;border:1.5px solid var(--gray3);border-radius:10px;background:var(--gray2);color:var(--text);font-size:15px;font-weight:600;margin-bottom:14px;box-sizing:border-box">
     <div style="display:flex;gap:8px">
       <button id="app-modal-cancel" class="btn btn-secondary" style="flex:1"></button>
+      <button id="app-modal-alt" class="btn btn-danger" style="flex:1;display:none"></button>
       <button id="app-modal-ok" class="btn btn-primary" style="flex:1"></button>
     </div>
   </div>
@@ -569,6 +575,8 @@ let BUILD_DATE='—'; // popolata da fetchBuildDate() leggendo l'header Last-Mod
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
 const ROLES=['ATT','MED','DIF'];
+const ROLE_CLS={ATT:'att',MED:'mid',DIF:'def'};   // CSS suffix of each role (role-att, tog-mid…)
+const ROLE_ORDER={ATT:0,MED:1,DIF:2};            // display order: attack → midfield → defence
 const RLBL={ATT:'Attacco',MED:'Centrocampo',DIF:'Difesa'};
 // ── MODULES ──────────────────────────────────────────────────────────────────
 // Each module: { name, notation, slots[] }
@@ -632,6 +640,7 @@ const SLOT_FALLBACK={
 let players=[], weights=STATS.map(()=>1);
 let sizeA=5, sizeB=5, asymMode=false;
 let backendUrl='', matches=[], matchesCache={timestamp:0, data:null};
+let _seasonMemo=null;   // memo of seasonStats(), rebuilt only when matches/pagelle/rosa change
 let selected=new Set(), allCombos=[], currentIdx=0;
 
 /* ── Cache persistente (localStorage) — stale-while-revalidate ── */
@@ -739,7 +748,6 @@ function applyData(d){
 function save(){
   localStorage.setItem('calcio_p',JSON.stringify(players));
   localStorage.setItem('calcio_w',JSON.stringify(weights));
-  localStorage.setItem('calcio_fmt',JSON.stringify({sizeA,sizeB,asymMode}));
 }
 
 // async init: 1) try fetch rosa_calcetto.json from same origin (only if served via HTTP)
@@ -760,13 +768,13 @@ async function loadData(){
   }
 
   // 2 — fallback to localStorage
+  try{ localStorage.removeItem('calcio_fmt'); }catch(e){}   // old key: match format is no longer remembered
   try{
     const rp=localStorage.getItem('calcio_p');
     if(rp){
       const d={
         players:JSON.parse(rp),
-        weights:JSON.parse(localStorage.getItem('calcio_w')||'null'),
-        ...JSON.parse(localStorage.getItem('calcio_fmt')||'{}')
+        weights:JSON.parse(localStorage.getItem('calcio_w')||'null')
       };
       applyData(d);
       setDataSource('💾 Dati da memoria locale');
@@ -836,6 +844,7 @@ function confirmModal(opts={}){
     document.getElementById('app-modal-title').textContent=opts.title||'Conferma';
     document.getElementById('app-modal-msg').innerHTML=opts.msg||'';
     document.getElementById('app-modal-input').style.display='none';
+    document.getElementById('app-modal-alt').style.display='none';
     const ok=document.getElementById('app-modal-ok');
     const cancel=document.getElementById('app-modal-cancel');
     ok.textContent=opts.okLabel||'Conferma';
@@ -855,6 +864,7 @@ function promptModal(opts={}){
     document.getElementById('app-modal-title').textContent=opts.title||'';
     document.getElementById('app-modal-msg').innerHTML=opts.msg||'';
     const input=document.getElementById('app-modal-input');
+    document.getElementById('app-modal-alt').style.display='none';
     input.style.display='block';
     input.value=opts.value||'';
     input.placeholder=opts.placeholder||'';
@@ -972,14 +982,10 @@ function formWeight(count){
 }
 let _formCache = null;      // per-generation cache: player.id → {avg, count}
 
-// Average of ALL valid ratings (1–10) for a player, with count. Cheap wrapper.
+// Average of ALL valid votes (1–10) of a player, with count — read from the shared season stats.
 function playerRatingAvg(player){
-  const rows=ratingsForPlayer(player).filter(r=>{
-    const v=parseFloat(r.rating);
-    return !isNaN(v)&&v>=1&&v<=10;
-  });
-  if(!rows.length) return {avg:null, count:0};
-  return {avg:rows.reduce((s,r)=>s+parseFloat(r.rating),0)/rows.length, count:rows.length};
+  const a=playerSeason(player);
+  return (a&&a.votes.length)?{avg:a.voteAvg,count:a.votes.length}:{avg:null,count:0};
 }
 
 // Effective balancing score: OVR nudged by historical pagelle average.
@@ -1042,39 +1048,60 @@ function playerKey(pid, pname){
   return {key:'name:'+(pname||pid||'?'), name:pname||'?'};
 }
 
-// All ratings for a given player object: match by id first, fall back to name for legacy rows
-function ratingsForPlayer(player){
-  if(!matchesCache.data || !matchesCache.data.ratings) return [];
-  const id=player.id, name=player.name;
-  // ids of OTHER players currently in the roster (to protect against same-name collisions)
-  const otherIds=new Set(players.filter(p=>p!==player && p.id).map(p=>p.id));
-  return matchesCache.data.ratings.filter(r=>{
-    // 1) exact id match — most reliable
-    if(r.playerId && id && r.playerId===id) return true;
-    // 2) name fallback — handles legacy rows AND id drift (re-import, re-created player…)
-    //    accepted unless this rating is explicitly tagged to a DIFFERENT current player
-    if(r.player===name){
-      if(r.playerId && otherIds.has(r.playerId)) return false;
-      return true;
-    }
-    return false;
+
+/* ── Statistiche di stagione: UNA sola fonte per scheda giocatore, classifiche, dashboard e tabella ──
+   Così i numeri sono sempre identici ovunque, anche quando in futuro si aggiunge una statistica.
+   • presenze e V/N/P  → dalle squadre salvate (un giocatore conta una volta per partita)
+   • voti, gol, assist, autogol, rigori sbagliati, mete → dalle pagelle di partite esistenti
+   Risultato: { chiaveGiocatore → record }, chiave = playerKey (id in rosa, poi nome). */
+function validVote(v){ const n=parseFloat(v); return (!isNaN(n)&&n>=1&&n<=10)?n:null; }
+function seasonStats(){
+  const ms=matches||[], ratings=matchesCache.data?.ratings||[];
+  const memo=_seasonMemo;
+  if(memo && memo.ms===ms && memo.rs===ratings && memo.pl===players && memo.n===players.length) return memo.by;
+  const byMatch={}; ms.forEach(m=>{byMatch[m.id]=m;});
+  const by={};
+  const ensure=(key,name)=>by[key]||(by[key]={key,name,pres:0,w:0,d:0,l:0,results:[],
+    rows:0,goals:0,assist:0,autogol:0,rigori:0,meta:0,votes:[],voteSum:0,voteAvg:null});
+  const seen=new Set();
+  ms.forEach(m=>{
+    [...normalizeTeam(m.teamA),...normalizeTeam(m.teamB)].forEach(pl=>{
+      const {key,name}=playerKey(pl.id,pl.name);
+      const tag=m.id+'|'+key;
+      if(seen.has(tag))return;
+      seen.add(tag);
+      const a=ensure(key,name); a.pres++;
+      const res=getPlayerMatchResult(m,pl.id,pl.name);
+      if(res==='W')a.w++; else if(res==='D')a.d++; else if(res==='L')a.l++;
+      if(res)a.results.push({date:m.date||'',res});
+    });
   });
+  ratings.forEach(r=>{
+    const m=byMatch[r.matchId]; if(!m) return;            // rows of deleted matches are ignored
+    const {key,name}=playerKey(r.playerId,r.player);
+    const a=ensure(key,name);
+    a.rows++;
+    a.goals+=parseInt(r.goals)||0; a.assist+=parseInt(r.assist)||0; a.autogol+=parseInt(r.autogol)||0;
+    a.rigori+=parseInt(r.rigoriSbagliati)||0; a.meta+=parseInt(r.meta)||0;
+    const v=validVote(r.rating);
+    if(v!=null){ a.votes.push({v,date:m.date||'',matchId:r.matchId}); a.voteSum+=v; }
+  });
+  Object.values(by).forEach(a=>{
+    a.results.sort((x,y)=>(x.date||'').localeCompare(y.date||''));   // chronological (form dots)
+    a.votes.sort((x,y)=>(x.date||'').localeCompare(y.date||''));     // chronological (chart)
+    a.voteAvg=a.votes.length?a.voteSum/a.votes.length:null;
+  });
+  _seasonMemo={ms,rs:ratings,pl:players,n:players.length,by};
+  return by;
 }
+// season record of one roster player (null if he never played / has no pagelle)
+function playerSeason(p){ return seasonStats()[playerKey(p.id,p.name).key]||null; }
 
 // Returns {label, cls, avg} for a player based on their average ratings from cached matches
 function getPlayerPagInfo(player){
-  if(!matchesCache.data || !matchesCache.data.ratings){
-    return {label:'PAG —', cls:'pag-none', avg:null};
-  }
-  // only count valid votes (1–10): skips goals-only rows (rating 0) and dirty legacy data
-  const ratings=ratingsForPlayer(player).filter(r=>{
-    const v=parseFloat(r.rating);
-    return !isNaN(v) && v>=1 && v<=10;
-  });
-  if(!ratings.length){
-    return {label:'PAG —', cls:'pag-none', avg:null};
-  }
-  const avg=ratings.reduce((s,r)=>s+parseFloat(r.rating),0)/ratings.length;
+  if(!matchesCache.data || !matchesCache.data.ratings) return {label:'PAG —', cls:'pag-none', avg:null};
+  const {avg}=playerRatingAvg(player);
+  if(avg==null) return {label:'PAG —', cls:'pag-none', avg:null};
   let cls='pag-mid';
   if(avg>=6.5) cls='pag-good';
   else if(avg<5.5) cls='pag-bad';
@@ -1090,10 +1117,9 @@ function buildRosa(){
   rosaOrder().forEach((i,rank)=>{   // strongest first; archived players excluded
     const p=players[i];
     const ovr=calcOvr(p.stats).toFixed(1);
-    const roleMap={ATT:'att',MED:'mid',DIF:'def'};
     const toggles=ROLES.map(r=>{
       const on=p.roles.includes(r);
-      const baseCls=`role-toggle role-${roleMap[r]}${on?' tog-'+roleMap[r]:''}`;
+      const baseCls=`role-toggle role-${ROLE_CLS[r]}${on?' tog-'+ROLE_CLS[r]:''}`;
       return `<button class="${baseCls}" onclick="toggleRole(${i},'${r}',event)">
         <span class="rt-label">${RLBL[r]}</span>
         ${on?'<span class="rt-tick">✓</span>':''}
@@ -1135,10 +1161,9 @@ function buildRosa(){
     <div id="cd${i}" style="display:none">
       <div class="photo-roles">
         <div class="photo-row">
-          ${avatarHTML(p,'avatar avatar-xl','')}
-          <div class="photo-btns">
-            <button class="btn btn-secondary btn-sm" onclick="choosePhoto(${i})" title="${p.photo?'Cambia foto':'Carica foto'}">📷 Foto</button>
-            ${p.photo?`<button class="btn btn-secondary btn-sm" onclick="removePhoto(${i})" title="Rimuovi foto" style="color:var(--red)">🗑</button>`:''}
+          <div class="photo-edit" onclick="photoActions(${i},event)" title="${p.photo?'Tocca per cambiare o rimuovere la foto':'Tocca per caricare una foto'}">
+            ${avatarHTML(p,'avatar avatar-xl','')}
+            <span class="photo-badge">📷</span>
           </div>
         </div>
         <div class="role-section">
@@ -1264,51 +1289,35 @@ async function loadAndRefreshPagelle(i){
 }
 
 function drawPagelle(i,player,container){
-  // all appearances (rows with a date), carrying both rating and goals
-  const raw=ratingsForPlayer(player).map(r=>{
-    const m=matches.find(x=>x.id===r.matchId);
-    return{date:m?m.date:'',rating:r.rating,goals:r.goals||0,matchId:r.matchId};
-  }).filter(r=>r.date).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-
-  if(!raw.length){
+  // every number comes from the shared season stats → identical to tables, rankings and dashboard
+  const a=playerSeason(player);
+  if(!a || !a.rows){
     container.innerHTML=`<div style="font-size:12px;color:var(--text3);text-align:center">📊 Nessuna pagella ancora</div>`;
     return;
   }
-
-  // ── goals: computed over rating rows; presenze: dalle squadre salvate ──
-  const totGoals=raw.reduce((s,r)=>s+(r.goals||0),0);
-  // count matches where the player actually appears in a saved team
-  const matchP=p=>(player.id&&p.id===player.id)||(p.name===player.name);
-  const matchesPlayed=(matches||[]).filter(m=>{
-    const team=[...normalizeTeam(m.teamA),...normalizeTeam(m.teamB)];
-    return team.some(matchP);
-  }).length || raw.length;   // fallback to rating rows if teams missing
+  const totGoals=a.goals, totAssist=a.assist, totAutogol=a.autogol, totRigori=a.rigori, totMeta=a.meta;
+  const matchesPlayed=a.pres || a.rows;   // fallback to rating rows if teams missing
   const goalsPerMatch=matchesPlayed?totGoals/matchesPlayed:0;
 
-  // ── new stats: autogol + meta totals (from rating rows) ──
-  const rrows=ratingsForPlayer(player);
-  const totAutogol=rrows.reduce((s,r)=>s+(parseInt(r.autogol)||0),0);
-  const totAssist=rrows.reduce((s,r)=>s+(parseInt(r.assist)||0),0);
-  const totRigori=rrows.reduce((s,r)=>s+(parseInt(r.rigoriSbagliati)||0),0);
-  const totMeta=rrows.reduce((s,r)=>s+(parseInt(r.meta)||0),0);
-
-  // ── W/D/L from saved teams (for win% and last-5 form) ──
-  let pw=0,pd=0,pl_=0; const formRes=[];
-  (matches||[]).forEach(m=>{
-    const res=getPlayerMatchResult(m, player.id, player.name);
-    if(res==='W')pw++; else if(res==='D')pd++; else if(res==='L')pl_++;
-    if(res)formRes.push({date:m.date||'', res});
-  });
-  const decided=pw+pd+pl_;
-  const winPct=decided?Math.round(pw/decided*100):null;
+  // ── W/D/L from saved teams (win% and last-5 form) ──
+  const decided=a.w+a.d+a.l;
+  const winPct=decided?Math.round(a.w/decided*100):null;
   const winCol=winPct==null?'var(--text3)':winPct>=60?'var(--green)':winPct<40?'var(--red)':'var(--amber)';
-  const last5=formRes.sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(-5);
+  const last5=a.results.slice(-5);
   const formDotsHTML=last5.length
     ? last5.map(x=>{const c=x.res==='W'?'#3aad5e':x.res==='L'?'#e05c5c':'#e0a92e';return `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin:0 1px"></span>`;}).join('')
     : '<span style="color:var(--text3)">—</span>';
 
-  // ── rating series: only rows with a real vote (>=1) ──
-  const dated=raw.filter(r=>r.rating>=1);
+  // one cell of the "Andamento pagelle" grid — look defined once in CSS (.pg-cell / .pg-lbl / .pg-val)
+  const cell=(label,value,color,size)=>{
+    const st=[color?'color:'+color:'',size?'font-size:'+size+'px':''].filter(Boolean).join(';');
+    return `<div class="pg-cell"><div class="pg-lbl">${label}</div><div class="pg-val"${st?` style="${st}"`:''}>${value}</div></div>`;
+  };
+  const formCell=`<div class="pg-cell"><div class="pg-lbl" style="margin-bottom:3px">Forma</div><div class="pg-form">${formDotsHTML}</div></div>`;
+  const winTxt=winPct==null?'—':winPct+'%';
+
+  // ── rating series: valid votes of dated matches, chronological ──
+  const dated=a.votes.filter(x=>x.date).map(x=>({date:x.date,rating:x.v,matchId:x.matchId}));
 
   if(!dated.length){
     // player has appearances/goals but no votes yet
@@ -1318,30 +1327,12 @@ function drawPagelle(i,player,container){
       </div>
       <div style="font-size:9px;color:var(--text3);font-style:italic;opacity:.6;margin-bottom:6px">✒️ a cura della Redazione Avv. Peppe Rella</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
-        <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Partite</div>
-          <div style="font-size:14px;font-weight:800;color:var(--text)">${matchesPlayed}</div>
-        </div>
-        <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol</div>
-          <div style="font-size:15px;font-weight:800;color:var(--green)">${totGoals}</div>
-        </div>
-        <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol/P</div>
-          <div style="font-size:15px;font-weight:800;color:var(--green)">${goalsPerMatch.toFixed(2)}</div>
-        </div>
-        <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">% Vittorie</div>
-          <div style="font-size:15px;font-weight:800;color:${winCol}">${winPct==null?'—':winPct+'%'}</div>
-        </div>
-        <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-          <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Forma</div>
-          <div style="font-size:13px;line-height:9px;padding:3px 0">${formDotsHTML}</div>
-        </div>
-        <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">🙃 AG · 🚀 Meta</div>
-          <div style="font-size:14px;font-weight:800;color:var(--text)">${totAutogol} · ${totMeta}</div>
-        </div>
+        ${cell('Partite',matchesPlayed,null,14)}
+        ${cell('⚽ Gol',totGoals,'var(--green)')}
+        ${cell('⚽ Gol/P',goalsPerMatch.toFixed(2),'var(--green)')}
+        ${cell('% Vittorie',winTxt,winCol)}
+        ${formCell}
+        ${cell('🙃 AG · 🚀 Meta',`${totAutogol} · ${totMeta}`,null,14)}
       </div>
       <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:9px">Nessun voto ancora registrato</div>
     `;
@@ -1423,54 +1414,18 @@ function drawPagelle(i,player,container){
     </div>
     <div style="font-size:9px;color:var(--text3);font-style:italic;opacity:.6;margin-bottom:6px">✒️ a cura della Redazione Avv. Peppe Rella</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:7px">
-      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Media voto</div>
-        <div style="font-size:15px;font-weight:800;color:var(--text)">${avg.toFixed(2)}</div>
-      </div>
-      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Partite</div>
-        <div style="font-size:14px;font-weight:800;color:var(--text)">${matchesPlayed}</div>
-      </div>
-      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">vs OVR</div>
-        <div style="font-size:14px;font-weight:800;color:${deltaCol}">${deltaSym} ${delta.toFixed(1)}</div>
-      </div>
-      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Min · Max</div>
-        <div style="font-size:13px;font-weight:800;color:var(--text)">${min} · ${max}</div>
-      </div>
-      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol</div>
-        <div style="font-size:15px;font-weight:800;color:var(--green)">${totGoals}</div>
-      </div>
-      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">⚽ Gol/P</div>
-        <div style="font-size:15px;font-weight:800;color:var(--green)">${goalsPerMatch.toFixed(2)}</div>
-      </div>
-      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">🅰️ Assist</div>
-        <div style="font-size:15px;font-weight:800;color:var(--green)">${totAssist}</div>
-      </div>
-      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">% Vittorie</div>
-        <div style="font-size:15px;font-weight:800;color:${winCol}">${winPct==null?'—':winPct+'%'}</div>
-      </div>
-      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Forma</div>
-        <div style="font-size:13px;line-height:9px;padding:3px 0">${formDotsHTML}</div>
-      </div>
-      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">🙃 Autogol</div>
-        <div style="font-size:15px;font-weight:800;color:${totAutogol>0?'var(--red)':'var(--text)'}">${totAutogol}</div>
-      </div>
-      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">❌ Rig. sbagliati</div>
-        <div style="font-size:15px;font-weight:800;color:${totRigori>0?'var(--red)':'var(--text)'}">${totRigori}</div>
-      </div>
-      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">🚀 Meta</div>
-        <div style="font-size:15px;font-weight:800;color:${totMeta>0?'var(--amber)':'var(--text)'}">${totMeta}</div>
-      </div>
+      ${cell('Media voto',avg.toFixed(2))}
+      ${cell('Partite',matchesPlayed,null,14)}
+      ${cell('vs OVR',`${deltaSym} ${delta.toFixed(1)}`,deltaCol,14)}
+      ${cell('Min · Max',`${min} · ${max}`,null,13)}
+      ${cell('⚽ Gol',totGoals,'var(--green)')}
+      ${cell('⚽ Gol/P',goalsPerMatch.toFixed(2),'var(--green)')}
+      ${cell('🅰️ Assist',totAssist,'var(--green)')}
+      ${cell('% Vittorie',winTxt,winCol)}
+      ${formCell}
+      ${cell('🙃 Autogol',totAutogol,totAutogol>0?'var(--red)':null)}
+      ${cell('❌ Rig. sbagliati',totRigori,totRigori>0?'var(--red)':null)}
+      ${cell('🚀 Meta',totMeta,totMeta>0?'var(--amber)':null)}
     </div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:var(--gray);border-radius:8px;display:block">
       ${grid}
@@ -1536,6 +1491,25 @@ function addPlayer(){
 
 /* ─── foto giocatore (salvata come thumbnail base64 nel JSON) ─── */
 let photoTargetIdx=-1;
+// Tap on the photo: no photo → open the picker straight away; with photo → Cambia / Rimuovi / Annulla.
+// Each choice runs synchronously in its own tap, so iOS Safari allows opening the file picker.
+function photoActions(i,e){
+  if(e) e.stopPropagation();
+  if(!players[i].photo){ choosePhoto(i); return; }
+  document.getElementById('app-modal-icon').textContent='📷';
+  document.getElementById('app-modal-title').textContent=players[i].name;
+  document.getElementById('app-modal-msg').innerHTML='Cosa vuoi fare con la foto?';
+  document.getElementById('app-modal-input').style.display='none';
+  const ok=document.getElementById('app-modal-ok'), alt=document.getElementById('app-modal-alt'), cancel=document.getElementById('app-modal-cancel');
+  ok.textContent='📷 Cambia'; ok.className='btn btn-primary';
+  alt.textContent='🗑 Rimuovi'; alt.style.display='';
+  cancel.textContent='Annulla';
+  const done=()=>{ alt.style.display='none'; ok.onclick=alt.onclick=cancel.onclick=null; closeAppModal(); };
+  ok.onclick=()=>{ done(); choosePhoto(i); };
+  alt.onclick=()=>{ done(); removePhoto(i); };
+  cancel.onclick=done;
+  document.getElementById('app-modal').style.display='flex';
+}
 function choosePhoto(i){
   photoTargetIdx=i;
   document.getElementById('photo-input').click();
@@ -1886,9 +1860,8 @@ function generateTeams(){
 function renderResult(){
   if(!allCombos.length)return;
   const c=allCombos[currentIdx];
-  const roleOrder={ATT:0,MED:1,DIF:2};
-  const pA=c.tA.map(i=>({...players[i],idx:i,score:wScore(players[i]),dispRole:primaryRole(players[i])})).sort((a,b)=>roleOrder[a.dispRole]-roleOrder[b.dispRole]);
-  const pB=c.tB.map(i=>({...players[i],idx:i,score:wScore(players[i]),dispRole:primaryRole(players[i])})).sort((a,b)=>roleOrder[a.dispRole]-roleOrder[b.dispRole]);
+  const pA=c.tA.map(i=>({...players[i],idx:i,score:wScore(players[i]),dispRole:primaryRole(players[i])})).sort((a,b)=>ROLE_ORDER[a.dispRole]-ROLE_ORDER[b.dispRole]);
+  const pB=c.tB.map(i=>({...players[i],idx:i,score:wScore(players[i]),dispRole:primaryRole(players[i])})).sort((a,b)=>ROLE_ORDER[a.dispRole]-ROLE_ORDER[b.dispRole]);
 
   document.getElementById('avg-a').textContent='Media '+c.sA.toFixed(1);
   document.getElementById('avg-b').textContent='Media '+c.sB.toFixed(1);
@@ -1904,7 +1877,7 @@ function renderResult(){
   const renderChips=(arr,pcls,team)=>
     arr.map(p=>`<div class="pchip ${pcls}" data-team="${team}" data-pidx="${p.idx}" ondragstart="return false" onpointerdown="dragStart(event,${p.idx},'${team}')"><span class="pchip-grip">⠿</span><span class="pchip-name">${esc(p.name)}</span><span class="pchip-score">${p.score.toFixed(1)}</span></div>`).join('');
   document.getElementById('chips-a').innerHTML=renderChips(pA,'pc-bl','A');
-  document.getElementById('chips-b').innerHTML=renderChips(pB,'pc-am','B');
+  document.getElementById('chips-b').innerHTML=renderChips(pB,'pc-bi','B');
 
   const avgA=STATS.map((_,j)=>c.tA.reduce((s,i)=>s+players[i].stats[j],0)/c.tA.length);
   const avgB=STATS.map((_,j)=>c.tB.reduce((s,i)=>s+players[i].stats[j],0)/c.tB.length);
@@ -1913,8 +1886,8 @@ function renderResult(){
     const a=avgA[j],b=avgB[j];
     cmp+=`<div class="cmp-row">
       <span class="cmp-v bl" style="font-weight:${a>b?800:500}">${a.toFixed(1)}</span>
-      <div class="cmp-bar"><div class="cf-bl" style="flex:${a}"></div><span class="cmp-lbl">${ICONS[j]} ${s}</span><div class="cf-am" style="flex:${b}"></div></div>
-      <span class="cmp-v am" style="font-weight:${b>a?800:500}">${b.toFixed(1)}</span>
+      <div class="cmp-bar"><div class="cf-bl" style="flex:${a}"></div><span class="cmp-lbl">${ICONS[j]} ${s}</span><div class="cf-bi" style="flex:${b}"></div></div>
+      <span class="cmp-v bi" style="font-weight:${b>a?800:500}">${b.toFixed(1)}</span>
     </div>`;
   });
   document.getElementById('stat-cmp').innerHTML=cmp;
@@ -2043,7 +2016,6 @@ function drawFormationsCanvas(o){
   return canvas;
 }
 
-const ROLE_ORDER={ATT:0,MED:1,DIF:2};
 
 // Gioca → share the currently displayed combination
 function shareTeams(){
@@ -3129,36 +3101,14 @@ function renderScorers(){
 function renderScorersList(){
   const el=document.getElementById('scorers-list');
   if(!el)return;
-  const ratings=matchesCache.data?.ratings||[];
-  const allMatches=matches||[];
-  const keyFor=playerKey;
   const isAst=(scorersMode==='assist');
 
-  const tally={}; // key → {name, goals, assist, pres}
-  const ensure=(key,name)=>{ if(!tally[key])tally[key]={name,goals:0,assist:0,pres:0}; return tally[key]; };
-
-  // presenze → dalle squadre salvate (una volta per partita)
-  const seen=new Set();
-  allMatches.forEach(m=>{
-    [...normalizeTeam(m.teamA),...normalizeTeam(m.teamB)].forEach(pl=>{
-      const {key,name}=keyFor(pl.id, pl.name);
-      const tag=m.id+'|'+key;
-      if(seen.has(tag))return;
-      seen.add(tag);
-      ensure(key,name).pres++;
-    });
-  });
-  // gol + assist → dalle righe pagelle
-  ratings.forEach(r=>{
-    const {key,name}=keyFor(r.playerId, r.player);
-    const t=ensure(key,name);
-    t.goals+=parseInt(r.goals)||0;
-    t.assist+=parseInt(r.assist)||0;
-  });
+  // presenze, gol e assist dalla fonte unica delle statistiche di stagione
+  const tally=Object.values(seasonStats());
 
   const field=isAst?'assist':'goals';
   // only players with at least one goal/assist appear; ties → better per-match ratio, then name
-  const ranked=Object.values(tally).filter(s=>s[field]>0)
+  const ranked=tally.filter(s=>s[field]>0)
     .sort((a,b)=>b[field]-a[field] || (b[field]/(b.pres||1))-(a[field]/(a.pres||1)) || a.name.localeCompare(b.name));
 
   const tabs=`<div class="sub-tabs" style="margin-bottom:10px">
@@ -3204,35 +3154,19 @@ function renderSeasonDash(){
   const el=document.getElementById('season-dash');
   if(!el)return;
   const ms=matches||[];
-  const ratings=matchesCache.data?.ratings||[];
   if(!ms.length){el.innerHTML='';return;}
   const totMatches=ms.length;
-  const totGoals=ratings.reduce((s,r)=>s+(parseInt(r.goals)||0),0);
+  const totGoals=Object.values(seasonStats()).reduce((s,p)=>s+p.goals,0);   // = somma dei gol in classifica
   const avgGoals=totMatches?(totGoals/totMatches):0;
-  // presences (from saved teams) + rating averages (from pagelle) per player
-  const stat={}; // key → {name, pres, sum, cnt}
-  const ensure=(key,name)=>{ if(!stat[key])stat[key]={name,pres:0,sum:0,cnt:0}; return stat[key]; };
-  ms.forEach(m=>{
-    const seen=new Set();
-    [...normalizeTeam(m.teamA),...normalizeTeam(m.teamB)].forEach(pl=>{
-      const {key,name}=playerKey(pl.id,pl.name);
-      if(seen.has(key))return; seen.add(key);
-      ensure(key,name).pres++;
-    });
-  });
-  ratings.forEach(r=>{
-    const rt=parseFloat(r.rating);
-    if(isNaN(rt)||rt<1)return;
-    const {key,name}=playerKey(r.playerId,r.player);
-    const s=ensure(key,name); s.sum+=rt; s.cnt++;
-  });
+  // presenze e voti per giocatore dalla fonte unica delle statistiche di stagione
+  const stat=seasonStats();
   // best average rating, but only among players who played enough matches
   // (threshold scales with season length so early data isn't skewed by 1-match wonders)
   const minPres=Math.max(2, Math.ceil(totMatches*0.4));
   let topRt={name:'—', avg:0};
   Object.values(stat).forEach(p=>{
-    if(p.pres>=minPres && p.cnt>0){
-      const avg=p.sum/p.cnt;
+    if(p.pres>=minPres && p.votes.length>0){
+      const avg=p.voteAvg;
       if(avg>topRt.avg) topRt={name:p.name, avg};
     }
   });
@@ -3356,45 +3290,12 @@ function statsFilterTabs(minPres){
 function renderStatsTable(){
   const el=document.getElementById('stats-table');
   if(!el)return;
-  const ratings=matchesCache.data?.ratings||[];
   const allMatches=matches||[];
 
-  // stable key + display name for a player (id first, name fallback)
-  const keyFor=playerKey;
-  const agg={}; // key → {name, pres, w, d, l, goals, ratingSum, ratingCount}
-  const ensure=(key,name)=>{
-    if(!agg[key]) agg[key]={name, pres:0, w:0, d:0, l:0, goals:0, ratingSum:0, ratingCount:0};
-    return agg[key];
-  };
+  // presenze, V/N/P, forma, gol e voti dalla fonte unica delle statistiche di stagione
+  const agg=seasonStats();
 
-  // 1) PRESENZE + V/N/P → dalle squadre salvate nella partita (fonte di verità)
-  const seen=new Set(); // "matchId|key" so a player counts once per match
-  allMatches.forEach(m=>{
-    const team=[...normalizeTeam(m.teamA),...normalizeTeam(m.teamB)];
-    team.forEach(pl=>{
-      const {key,name}=keyFor(pl.id, pl.name);
-      const tag=m.id+'|'+key;
-      if(seen.has(tag))return;
-      seen.add(tag);
-      const a=ensure(key,name);
-      a.pres++;
-      const res=getPlayerMatchResult(m, pl.id, pl.name);
-      if(res==='W')a.w++; else if(res==='D')a.d++; else if(res==='L')a.l++;
-      if(!a.results)a.results=[];
-      if(res)a.results.push({date:m.date||'', res}); // for "last 5 form"
-    });
-  });
-
-  // 2) VOTI + GOL → dalle righe pagelle
-  ratings.forEach(r=>{
-    const {key,name}=keyFor(r.playerId, r.player);
-    const a=ensure(key,name);
-    a.goals+=parseInt(r.goals)||0;
-    const rt=parseFloat(r.rating);
-    if(!isNaN(rt)&&rt>=1){a.ratingSum+=rt; a.ratingCount++;}
-  });
-
-  let rows=Object.values(agg);
+  let rows=Object.values(agg).map(s=>({...s, ratingSum:s.voteSum, ratingCount:s.votes.length}));
   const totMatches=allMatches.length;
   // "regulars" = played at least 30% of the season's matches (rounded up, inclusive)
   const minPres=Math.ceil(totMatches*0.30);
@@ -3641,7 +3542,7 @@ function openMatch(id){
   });
 
   const renderTeam=(title, team, isBlue)=>{
-    const cls=isBlue?'bl':'am';
+    const cls=isBlue?'bl':'bi';   // field-id prefix: bl = Blu, bi = Bianchi
     const bg=isBlue?'var(--blue-light)':'var(--teamb-light)';
     const col=isBlue?'var(--blue)':'var(--teamb)';
     return `<div style="background:${bg};border-radius:var(--radius-sm);padding:10px;flex:1">
@@ -3822,7 +3723,7 @@ async function saveRatings(matchId){
   const goalNoRating=[]; // players with goals but no valid rating
   const teamTot={A:{goals:0,assist:0},B:{goals:0,assist:0}};
   all.forEach((pl,i)=>{
-    const teamCls=i<teamA.length?'bl':'am';
+    const teamCls=i<teamA.length?'bl':'bi';
     const el=document.getElementById('rate-'+teamCls+'-'+i);
     const gEl=document.getElementById('goal-'+teamCls+'-'+i);
     const aEl=document.getElementById('og-'+teamCls+'-'+i);
