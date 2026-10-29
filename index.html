@@ -106,11 +106,17 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .role-section{margin:8px 0 0;padding-top:8px;border-top:1px solid var(--gray2)}
 .role-section-label{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px}
 .role-toggles{display:flex;gap:6px}
-/* Rosa card: photo on the left, roles stacked on the right (no dedicated roles row) */
-.photo-roles{display:flex;align-items:center;gap:12px;margin:4px 0 0}
-.photo-roles .photo-row{margin:0;flex-shrink:0}
-.photo-roles .role-section{flex:1;min-width:0;margin:0;padding-top:0;border-top:none}
+/* Rosa card: 3 columns aligned with the stats grid → photo | roles | free slot (future use) */
+.photo-roles{display:grid;grid-template-columns:repeat(3,1fr);gap:5px 6px;align-items:start;margin:4px 0 0}
+.photo-roles .photo-row{margin:0;gap:6px;min-width:0}
+.photo-roles .avatar-xl{width:100%;height:auto;aspect-ratio:1/1;max-width:170px}
+.photo-btns{display:flex;gap:4px;width:100%;max-width:170px}
+.photo-btns .btn{flex:1;padding:6px 4px;min-height:30px;font-size:11px;gap:3px}
+.photo-btns .btn+.btn{flex:0 0 32px}
+.photo-roles .role-section{min-width:0;margin:0;padding-top:0;border-top:none}
 .photo-roles .role-toggles{flex-direction:column;gap:6px}
+.photo-roles .role-toggle{padding:6px 2px}
+.photo-slot{min-height:1px}
 .role-toggle{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px 4px;border:1.5px solid;border-radius:99px;background:transparent;cursor:pointer;transition:all var(--tr);opacity:0.55}
 .role-toggle .rt-label{font-size:11px;font-weight:700}
 .role-toggle .rt-tick{font-size:10px;font-weight:800;line-height:1}
@@ -1069,15 +1075,16 @@ function buildRosa(){
       <div class="photo-roles">
         <div class="photo-row">
           ${avatarHTML(p,'avatar avatar-xl','')}
-          <div style="display:flex;gap:6px;justify-content:center">
-            <button class="btn btn-secondary btn-sm" onclick="choosePhoto(${i})">📷 ${p.photo?'Cambia foto':'Carica foto'}</button>
-            ${p.photo?`<button class="btn btn-secondary btn-sm" onclick="removePhoto(${i})" style="color:var(--red)">🗑</button>`:''}
+          <div class="photo-btns">
+            <button class="btn btn-secondary btn-sm" onclick="choosePhoto(${i})" title="${p.photo?'Cambia foto':'Carica foto'}">📷 Foto</button>
+            ${p.photo?`<button class="btn btn-secondary btn-sm" onclick="removePhoto(${i})" title="Rimuovi foto" style="color:var(--red)">🗑</button>`:''}
           </div>
         </div>
         <div class="role-section">
-          <div class="role-section-label">Ruoli (anche più di uno)</div>
+          <div class="role-section-label">Ruoli</div>
           <div class="role-toggles">${toggles}</div>
         </div>
+        <div class="photo-slot" id="pslot-${i}"></div><!-- terza colonna libera per usi futuri -->
       </div>${sg}
       <div id="pagelle-${i}" style="margin-top:4px;padding-top:6px;border-top:1px solid var(--gray2)"></div>
       <div style="text-align:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--gray2)">
@@ -1306,7 +1313,7 @@ function drawPagelle(i,player,container){
   else { trendLabel='Stabile'; trendCol='var(--amber)'; trendArrow='→'; }
 
   // ── geometry: bars chart ──
-  const W=320, H=120, padL=22, padR=10, padT=10, padB=20;
+  const W=320, H=76, padL=22, padR=10, padT=11, padB=4;   // compact: no labels under the bars
   const plotW=W-padL-padR, plotH=H-padT-padB;
   const yMin=1, yMax=10;
   const yToPx=v=>padT+plotH-((v-yMin)/(yMax-yMin))*plotH;
