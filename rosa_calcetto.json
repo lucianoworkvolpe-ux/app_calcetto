@@ -483,13 +483,13 @@
     1,
     1,
     2,
-    1,
+    0.5,
     1.5
   ],
   "sizeA": 5,
   "sizeB": 5,
   "asymMode": false,
-  "backendUrl": "https://script.google.com/macros/s/AKfycby52wP9lTID9snXa45Ue_w7G_qjM82hzX1SdxlmvF6Q_-UlK_3gpVvvCghb02yxOJoD_A/exec",
+  "backendUrl": "https://script.google.com/macros/s/AKfycbxUGsdykDsF-Sj9f2A03vRtp-wJp_RJWd6NyGU2UX4MIpqSV-PZyn5eK9BCUU-WmfmV/exec",
   "version": 6,
-  "exported": "2026-10-22T12:01:21.477Z"
+  "exported": "2026-10-29T09:24:10.110Z"
 }

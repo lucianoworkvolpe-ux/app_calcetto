@@ -1208,6 +1208,7 @@ function drawPagelle(i,player,container){
   const rrows=ratingsForPlayer(player);
   const totAutogol=rrows.reduce((s,r)=>s+(parseInt(r.autogol)||0),0);
   const totAssist=rrows.reduce((s,r)=>s+(parseInt(r.assist)||0),0);
+  const totRigori=rrows.reduce((s,r)=>s+(parseInt(r.rigoriSbagliati)||0),0);
   const totMeta=rrows.reduce((s,r)=>s+(parseInt(r.meta)||0),0);
 
   // ── W/D/L from saved teams (for win% and last-5 form) ──
@@ -1376,6 +1377,10 @@ function drawPagelle(i,player,container){
       <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">🙃 Autogol</div>
         <div style="font-size:15px;font-weight:800;color:${totAutogol>0?'var(--red)':'var(--text)'}">${totAutogol}</div>
+      </div>
+      <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:2px">❌ Rig. sbagliati</div>
+        <div style="font-size:15px;font-weight:800;color:${totRigori>0?'var(--red)':'var(--text)'}">${totRigori}</div>
       </div>
       <div style="background:var(--gray);border-radius:7px;padding:5px 4px;text-align:center">
         <div style="font-size:10px;color:var(--text2);margin-bottom:2px">🚀 Meta</div>
@@ -1991,7 +1996,7 @@ function shareMatchSummary(id){
       name:playerKey(pl.id,pl.name).name,
       v:(!isNaN(v)&&v>=1)?v:null,
       g:r?parseInt(r.goals)||0:0, a:r?parseInt(r.assist)||0:0,
-      ag:r?parseInt(r.autogol)||0:0, mt:r?parseInt(r.meta)||0:0
+      ag:r?parseInt(r.autogol)||0:0, mt:r?parseInt(r.meta)||0:0, rs:r?parseInt(r.rigoriSbagliati)||0:0
     };
   }).sort((x,y)=>(y.v??-1)-(x.v??-1) || x.name.localeCompare(y.name)); // best voto first
   const tA=rowsFor(m.teamA), tB=rowsFor(m.teamB);
@@ -2064,7 +2069,7 @@ function shareMatchSummary(id){
       const isMvp=h.mvp && p.name===h.mvp.name;
       ctx.textAlign='left'; ctx.fillStyle=C.TXT; ctx.font=SHARE_FONT('700 20px');
       ctx.fillText(fitText(ctx,(isMvp?'⭐ ':'')+p.name,colW-90), x+16, y+25);
-      const chips=[p.g?`⚽ ${p.g}`:'', p.a?`🅰️ ${p.a}`:'', p.ag?`🙃 ${p.ag}`:'', p.mt?`🚀 ${p.mt}`:''].filter(Boolean).join('   ');
+      const chips=[p.g?`⚽ ${p.g}`:'', p.a?`🅰️ ${p.a}`:'', p.ag?`🙃 ${p.ag}`:'', p.rs?`❌ ${p.rs}`:'', p.mt?`🚀 ${p.mt}`:''].filter(Boolean).join('   ');
       if(chips){ ctx.fillStyle=C.SUB; ctx.font=SHARE_FONT('600 15px'); ctx.fillText(fitText(ctx,chips,colW-90), x+16, y+46); }
       ctx.textAlign='right'; ctx.fillStyle=voteCol(p.v); ctx.font=SHARE_FONT('800 28px');
       ctx.fillText(p.v!=null?(Number.isInteger(p.v)?String(p.v):p.v.toFixed(1)):'—', x+colW-16, y+(rowH-8)/2+10);
@@ -2851,11 +2856,11 @@ function getMatches() {
 }
 
 function getRatings() {
-  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist']);
+  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist','rigori_sbagliati']);
   const data = sh.getDataRange().getValues();
   if (data.length < 2) return [];
   return data.slice(1).map(r => ({
-    matchId: r[0], player: r[1], rating: parseFloat(r[2]) || 0, notes: r[3] || '', playerId: r[4] || '', goals: parseInt(r[5]) || 0, autogol: parseInt(r[6]) || 0, meta: parseInt(r[7]) || 0, assist: parseInt(r[8]) || 0
+    matchId: r[0], player: r[1], rating: parseFloat(r[2]) || 0, notes: r[3] || '', playerId: r[4] || '', goals: parseInt(r[5]) || 0, autogol: parseInt(r[6]) || 0, meta: parseInt(r[7]) || 0, assist: parseInt(r[8]) || 0, rigoriSbagliati: parseInt(r[9]) || 0
   })).filter(r => r.matchId && (r.player || r.playerId));
 }
 
@@ -2876,7 +2881,7 @@ function deleteMatch(id) {
     if (data[i][0] === id) sh.deleteRow(i + 1);
   }
   // delete ratings too
-  const rs = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist']);
+  const rs = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist','rigori_sbagliati']);
   const rd = rs.getDataRange().getValues();
   for (let i = rd.length - 1; i >= 1; i--) {
     if (rd[i][0] === id) rs.deleteRow(i + 1);
@@ -2885,7 +2890,7 @@ function deleteMatch(id) {
 }
 
 function saveRatings(payload) {
-  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist']);
+  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist','rigori_sbagliati']);
   const data = sh.getDataRange().getValues();
   // remove old ratings for this match
   for (let i = data.length - 1; i >= 1; i--) {
@@ -2893,7 +2898,7 @@ function saveRatings(payload) {
   }
   // append new ones
   (payload.ratings || []).forEach(r => {
-    sh.appendRow([payload.matchId, r.player, r.rating, r.notes || '', r.playerId || '', r.goals || 0, r.autogol || 0, r.meta || 0, r.assist || 0]);
+    sh.appendRow([payload.matchId, r.player, r.rating, r.notes || '', r.playerId || '', r.goals || 0, r.autogol || 0, r.meta || 0, r.assist || 0, r.rigoriSbagliati || 0]);
   });
   return (payload.ratings || []).length;
 }
@@ -3412,9 +3417,10 @@ function matchHighlights(m){
     const g=parseInt(r.goals)||0;
     const ag=parseInt(r.autogol)||0;
     const ast=parseInt(r.assist)||0;
+    const rs=parseInt(r.rigoriSbagliati)||0;
     if(!isNaN(rt)&&rt>=1){
-      // composite performance: voto + 0.5·gol + 0.3·assist − 0.5·autogol
-      const perf=rt + g*0.5 + ast*0.3 - ag*0.5;
+      // composite performance: voto + 0.5·gol + 0.3·assist − 0.3·autogol − 0.3·rigori sbagliati
+      const perf=rt + g*0.5 + ast*0.3 - ag*0.3 - rs*0.3;
       if(!mvp||perf>mvp.perf)   mvp={name, v:rt, perf};
       if(!worst||perf<worst.perf) worst={name, v:rt, perf};
       // team averages (which side is this player on?)
@@ -3487,11 +3493,13 @@ function openMatch(id){
         const val=r?r.rating:'';
         const goals=r&&r.goals?r.goals:'';
         const localIdx=allPlayers.indexOf(pl);
-        const rid='rate-'+cls+'-'+localIdx, gid='goal-'+cls+'-'+localIdx, xid='ast-'+cls+'-'+localIdx, aid='og-'+cls+'-'+localIdx, mid='meta-'+cls+'-'+localIdx;
+        const rid='rate-'+cls+'-'+localIdx, gid='goal-'+cls+'-'+localIdx, xid='ast-'+cls+'-'+localIdx, aid='og-'+cls+'-'+localIdx, sid='rig-'+cls+'-'+localIdx, mid='meta-'+cls+'-'+localIdx;
         const og=r&&r.autogol?r.autogol:'';
         const meta=r&&r.meta?r.meta:'';
         const ast=r&&r.assist?r.assist:'';
-        const chk=`checkGoalRating('${rid}','${gid}');checkGoalRating('${rid}','${xid}')`;
+        const rig=r&&r.rigoriSbagliati?r.rigoriSbagliati:'';
+        // anyone with gol / assist / autogol / rigori sbagliati must have a voto → red outline if missing
+        const chk=[gid,xid,aid,sid].map(x=>`checkGoalRating('${rid}','${x}')`).join(';');
         // compact counter: emoji label on top, [−][value][+] below
         const cnt=(id,emoji,title,val,max,withWarn)=>`<div class="mcnt" title="${title}">
               <span class="mcnt-lbl">${emoji}</span>
@@ -3514,7 +3522,8 @@ function openMatch(id){
           <div class="mcnt-row">
             ${cnt(gid,'⚽','Gol',goals,20,true)}
             ${cnt(xid,'🅰️','Assist',ast,20,true)}
-            ${cnt(aid,'🙃','Autogol',og,20,false)}
+            ${cnt(aid,'🙃','Autogol',og,20,true)}
+            ${cnt(sid,'❌','Rigori sbagliati',rig,10,true)}
             ${cnt(mid,'🚀','Meta — tiri alle stelle',meta,50,false)}
           </div>
         </div>`;
@@ -3661,14 +3670,16 @@ async function saveRatings(matchId){
     const aEl=document.getElementById('og-'+teamCls+'-'+i);
     const mEl=document.getElementById('meta-'+teamCls+'-'+i);
     const xEl=document.getElementById('ast-'+teamCls+'-'+i);
+    const sEl=document.getElementById('rig-'+teamCls+'-'+i);
     const v=clampRating(el?.value);          // null if empty/invalid, else 1–10 snapped to .5
     const g=clampInt(gEl?.value, 0, 20, 0);  // 0–20 integer
     const asv=clampInt(xEl?.value, 0, 20, 0); // assist 0–20
+    const rsv=clampInt(sEl?.value, 0, 10, 0); // rigori sbagliati 0–10
     const ag=clampInt(aEl?.value, 0, 20, 0); // autogol 0–20
     const mt=clampInt(mEl?.value, 0, 50, 0); // meta (tiri alle stelle) 0–50
     const hasRating=(v!==null);
-    // RULE: chi ha gol, assist o autogol deve avere un voto (ha per forza giocato)
-    if((g>0||asv>0||ag>0) && !hasRating){
+    // RULE: chi ha gol, assist, autogol o rigori sbagliati deve avere un voto (ha per forza giocato)
+    if((g>0||asv>0||ag>0||rsv>0) && !hasRating){
       goalNoRating.push(pl.name);
       return;
     }
@@ -3685,14 +3696,15 @@ async function saveRatings(matchId){
         goals:g,
         autogol:ag,
         meta:mt,
-        assist:asv
+        assist:asv,
+        rigoriSbagliati:rsv
       });
     }
   });
 
   // block save if anyone with gol/assist/autogol is missing a rating
   if(goalNoRating.length){
-    toast(`⚠️ Metti il voto a: ${goalNoRating.join(', ')} (ha gol/assist registrati)`);
+    toast(`⚠️ Metti il voto a: ${goalNoRating.join(', ')} (ha gol/assist/autogol/rigori registrati)`);
     return;
   }
 
