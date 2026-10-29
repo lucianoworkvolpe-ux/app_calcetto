@@ -86,6 +86,8 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .ph-name-row{display:flex;align-items:center;gap:3px;flex:1;min-width:0}
 .player-name-display{flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .role-pills-display{display:flex;gap:2px;flex-wrap:wrap;flex-shrink:0}
+/* narrow screens: role pills under the name, so names aren't truncated next to the big initials */
+@media(max-width:520px){.ph-info{flex-direction:column;align-items:flex-start;gap:3px}.ph-name-row{width:100%}}
 .avatar{width:26px;height:26px;border-radius:50%;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .avatar.has-photo,.conv-avatar.has-photo{background-size:cover;background-position:center;color:transparent}
 .avatar-xl{width:104px;height:104px;font-size:34px;border:3px solid var(--gray3);box-shadow:0 4px 14px rgba(0,0,0,0.18)}
@@ -94,6 +96,7 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .av-mid{background:var(--mid-light);color:var(--mid)}
 .av-def{background:var(--def-light);color:var(--def)}
 .av-multi{background:#f0eaf8;color:#6b3fa0}
+@media(prefers-color-scheme:dark){.av-multi{background:#2a1d40;color:#b794f6}}
 .av-none{background:var(--gray2);color:var(--text3)}
 .ovr-badge{font-size:8px;font-weight:800;padding:1.5px 5px;border-radius:99px;background:linear-gradient(135deg,#2e69c4,#1a4a8f);color:#fff;white-space:nowrap;box-shadow:0 1px 3px rgba(26,74,143,0.35)}
 .pag-badge{font-size:8px;font-weight:800;padding:1.5px 5px;border-radius:99px;white-space:nowrap;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.18)}
@@ -208,8 +211,11 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .conv-item.sel .conv-check{background:var(--green);border-color:var(--green);color:#fff}
 .conv-avatar-stack{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0}
 .conv-avatar{width:30px;height:30px;border-radius:50%;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+/* big nickname initials in lists (Rosa, Gioca, card headers) instead of the tiny photo */
+.avatar.avatar-ini,.conv-avatar.avatar-ini{width:40px;height:40px;font-size:15px;letter-spacing:.3px}
 .conv-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-.conv-name{font-size:14px;font-weight:700;color:var(--text);white-space:normal;word-break:break-word;line-height:1.2}
+.conv-name{font-size:14px;font-weight:700;color:var(--text);white-space:normal;overflow-wrap:break-word;line-height:1.2}
+@media(max-width:520px){.conv-name{font-size:13px}.conv-avatar.avatar-ini{width:36px;height:36px;font-size:14px}.conv-item{gap:6px;padding:10px 7px}}
 .conv-roles{display:flex;gap:3px;flex-wrap:wrap}
 .conv-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--gray3);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;transition:all var(--tr)}
 .conv-status{font-size:13px;color:var(--text2);margin:10px 0 0;text-align:center}
@@ -919,7 +925,23 @@ function getBackupSizeInfo(){
   // read real upload date of index.html from GitHub Pages
   fetchBuildDate();
 })();
-function ini(n){return esc((n||'?').substring(0,2).toUpperCase())}
+// Nickname initials: first letter of the first two words, CamelCase counts as words
+// ("Vito Azz"→VA, "FabioFicarelli"→FF); single word → first two letters ("Rella"→RE)
+function ini(n){
+  const s=String(n||'?').trim().replace(/([a-zà-ÿ])([A-ZÀ-Þ])/g,'$1 $2');
+  const w=s.split(/\s+/).filter(Boolean);
+  return esc((w.length>=2?w[0][0]+w[1][0]:s.substring(0,2)).toUpperCase());
+}
+// Big initials badge for lists (Rosa, Gioca, card headers): no photo thumbnail
+function initialsAvatar(p, baseCls, idAttr){
+  const id=idAttr?`id="${idAttr}"`:'';
+  return `<div class="${baseCls} ${avCls(p)}" ${id}>${ini(p.name)}</div>`;
+}
+// Display order of Rosa / Gioca lists: strongest first (OVR as on the badge), then by name
+function rosaOrder(){
+  return players.map((p,i)=>i).filter(i=>!players[i].archived)
+    .sort((a,b)=>calcOvr(players[b].stats)-calcOvr(players[a].stats) || players[a].name.localeCompare(players[b].name));
+}
 function primaryRole(p){return p.roles[0]||'MED'}
 function avCls(p){
   const r=p.roles;
@@ -1065,8 +1087,8 @@ function neededTotal(){return sizeA+sizeB}
 ════════════════════════════════════ */
 function buildRosa(){
   const c=document.getElementById('players-list');c.innerHTML='';
-  players.forEach((p,i)=>{
-    if(p.archived)return;   // archived players hidden from active roster
+  rosaOrder().forEach((i,rank)=>{   // strongest first; archived players excluded
+    const p=players[i];
     const ovr=calcOvr(p.stats).toFixed(1);
     const roleMap={ATT:'att',MED:'mid',DIF:'def'};
     const toggles=ROLES.map(r=>{
@@ -1094,12 +1116,12 @@ function buildRosa(){
     const accent=p.roles.length>1?'#8b5cf6':(p.roles[0]==='ATT'?'var(--att)':p.roles[0]==='DIF'?'var(--def)':'var(--mid)');
     const d=document.createElement('div');d.className='card card-compact';
     d.style.setProperty('--role-accent',accent);
-    d.style.animationDelay=(Math.min(i,12)*0.03)+'s';   // subtle stagger
+    d.style.animationDelay=(Math.min(rank,12)*0.03)+'s';   // subtle stagger, in display order
     d.innerHTML=`<div class="player-header" onclick="toggleCard(${i})">
       <div class="ph-top">
         <div class="avatar-stack">
           <span class="pag-badge ${pagInfo.cls}" id="pag${i}" title="Media pagelle">${pagInfo.label}</span>
-          ${avatarHTML(p,'avatar','av'+i)}
+          ${initialsAvatar(p,'avatar avatar-ini','av'+i)}
           <span class="ovr-badge" id="ov${i}">OVR ${ovr}</span>
         </div>
         <div class="ph-info">
@@ -1182,7 +1204,7 @@ function openPlayerCardByIdx(idx){
       <div class="ph-top">
         <div class="avatar-stack">
           <span class="pag-badge ${pagInfo.cls}" title="Media pagelle">${pagInfo.label}</span>
-          ${avatarHTML(p,'avatar','')}
+          ${initialsAvatar(p,'avatar avatar-ini','')}
           <span class="ovr-badge">OVR ${ovr}</span>
         </div>
         <div class="ph-info">
@@ -1604,8 +1626,8 @@ function buildConvList(){
   const c=document.getElementById('conv-list');if(!c)return;
   // drop stale selections (deleted players)
   selected.forEach(i=>{if(i>=players.length)selected.delete(i)});
-  c.innerHTML=players.map((p,i)=>{
-    if(p.archived)return '';   // archived players hidden from convocati
+  c.innerHTML=rosaOrder().map(i=>{   // strongest first; archived players excluded
+    const p=players[i];
     const sel=selected.has(i);
     const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
     const selCls=sel?' sel':'';
@@ -1614,11 +1636,11 @@ function buildConvList(){
     return `<div class="conv-item${selCls}" onclick="toggleConv(${i})">
       <div class="conv-avatar-stack">
         <span class="pag-badge ${pagInfo.cls}" title="Media pagelle">${pagInfo.label}</span>
-        ${avatarHTML(p,'conv-avatar','')}
+        ${initialsAvatar(p,'conv-avatar avatar-ini','')}
         <span class="ovr-badge">OVR ${ovr}</span>
       </div>
       <div class="conv-info">
-        <span class="conv-name">${esc(p.name)}</span>
+        <span class="conv-name">${esc(p.name).replace(/([a-zà-ÿ])([A-ZÀ-Þ])/g,'$1<wbr>$2')}</span>
         <div class="conv-roles">${pills}</div>
       </div>
       <div class="conv-check">${sel?'✓':''}</div>
