@@ -132,6 +132,10 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .fut-mini-pag{font-size:10px;font-weight:900;padding:2px 7px;border-radius:99px;margin:3px 0 2px;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.35);background:linear-gradient(#2a3243,#0c1018)!important;border:1.5px solid currentColor}
 .fut-mini-pag.pag-good{color:#5fd184}.fut-mini-pag.pag-mid{color:#ffd36b}.fut-mini-pag.pag-bad{color:#f07a6c}.fut-mini-pag.pag-none{color:#c9ced6}
 .fut-mini:active{transform:scale(0.95)}
+/* iOS Safari: no native button padding/appearance, every line full-width and centred */
+.fut-mini{-webkit-appearance:none;appearance:none;padding:0;margin:0;text-align:center}
+.fut-mini>span{display:block;width:100%;text-align:center}
+.fut-mini>span.fut-mini-pag{display:inline-block;width:auto}
 .fut-mini-ovr{font-size:34px;font-weight:900;line-height:1;text-shadow:0 1px 0 rgba(255,255,255,.45),0 2px 6px rgba(0,0,0,.25);position:relative}
 .fut-mini-tier{font-size:9px;font-weight:800;letter-spacing:1.5px;opacity:.85}
 .fut-mini-cta{font-size:10px;font-weight:800;margin-top:7px;opacity:.9}
@@ -2741,10 +2745,12 @@ function drawFutCard(p, photoImg){
   roundRect(ctx,bx,by,bw,bh,bh/2); ctx.fillStyle=pg; ctx.fill(); ctx.restore();
   roundRect(ctx,bx,by,bw,bh,bh/2); ctx.strokeStyle=pc[0]; ctx.lineWidth=3; ctx.stroke();
   roundRect(ctx,bx+4,by+4,bw-8,bh-8,(bh-8)/2); ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.lineWidth=1.5; ctx.stroke();
-  ctx.textAlign='center';
-  ctx.font=F('800 15px'); ctx.fillStyle='#c9d2e3'; ctx.fillText('PAG',bx+38,by+32);
+  const pTxt=pv==null?'—':pv.toFixed(1);
+  ctx.font=F('800 15px'); const wP=ctx.measureText('PAG').width; ctx.font=F('900 30px'); const wV=ctx.measureText(pTxt).width;
+  const sx0=lx-(wP+10+wV)/2;                                  // content centred in the pill, whatever the font
+  ctx.textAlign='left'; ctx.font=F('800 15px'); ctx.fillStyle='#c9d2e3'; ctx.fillText('PAG',sx0,by+32);
   ctx.save(); ctx.shadowColor=pc[0]; ctx.shadowBlur=10; ctx.font=F('900 30px'); ctx.fillStyle=pc[0];
-  ctx.fillText(pv==null?'—':pv.toFixed(1),bx+bw-50,by+35); ctx.restore();
+  ctx.fillText(pTxt,sx0+wP+10,by+35); ctx.restore();
   const roles=[primaryRole(p),...p.roles.filter(r=>r!==primaryRole(p))];
   etext(roles[0],lx,y+294,F('800 40px'),t.text);
   if(roles.length>1) etext(roles.slice(1).join(' · '),lx,y+326,F('700 23px'),t.sub);
@@ -2760,10 +2766,16 @@ function drawFutCard(p, photoImg){
   sep(y+490,x+60,x+w-60);
 
   // ── 6 stats in two columns ──
+  // measure with the font that will actually draw (iPhone ≠ desktop) → two equal columns, symmetric around the centre
+  const VF=F('900 48px'), LF=F('700 34px'), inGap=12, midGap=56;
+  ctx.font=VF; const valW=Math.max(...FUT_STATS.map(([,idx])=>ctx.measureText(String(futStat(p,idx))).width));
+  ctx.font=LF; const labW=Math.max(...FUT_STATS.map(([l])=>ctx.measureText(l).width));
+  const colW=valW+inGap+labW;
   FUT_STATS.forEach(([lbl,idx],k)=>{
-    const col=k<3?0:1, row=k%3, bx=x+(col?w/2+40:100), by=y+560+row*66;
-    etext(String(futStat(p,idx)),bx+92,by,F('900 48px'),t.text,'right');
-    etext(lbl,bx+104,by,F('700 34px'),t.sub,'left');
+    const col=k<3?0:1, row=k%3, by=y+560+row*66;
+    const left=col?cx+midGap/2:cx-midGap/2-colW;
+    etext(String(futStat(p,idx)),left+valW,by,VF,t.text,'right');
+    etext(lbl,left+valW+inGap,by,LF,t.sub,'left');
   });
   ctx.save(); const vl=ctx.createLinearGradient(0,y+516,0,y+700); vl.addColorStop(0,'rgba(0,0,0,0)'); vl.addColorStop(0.5,t.sub); vl.addColorStop(1,'rgba(0,0,0,0)');
   ctx.globalAlpha=0.6; ctx.strokeStyle=vl; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx,y+516); ctx.lineTo(cx,y+700); ctx.stroke(); ctx.restore();
