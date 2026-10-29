@@ -100,6 +100,18 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .rec-who{font-size:12px;color:var(--text);line-height:1.5}
 .rec-v{font-size:15px;font-weight:900;color:var(--green);white-space:nowrap}
 .cl-date{color:var(--text3);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+/* ⚖️ Equilibrio squadre (match card) */
+.eq-toggle{margin-top:10px;font-size:13px;min-height:40px}
+#match-balance{margin-top:8px}
+.mb-sec{background:rgba(128,128,128,.08);border-radius:var(--radius-sm);padding:10px 11px;margin-bottom:8px}
+.mb-title{font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.mb-line{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0;font-size:12px;color:var(--text2)}
+.mb-line b{color:var(--text);font-size:13px}
+.mb-line .pill-ok,.mb-line .pill-warn,.mb-line .pill-bad{font-size:12px;padding:3px 10px;white-space:nowrap}
+.mb-verdict{font-size:12px;font-weight:700;color:var(--text);margin-top:4px}
+.mb-note{font-size:10px;color:var(--text3);margin-top:6px;line-height:1.35}
+.mb-avgs{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px}
+.mb-dist{font-size:11px;color:var(--text2);font-weight:700;text-align:center}
 /* ⚔️ Confronto */
 .vs-pick{display:flex;align-items:center;gap:6px;margin-bottom:10px}
 .vs-sel{flex:1;min-width:0;display:flex;align-items:center;gap:7px;padding:6px 8px;border:1.5px solid var(--gray2);border-radius:12px;background:var(--gray);color:var(--text);font-weight:800;font-size:13px;cursor:pointer;font-family:inherit}
@@ -730,7 +742,7 @@ input[type=file]{display:none}
 ════════════════════════════════════ */
 // Version of the code that is RUNNING (bump at every release). The installed home-screen app has no reload
 // button and iOS keeps it frozen in memory: comparing this with the file on GitHub tells if it's outdated.
-const APP_VERSION='2026.10.29-h';
+const APP_VERSION='2026.10.29-i';
 let BUILD_DATE='—'; // date of the file ON THE SERVER (Last-Modified of index.html), not of the running code
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
@@ -2297,6 +2309,25 @@ function generateTeams(){
 /* ════════════════════════════════════
    RENDER RESULT
 ════════════════════════════════════ */
+// ── shared by Gioca and the match card ("⚖️ Equilibrio squadre") ──
+// per-stat team averages, Blu vs Bianchi
+function statCompareHTML(tA,tB){
+  const avgA=STATS.map((_,j)=>tA.reduce((s,i)=>s+players[i].stats[j],0)/tA.length);
+  const avgB=STATS.map((_,j)=>tB.reduce((s,i)=>s+players[i].stats[j],0)/tB.length);
+  let cmp='';
+  STATS.forEach((s,j)=>{
+    const a=avgA[j],b=avgB[j];
+    cmp+=`<div class="cmp-row">
+      <span class="cmp-v bl" style="font-weight:${a>b?800:500}">${a.toFixed(1)}</span>
+      <div class="cmp-bar"><div class="cf-bl" style="flex:${a}"></div><span class="cmp-lbl">${ICONS[j]} ${s}</span><div class="cf-bi" style="flex:${b}"></div></div>
+      <span class="cmp-v bi" style="font-weight:${b>a?800:500}">${b.toFixed(1)}</span>
+    </div>`;
+  });
+  return cmp;
+}
+// how evenly the strong (and weak) players are split
+const distribLabel=d=>d<=0.5?'forti distribuiti ✓':d<=1.2?'distribuzione ok':'forti sbilanciati ⚠';
+
 function renderResult(){
   if(!allCombos.length)return;
   const c=allCombos[currentIdx];
@@ -2319,18 +2350,7 @@ function renderResult(){
   document.getElementById('chips-a').innerHTML=renderChips(pA,'pc-bl','A');
   document.getElementById('chips-b').innerHTML=renderChips(pB,'pc-bi','B');
 
-  const avgA=STATS.map((_,j)=>c.tA.reduce((s,i)=>s+players[i].stats[j],0)/c.tA.length);
-  const avgB=STATS.map((_,j)=>c.tB.reduce((s,i)=>s+players[i].stats[j],0)/c.tB.length);
-  let cmp='';
-  STATS.forEach((s,j)=>{
-    const a=avgA[j],b=avgB[j];
-    cmp+=`<div class="cmp-row">
-      <span class="cmp-v bl" style="font-weight:${a>b?800:500}">${a.toFixed(1)}</span>
-      <div class="cmp-bar"><div class="cf-bl" style="flex:${a}"></div><span class="cmp-lbl">${ICONS[j]} ${s}</span><div class="cf-bi" style="flex:${b}"></div></div>
-      <span class="cmp-v bi" style="font-weight:${b>a?800:500}">${b.toFixed(1)}</span>
-    </div>`;
-  });
-  document.getElementById('stat-cmp').innerHTML=cmp;
+  document.getElementById('stat-cmp').innerHTML=statCompareHTML(c.tA,c.tB);
 
   // balance expressed in goals (+ how much worse than the generator's 1st proposal, if you moved away from it)
   const pred=c.sA-c.sB, lvl=goalsLevel(pred);
@@ -2348,7 +2368,7 @@ function renderResult(){
     const rfPct=Math.round((c.roleFit||0)*100);
     const distrib=(c.distrib!==undefined)?c.distrib:0;
     // distribution verdict (how evenly the strong players are split)
-    const distLbl=distrib<=0.5?'forti distribuiti ✓':distrib<=1.2?'distribuzione ok':'forti sbilanciati ⚠';
+    const distLbl=distribLabel(distrib);
     qualEl.textContent=`diff ${c.diff.toFixed(2)}  ·  ${distLbl}  ·  ruoli ${rfPct}%`;
     qualEl.style.color={ok:'var(--green)',warn:'var(--amber)',bad:'var(--red)'}[goalsLevel(c.sA-c.sB)];
   }
@@ -4594,6 +4614,53 @@ function matchHighlights(m){
 }
 
 // Render the highlights panel (MVP / peggiore / capocannoniere / medie squadre)
+// ⚖️ Equilibrio squadre of a saved match: the same data as the draw in Gioca
+function toggleMatchBalance(id){
+  const box=document.getElementById('match-balance'), btn=document.getElementById('match-balance-btn'); if(!box) return;
+  const open=box.style.display==='none';
+  if(open){ const m=(matches||[]).find(x=>x.id===id); box.innerHTML=m?matchBalanceHTML(m):''; }
+  box.style.display=open?'block':'none';
+  if(btn) btn.innerHTML=open?'⚖️ Equilibrio squadre ▴':'⚖️ Equilibrio squadre ▾';
+}
+function matchBalanceHTML(m){
+  const toIdx=team=>normalizeTeam(team).map(pl=>{ const k=playerKey(pl.id,pl.name).key; return players.findIndex(p=>playerKey(p.id,p.name).key===k); });
+  const rawA=toIdx(m.teamA), rawB=toIdx(m.teamB), ia=rawA.filter(i=>i>=0), ib=rawB.filter(i=>i>=0);
+  const missing=rawA.length+rawB.length-ia.length-ib.length;
+  if(!ia.length||!ib.length) return `<div class="mb-note">Squadre non disponibili: i giocatori non sono più in rosa.</div>`;
+  const c=comboMetrics(ia,ib), now=c.sA-c.sB;
+  const saved=(m.pred!=null&&m.pred!==''&&!isNaN(Number(m.pred)))?Number(m.pred):null;
+  const rank=(m.predRank!=null&&m.predRank!=='')?Number(m.predRank):null;
+  const rankTxt=rank==null?'':rank===0?'squadre modificate a mano':rank===1?'1ª proposta del generatore':`${rank}ª proposta del generatore`;
+  const pill=(pred,sub)=>{ const lvl=goalsLevel(pred);
+    return `<span class="pill-${lvl}">${lvl==='ok'?'⚖️':'⚠'} ${goalsLabel(pred)}${sub?` <span class="pill-sub">· ${sub}</span>`:''}</span>`; };
+  // result vs prediction (the one saved at creation if there is one, otherwise today's)
+  const sa=parseInt(m.scoreA), sb=parseInt(m.scoreB), has=!isNaN(sa)&&!isNaN(sb);
+  let verdict='';
+  if(has){
+    const ref=saved!=null?saved:now, g=predGoals(ref), gd=sa-sb;
+    const res=gd===0?'pareggio':`${gd>0?'Blu':'Bianchi'} +${Math.abs(gd)}`;
+    const how=Math.abs(g)<0.5?(Math.abs(gd)<=2?'✓ prevista alla pari, ed è stata equilibrata':'✗ prevista alla pari, ma è finita con uno scarto largo')
+      :gd===0?'≈ finita pari'
+      :(Math.sign(gd)===Math.sign(g)?'✓ ha vinto la squadra favorita':'✗ ha vinto la squadra sfavorita');
+    verdict=`<div class="mb-line"><span>Risultato</span><b>${sa} - ${sb} · ${res}</b></div>
+      <div class="mb-verdict">${how} · errore della previsione ${Math.abs(gd-g).toFixed(1)} gol</div>`;
+  }
+  return `<div class="mb-sec">
+      <div class="mb-title">⚖️ Squilibrio in gol</div>
+      ${saved!=null?`<div class="mb-line"><span>Alla creazione</span>${pill(saved,'diff '+Math.abs(saved).toFixed(2))}</div>
+        ${rankTxt?`<div class="mb-note" style="text-align:right">${rankTxt}</div>`:''}`
+        :`<div class="mb-note">Previsione non salvata: la partita è stata creata prima di questa funzione.</div>`}
+      <div class="mb-line"><span>Con i valori di oggi</span>${pill(now,'diff '+c.diff.toFixed(2))}</div>
+      ${verdict}
+    </div>
+    <div class="mb-sec">
+      <div class="mb-title">📊 Confronto statistiche</div>
+      <div class="mb-avgs"><span class="mp-bl media-pill">🔵 Media ${c.sA.toFixed(1)}</span><span class="mb-dist">${distribLabel(c.distrib)}</span><span class="mp-bi media-pill">⚪ Media ${c.sB.toFixed(1)}</span></div>
+      ${statCompareHTML(ia,ib)}
+      <div class="mb-note">Calcolato con statistiche e pagelle di oggi${missing?` · ${missing} ${missing===1?'giocatore non più':'giocatori non più'} in rosa esclus${missing===1?'o':'i'}`:''}.</div>
+    </div>`;
+}
+
 function matchHighlightsHTML(m){
   const h=matchHighlights(m);
   if(!h.mvp && !h.topScorer && h.avgA==null) return ''; // no ratings yet
@@ -4719,6 +4786,8 @@ function openMatch(id){
       <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-top:8px">Risultato</div>
       ${scoreEditor}
       ${matchHighlightsHTML(m)}
+      <button type="button" class="btn btn-secondary btn-full eq-toggle" id="match-balance-btn" onclick="toggleMatchBalance('${id}')">⚖️ Equilibrio squadre ▾</button>
+      <div id="match-balance" style="display:none"></div>
       <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">Pagelle (1–10)</div>
       <div style="display:flex;gap:8px;margin-bottom:14px">
         ${renderTeam('🔵 Blu',teamA,true)}
