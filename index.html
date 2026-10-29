@@ -713,6 +713,7 @@ function defaultPlayers(){
 ════════════════════════════════════ */
 function migratePlayer(p){
   if(!p.id) p.id=uid();
+  delete p.archived;   // archiving was removed: old archived players simply return to the roster
   if(!p.roles){p.roles=p.role?[p.role]:['MED'];delete p.role;}
   if(!Array.isArray(p.roles))p.roles=[p.roles];
   if(p.roles.length===0)p.roles=['MED'];
@@ -946,7 +947,7 @@ function initialsAvatar(p, baseCls, idAttr){
 }
 // Display order of Rosa / Gioca lists: strongest first (OVR as on the badge), then by name
 function rosaOrder(){
-  return players.map((p,i)=>i).filter(i=>!players[i].archived)
+  return players.map((p,i)=>i)
     .sort((a,b)=>calcOvr(players[b].stats)-calcOvr(players[a].stats) || players[a].name.localeCompare(players[b].name));
 }
 function primaryRole(p){return p.roles[0]||'MED'}
@@ -1114,7 +1115,7 @@ function neededTotal(){return sizeA+sizeB}
 function buildRosa(opts){
   const c=document.getElementById('players-list');c.innerHTML='';
   c.classList.toggle('no-anim',!!(opts&&opts.noAnim));
-  rosaOrder().forEach((i,rank)=>{   // strongest first; archived players excluded
+  rosaOrder().forEach((i,rank)=>{   // strongest first
     const p=players[i];
     const ovr=calcOvr(p.stats).toFixed(1);
     const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
@@ -1141,7 +1142,7 @@ function buildRosa(opts){
 }
 
 let rosaCardIdx=null;   // roster index of the Rosa card open on top (null = none)
-// Full editable player card (photo, roles, stats, pagelle, archive), opened on top of the Rosa list
+// Full editable player card (photo, roles, stats, pagelle), opened on top of the Rosa list
 function openRosaCard(i){
   const p=players[i]; if(!p)return;
   rosaCardIdx=i;
@@ -1195,10 +1196,7 @@ function openRosaCard(i){
       </div>
       <div class="photo-slot" id="pslot-${i}"></div><!-- terza colonna libera per usi futuri -->
     </div>${sg}
-    <div id="pagelle-${i}" style="margin-top:4px;padding-top:6px;border-top:1px solid var(--gray2)"></div>
-    <div style="text-align:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--gray2)">
-      <button onclick="delPlayer(${i},event)" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:4px 8px;text-decoration:underline;text-underline-offset:2px">🗄️ Archivia giocatore</button>
-    </div>`;
+    <div id="pagelle-${i}" style="margin-top:4px;padding-top:6px;border-top:1px solid var(--gray2)"></div>`;
   document.getElementById('match-modal').style.display='block';
   renderPlayerPagelle(i);
 }
@@ -1452,28 +1450,6 @@ function toggleRole(i,r,e){
   save();buildRosa({noAnim:true});buildConvList();
   if(rosaCardIdx===i) openRosaCard(i);   // refresh toggles + pills in the open card
 }
-function delPlayer(i,e){
-  e.stopPropagation();
-  const active=players.filter(p=>!p.archived).length;
-  if(active<=2){toast('Minimo 2 giocatori attivi');return}
-  confirmModal({
-    icon:'🗄️',
-    title:'Archiviare '+players[i].name+'?',
-    msg:'Verrà rimosso dalla rosa attiva, ma lo storico e le statistiche resteranno salvati. Puoi ripristinarlo dai Settings.',
-    okLabel:'Archivia',
-    cancelLabel:'Annulla',
-    danger:true
-  }).then(ok=>{
-    if(!ok)return;
-    players[i].archived=true;
-    selected.delete(i);
-    save();closeMatchModal();buildRosa({noAnim:true});buildConvList();
-    toast('Giocatore archiviato');
-  });
-}
-function unarchivePlayer(i){
-  if(players[i]){players[i].archived=false;save();buildRosa();buildConvList();buildSettings();toast('Giocatore ripristinato');}
-}
 function addPlayer(){
   promptModal({
     icon:'➕',
@@ -1600,7 +1576,7 @@ function buildConvList(){
   const c=document.getElementById('conv-list');if(!c)return;
   // drop stale selections (deleted players)
   selected.forEach(i=>{if(i>=players.length)selected.delete(i)});
-  c.innerHTML=rosaOrder().map(i=>{   // strongest first; archived players excluded
+  c.innerHTML=rosaOrder().map(i=>{   // strongest first
     const p=players[i];
     const sel=selected.has(i);
     const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
@@ -2619,19 +2595,6 @@ function buildSettings(){
       <div id="backend-status" style="font-size:11px;margin-top:6px;color:var(--text3)"></div>
       <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5">💡 Salva l'URL, poi premi <strong>⬇ Salva</strong> in alto per esportare <code>rosa_calcetto.json</code> con l'URL incluso. Caricalo su GitHub e l'URL sarà disponibile su tutti i dispositivi.</div>
     </div>`;
-
-  // ── Archived players ──
-  const archived=players.map((p,i)=>({p,i})).filter(x=>x.p.archived);
-  if(archived.length){
-    html+=`<div class="section-header" style="margin-top:4px">🗄️ Giocatori archiviati</div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.4">Rimossi dalla rosa attiva ma mantenuti nello storico. Puoi ripristinarli.</p>
-    <div style="margin-bottom:20px">
-      ${archived.map(x=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);background:var(--gray);margin-bottom:6px">
-        <span style="flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.p.name)}</span>
-        <button class="btn btn-secondary btn-sm" onclick="unarchivePlayer(${x.i})" style="padding:5px 12px;font-size:12px">↩️ Ripristina</button>
-      </div>`).join('')}
-    </div>`;
-  }
 
   // ── Forma recente nel bilanciamento ──
   html+=`<div class="section-header" style="margin-top:4px">⚽ Forma recente</div>
