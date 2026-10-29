@@ -149,6 +149,7 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .stat-input::-webkit-outer-spin-button,
 .stat-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .stat-input:focus{outline:none;border-color:var(--green)}
+.stat-input.stat-ro{border:none;background:transparent;-webkit-text-fill-color:var(--text);width:auto;min-width:30px;cursor:default}
 .mini-bar{grid-column:1 / -1;grid-row:2;height:3px;background:var(--gray2);border-radius:2px;overflow:hidden}
 .mini-bar-fill{height:100%;background:var(--green-mid);border-radius:2px;transition:width 0.2s}
 
@@ -928,8 +929,16 @@ function avatarHTML(p, baseCls, idAttr){
 function calcOvr(stats){const tot=weights.reduce((a,b)=>a+b,0)||1;return stats.reduce((s,v,i)=>s+v*weights[i],0)/tot}
 // ── Forma recente: correzione leggera dell'OVR con la media pagelle storica ──
 let useFormInBalance = (localStorage.getItem('calcio_useform')!=='0'); // default ON
-const FORM_WEIGHT = 0.10;   // 10% pagelle, 90% OVR
-const FORM_MIN_RATINGS = 2; // serve almeno 2 pagelle valide per correggere
+// Peso della media pagelle CRESCENTE con i dati: 0% con FORM_MIN_RATINGS pagelle,
+// sale linearmente fino a FORM_MAX_WEIGHT con FORM_FULL_RATINGS pagelle o più.
+// Un giocatore nuovo resta vicino al suo OVR; chi ha tanto storico è giudicato su come rende davvero.
+const FORM_MAX_WEIGHT = 0.25;
+const FORM_MIN_RATINGS = 2;
+const FORM_FULL_RATINGS = 18;
+function formWeight(count){
+  if(!count || count<=FORM_MIN_RATINGS) return 0;
+  return FORM_MAX_WEIGHT*Math.min(1,(count-FORM_MIN_RATINGS)/(FORM_FULL_RATINGS-FORM_MIN_RATINGS));
+}
 let _formCache = null;      // per-generation cache: player.id → {avg, count}
 
 // Average of ALL valid ratings (1–10) for a player, with count. Cheap wrapper.
@@ -954,8 +963,28 @@ function effectiveScore(p){
   }else{
     info=playerRatingAvg(p);
   }
-  if(info.avg==null || info.count<FORM_MIN_RATINGS) return ovr; // not enough data → pure OVR
-  return ovr*(1-FORM_WEIGHT) + info.avg*FORM_WEIGHT;
+  const w=formWeight(info.count);
+  if(info.avg==null || w===0) return ovr; // not enough data → pure OVR
+  return ovr*(1-w) + info.avg*w;
+}
+
+// 12th read-only cell of the attributes grid: how much the pagelle average weighs for this player
+function formWeightCell(p,idAttr){
+  const id=idAttr?` id="${idAttr}"`:'';
+  const tip=`Peso della media voti nel bilanciamento: 0% con ${FORM_MIN_RATINGS} pagelle, sale fino a ${Math.round(FORM_MAX_WEIGHT*100)}% con ${FORM_FULL_RATINGS}+`;
+  return `<div class="stat-row stat-row-ro"${id} title="${tip}">${formWeightCellInner(p)}</div>`;
+}
+function formWeightCellInner(p){
+  if(!useFormInBalance){
+    return `<span class="stat-icon">⚖️</span><span class="stat-name">Peso voti</span>
+      <span class="stat-input stat-ro" style="color:var(--text3);-webkit-text-fill-color:var(--text3)">Off</span>
+      <div class="mini-bar"><div class="mini-bar-fill" style="width:0%"></div></div>`;
+  }
+  const info=playerRatingAvg(p), w=formWeight(info.count);
+  const pct=Math.round(w*100), fill=Math.round(w/FORM_MAX_WEIGHT*100);
+  return `<span class="stat-icon">⚖️</span><span class="stat-name">Peso voti</span>
+    <span class="stat-input stat-ro">${pct}%</span>
+    <div class="mini-bar"><div class="mini-bar-fill" style="width:${fill}%;background:var(--amber)"></div></div>`;
 }
 
 function wScore(p){return effectiveScore(p)}
@@ -1048,6 +1077,7 @@ function buildRosa(){
         <div class="mini-bar"><div class="mini-bar-fill" id="b${i}-${j}" style="width:${p.stats[j]*10}%"></div></div>
       </div>`;
     });
+    sg+=formWeightCell(p,'fw'+i);   // 12° valore, non modificabile
     sg+='</div>';
     const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
     const pagInfo=getPlayerPagInfo(p);
@@ -1108,7 +1138,11 @@ function toggleCard(i){
   // expand card to full width of the grid while open
   const card=e.closest('.card');
   if(card) card.classList.toggle('expanded', !o);
-  if(!o) renderPlayerPagelle(i);
+  if(!o){
+    renderPlayerPagelle(i);
+    const fw=document.getElementById('fw'+i);   // keep ⚖️ Peso voti in sync with the latest pagelle
+    if(fw) fw.innerHTML=formWeightCellInner(players[i]);
+  }
 }
 
 // Open a read-only player profile in a modal (used from the stats/scorers tables).
@@ -1130,6 +1164,7 @@ function openPlayerCardByIdx(idx){
       <div class="mini-bar"><div class="mini-bar-fill" style="width:${p.stats[j]*10}%"></div></div>
     </div>`;
   });
+  sg+=formWeightCell(p);   // 12° valore, non modificabile
   sg+='</div>';
 
   document.getElementById('match-modal-title').textContent='';
@@ -1313,15 +1348,19 @@ function drawPagelle(i,player,container){
   else { trendLabel='Stabile'; trendCol='var(--amber)'; trendArrow='→'; }
 
   // ── geometry: bars chart ──
-  const W=320, H=76, padL=22, padR=10, padT=11, padB=4;   // compact: no labels under the bars
+  const W=320, H=56, padL=22, padR=10, padT=10, padB=3;   // compact: no labels under the bars
   const plotW=W-padL-padR, plotH=H-padT-padB;
-  const yMin=1, yMax=10;
+  // scale fits the player's votes: from just below the lowest (never above 3) to just above the highest
+  // (never below 8, max 10), so the bars use the whole height of the compact chart
+  const minV=Math.min(...dated.map(r=>r.rating)), maxV=Math.max(...dated.map(r=>r.rating));
+  const yMin=Math.max(1,Math.min(3,Math.floor(minV)-1));
+  const yMax=Math.min(10,Math.max(8,Math.ceil(maxV)+1));
   const yToPx=v=>padT+plotH-((v-yMin)/(yMax-yMin))*plotH;
   const slotW=plotW/n;
   const barW=Math.min(34, slotW*0.6);
 
   // gridlines at 4,6,8
-  const grid=[4,6,8].map(g=>{
+  const grid=[4,6,8].filter(g=>g>yMin&&g<yMax).map(g=>{
     const y=yToPx(g);
     return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--gray3)" stroke-width="0.5" opacity="0.4"/>
     <text x="${padL-4}" y="${(y+3).toFixed(1)}" font-size="7" fill="var(--text3)" text-anchor="end">${g}</text>`;
@@ -1407,7 +1446,7 @@ function drawPagelle(i,player,container){
       ${bars}
       ${trendLine}
     </svg>
-    <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px">Da ${formatDate(dated[0].date)} a ${formatDate(dated[dated.length-1].date)} · linea tratteggiata = tendenza</div>
+    <div style="font-size:9px;color:var(--text3);text-align:center;margin-top:3px">Da ${formatDate(dated[0].date)} a ${formatDate(dated[dated.length-1].date)} · linea tratteggiata = tendenza</div>
   `;
 }
 function upStat(i,j,v){
@@ -2577,7 +2616,7 @@ function buildSettings(){
     <div style="display:flex;align-items:center;gap:12px;background:rgba(128,128,128,0.08);border-radius:var(--radius-sm);padding:11px 13px;margin-bottom:8px">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;color:var(--text)">Considera le pagelle</div>
-        <div style="font-size:11px;color:var(--text2);line-height:1.4;margin-top:2px">Corregge leggermente l'OVR con la media voti storica (${Math.round(FORM_WEIGHT*100)}%). Serve almeno ${FORM_MIN_RATINGS} pagelle.</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.4;margin-top:2px">Corregge l'OVR con la media voti storica. Il peso cresce con le pagelle: 0% con ${FORM_MIN_RATINGS}, fino a ${Math.round(FORM_MAX_WEIGHT*100)}% con ${FORM_FULL_RATINGS} o più. Lo vedi in ogni scheda alla voce ⚖️ Peso voti.</div>
       </div>
       <button onclick="toggleFormBalance()" class="form-switch ${useFormInBalance?'on':''}" aria-label="Attiva forma"><span class="form-knob"></span></button>
     </div>`;
@@ -2725,6 +2764,8 @@ async function ensureMatchesCachedForRosa(){
           el.textContent=info.label;
           el.className='pag-badge '+info.cls;
         }
+        const fw=document.getElementById('fw'+i);   // ⚖️ Peso voti cell
+        if(fw) fw.innerHTML=formWeightCellInner(p);
       });
     }
   }catch(e){/* silent */}
