@@ -78,6 +78,35 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 @media(max-width:340px){#players-list{grid-template-columns:1fr}}
 #players-list .card{margin-bottom:0}
 #players-list .card.card-compact:active{transform:scale(0.97)}
+/* 🏆 albo d'oro */
+.albo-note{font-size:10px;color:var(--text3);margin-bottom:10px;line-height:1.35}
+.albo-season{background:rgba(128,128,128,0.07);border-radius:var(--radius-sm);padding:10px 11px;margin-bottom:10px}
+.albo-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.albo-title{font-size:15px;font-weight:800;color:var(--text)}
+.albo-chip{font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.albo-chip.live{background:var(--green);color:#fff}.albo-chip.soon{background:#e0a92e;color:#2b1d00}.albo-chip.done{background:var(--gray2);color:var(--text2)}
+.albo-sub{font-size:10px;color:var(--text3);margin:2px 0 8px}
+.albo-row,.albo-feat{display:flex;align-items:baseline;gap:8px;padding:5px 0;border-top:1px solid rgba(128,128,128,0.12);font-size:12px;color:var(--text)}
+.albo-row .albo-t,.albo-feat .albo-t{flex:0 0 46%;color:var(--text2);font-weight:700}
+.albo-w{flex:1;min-width:0;font-weight:800}
+.albo-v{color:var(--text3);font-size:11px;white-space:nowrap}
+.albo-feat{flex-wrap:nowrap}.albo-feat>span:last-child{flex:1;min-width:0;line-height:1.5}
+.albo-grp{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin:9px 0 2px}
+.albo-empty{font-size:12px;color:var(--text3);padding:4px 0}
+.albo-name{cursor:pointer;color:var(--green)}
+/* player card: bacheca + compagni */
+.pe-sec{margin-top:10px;padding-top:8px;border-top:1px solid var(--gray2)}
+.pe-title{font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.pe-empty{font-size:11px;color:var(--text3)}
+.trophies{display:flex;flex-wrap:wrap;gap:5px}
+.trophy,.feat{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;padding:4px 8px;border-radius:99px;background:linear-gradient(135deg,#fbeaa0,#e0b93c);color:#2b1d00}
+.trophy small{font-weight:600;opacity:.75;font-size:9.5px;margin-left:2px}
+.trophy.shame{background:var(--gray2);color:var(--text2)}
+.feat{background:rgba(128,128,128,0.14);color:var(--text)}
+.pair-line{display:flex;align-items:baseline;gap:8px;font-size:12px;padding:3px 0}
+.pair-l{flex:0 0 44%;color:var(--text2);font-weight:700}
+.pair-n{flex:1;min-width:0;font-weight:800;color:var(--text)}
+.pair-v{color:var(--text3);font-size:11px;white-space:nowrap}
 /* 🃏 figurina preview (third column of the player card) */
 .photo-slot{display:flex;justify-content:center;align-items:flex-start}
 .fut-mini{width:100%;max-width:112px;aspect-ratio:3/4;border:none;border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;box-shadow:0 4px 14px rgba(0,0,0,.35);font-family:inherit;transition:transform var(--tr)}
@@ -516,10 +545,11 @@ input[type=file]{display:none}
     <div id="last-match"></div>
 
     <!-- sotto-tab -->
-    <div class="sub-tabs">
+    <div class="sub-tabs" id="storico-tabs">
       <button class="sub-tab active" id="stab-marcatori" onclick="showStoricoTab('marcatori')">⚽ Marcatori</button>
       <button class="sub-tab" id="stab-statistiche" onclick="showStoricoTab('statistiche')">📈 Statistiche</button>
       <button class="sub-tab" id="stab-partite" onclick="showStoricoTab('partite')">📋 Partite</button>
+      <button class="sub-tab" id="stab-albo" onclick="showStoricoTab('albo')">🏆 Albo</button>
     </div>
 
     <div class="card storico-sec" id="scorers-card">
@@ -531,6 +561,9 @@ input[type=file]{display:none}
       <div id="stats-table">
         <div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">⏳ Caricamento...</div>
       </div>
+    </div>
+    <div class="card storico-sec" id="albo-card" style="display:none">
+      <div id="albo-list"></div>
     </div>
     <div class="card storico-sec" id="matches-card" style="display:none">
       <div id="matches-list">
@@ -1118,6 +1151,202 @@ function seasonStats(){
   _seasonMemo={ms,rs:ratings,pl:players,n:players.length,by};
   return by;
 }
+// Composite match performance used for MVP / Peggiore (and for the "Re degli MVP" award):
+// voto + 0.5·gol + 0.3·assist − 0.3·autogol − 0.3·rigori sbagliati. null if there's no valid vote.
+function mvpPerf(r){
+  const rt=parseFloat(r.rating); if(isNaN(rt)||rt<1) return null;
+  return rt + (parseInt(r.goals)||0)*0.5 + (parseInt(r.assist)||0)*0.3 - (parseInt(r.autogol)||0)*0.3 - (parseInt(r.rigoriSbagliati)||0)*0.3;
+}
+
+/* ═════ 🏆 Stagioni, premi, imprese e coppie ═════
+   Stagioni a mesi interi: Primavera mar–mag, Estate giu–ago, Autunno set–nov, Inverno dic–feb.
+   L'albo d'oro di una stagione si aggiorna finché è in corso e per ALBO_GRACE_DAYS giorni dopo
+   (pagelle inserite in ritardo), poi viene "chiuso" nel foglio Google e non cambia più. */
+const ALBO_GRACE_DAYS=14;
+const ALBO_MIN_MATCHES=3;   // below this a season assigns only the feats, not the awards
+const ALBO_MIN_MVP=2;       // "Re degli MVP" needs at least 2 MVP titles
+const AWARDS=[
+  {k:'goleador',  t:'🥇 Goleador'},
+  {k:'assistman', t:'🅰️ Assistman'},
+  {k:'media',     t:'⭐ Miglior media'},
+  {k:'mvp',       t:'👑 Re degli MVP'},
+  {k:'stelle',    t:'🚀 Re delle Stelle'},
+  {k:'stakanov',  t:'🏃 Stakanovista'},
+  {k:'coppia',    t:"🤝 Coppia d'oro"},
+  {k:'flop',      t:'🥴 Peggior media',            shame:true},
+  {k:'cucchiaio', t:'🥄 Cucchiaio di legno',       shame:true},
+  {k:'rigori',    t:'❌ Re dei rigori sbagliati',  shame:true},
+  {k:'autogol',   t:'🙃 Re degli autogol',         shame:true},
+];
+const FEATS=[
+  {k:'tripletta',   t:'🎩 Tripletta',   d:'3+ gol in una partita'},
+  {k:'manita',      t:'🖐️ Manita',      d:'5+ gol in una partita'},
+  {k:'regista',     t:'🧠 Regista',     d:'3+ assist in una partita'},
+  {k:'fuoriclasse', t:'🌟 Fuoriclasse', d:'voto 8 o più'},
+  {k:'imbattibile', t:'🧱 Imbattibile', d:'5 partite di fila senza sconfitte'},
+];
+function seasonOf(date){
+  const m=String(date||'').match(/^(\d{4})-(\d{2})/); if(!m) return null;
+  const y=+m[1], mo=+m[2];
+  if(mo>=3&&mo<=5)  return {key:y+'-PRI',label:'Primavera '+y,start:y+'-03-01',end:y+'-05-31',ord:y*4+1};
+  if(mo>=6&&mo<=8)  return {key:y+'-EST',label:'Estate '+y,   start:y+'-06-01',end:y+'-08-31',ord:y*4+2};
+  if(mo>=9&&mo<=11) return {key:y+'-AUT',label:'Autunno '+y,  start:y+'-09-01',end:y+'-11-30',ord:y*4+3};
+  const sy=mo===12?y:y-1, feb=new Date(sy+1,2,0).getDate();          // winter spans two years
+  return {key:sy+'-INV',label:`Inverno ${sy}/${String(sy+1).slice(2)}`,start:sy+'-12-01',end:`${sy+1}-02-${feb}`,ord:sy*4+4};
+}
+function seasonStatus(s){
+  const today=new Date().toISOString().slice(0,10);
+  if(today<=s.end) return 'in corso';
+  const f=new Date(s.end+'T12:00:00'); f.setDate(f.getDate()+ALBO_GRACE_DAYS);
+  return today<=f.toISOString().slice(0,10)?'in chiusura':'chiusa';
+}
+// seasons that have at least one saved match (or a stored albo), oldest first
+function seasonsList(){
+  const by={};
+  (matches||[]).forEach(m=>{const s=seasonOf(m.date); if(s) by[s.key]=s;});
+  (matchesCache.data?.albo||[]).forEach(r=>{ if(r.chiave&&!by[r.chiave]){ const s=seasonOf(String(r.dal||'')); if(s) by[s.key]=s; } });
+  return Object.values(by).sort((a,b)=>a.ord-b.ord).map(s=>({...s,status:seasonStatus(s)}));
+}
+
+// Awards + feats of one season, computed live from saved teams and pagelle
+function computeSeasonAwards(s){
+  const ms=(matches||[]).filter(m=>{const x=seasonOf(m.date);return x&&x.key===s.key;})
+    .sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.id).localeCompare(String(b.id)));
+  const ids=new Set(ms.map(m=>m.id));
+  const rs=(matchesCache.data?.ratings||[]).filter(r=>ids.has(r.matchId));
+  const P={}, pairs={}, num=v=>{const n=parseInt(v);return isNaN(n)?null:n;};
+  const get=(k,name)=>P[k]||(P[k]={name,pres:0,w:0,d:0,l:0,goals:0,assist:0,autogol:0,rigori:0,meta:0,vs:0,vn:0,mvp:0,streak:0,
+    feats:{tripletta:0,manita:0,regista:0,fuoriclasse:0,imbattibile:0}});
+  ms.forEach(m=>{
+    const a=num(m.scoreA), b=num(m.scoreB), has=a!=null&&b!=null;
+    [[m.teamA,has?Math.sign(a-b):null],[m.teamB,has?Math.sign(b-a):null]].forEach(([team,res])=>{
+      const keys=[...new Map(normalizeTeam(team).map(pl=>{const k=playerKey(pl.id,pl.name);return [k.key,k.name];})).entries()];
+      keys.forEach(([k,name])=>{
+        const p=get(k,name); p.pres++;
+        if(res===1)p.w++; else if(res===0)p.d++; else if(res===-1)p.l++;
+        if(res!=null){ if(res>=0){ p.streak++; if(p.streak===5) p.feats.imbattibile++; } else p.streak=0; }
+      });
+      if(res!=null) for(let x=0;x<keys.length;x++) for(let y=x+1;y<keys.length;y++){
+        const [p1,p2]=[keys[x],keys[y]].sort((u,v)=>u[0]<v[0]?-1:1), id=p1[0]+'|'+p2[0];
+        const c=pairs[id]||(pairs[id]={names:p1[1]+' & '+p2[1],w:0,d:0,l:0,gd:0});
+        if(res===1)c.w++; else if(res===0)c.d++; else c.l++;
+        c.gd+=(team===m.teamA?1:-1)*(a-b);
+      }
+    });
+  });
+  const best={};
+  rs.forEach(r=>{
+    const {key,name}=playerKey(r.playerId,r.player), p=get(key,name);
+    const g=parseInt(r.goals)||0, as=parseInt(r.assist)||0;
+    p.goals+=g; p.assist+=as; p.autogol+=parseInt(r.autogol)||0; p.rigori+=parseInt(r.rigoriSbagliati)||0; p.meta+=parseInt(r.meta)||0;
+    if(g>=3)p.feats.tripletta++; if(g>=5)p.feats.manita++; if(as>=3)p.feats.regista++;
+    const v=validVote(r.rating); if(v!=null){ p.vs+=v; p.vn++; if(v>=8)p.feats.fuoriclasse++; }
+    const pf=mvpPerf(r); if(pf!=null && (!best[r.matchId]||pf>best[r.matchId].pf)) best[r.matchId]={pf,key};
+  });
+  Object.values(best).forEach(b=>P[b.key].mvp++);
+
+  const list=Object.values(P), n=ms.length, minPres=Math.max(2,Math.ceil(n*0.4));
+  const avg=p=>p.vn?p.vs/p.vn:null, eligible=list.filter(p=>p.pres>=minPres);
+  const eq=(x,y)=>Math.abs(x-y)<1e-9;
+  // winner(s): best value; ties → media voto (higher for prizes, lower for shame), then presences
+  const pick=(cands,val,dir,shame)=>{
+    let c=cands.filter(p=>val(p)!=null); if(!c.length) return [];
+    const top=dir>0?Math.max(...c.map(val)):Math.min(...c.map(val)); c=c.filter(p=>eq(val(p),top));
+    if(c.length>1){ const tv=p=>avg(p)??(shame?99:-1), bt=shame?Math.min(...c.map(tv)):Math.max(...c.map(tv)); c=c.filter(p=>eq(tv(p),bt)); }
+    if(c.length>1){ const bp=Math.max(...c.map(p=>p.pres)); c=c.filter(p=>p.pres===bp); }
+    return c;
+  };
+  const one=(k,cands,val,dir,fmt)=>{ const def=AWARDS.find(a=>a.k===k), w=pick(cands,val,dir,!!def.shame);
+    return {k,t:def.t,shame:!!def.shame,winners:w.map(p=>p.name),value:w.length?fmt(val(w[0]),w[0]):''}; };
+  const pl=(v,s,p)=>v===1?s:p;
+  const awards=[
+    one('goleador', list.filter(p=>p.goals>0), p=>p.goals, 1, v=>`${v} gol`),
+    one('assistman',list.filter(p=>p.assist>0),p=>p.assist,1, v=>`${v} assist`),
+    one('media',    eligible.filter(p=>p.vn), avg, 1, v=>`media ${v.toFixed(2)}`),
+    one('mvp',      list.filter(p=>p.mvp>=ALBO_MIN_MVP), p=>p.mvp, 1, v=>`${v} volte MVP`),
+    one('stelle',   list.filter(p=>p.meta>0), p=>p.meta, 1, v=>`${v} ${pl(v,'meta','mete')}`),
+    one('stakanov', list.filter(p=>p.pres>0), p=>p.pres, 1, v=>`${v} ${pl(v,'presenza','presenze')}`),
+  ];
+  // Coppia d'oro: most wins together (min 3 matches together); ties → win %, fewer defeats, goal difference together
+  const tot=c=>c.w+c.d+c.l;
+  const cp=Object.values(pairs).filter(c=>tot(c)>=3 && c.w>0)
+    .sort((x,y)=>y.w-x.w || y.w/tot(y)-x.w/tot(x) || x.l-y.l || y.gd-x.gd);
+  const cw=cp.length?cp.filter(c=>c.w===cp[0].w&&eq(c.w/tot(c),cp[0].w/tot(cp[0]))&&c.l===cp[0].l&&c.gd===cp[0].gd):[];
+  awards.push({k:'coppia',t:"🤝 Coppia d'oro",shame:false,winners:cw.map(c=>c.names),
+    value:cw.length?`${cw[0].w} ${pl(cw[0].w,'vinta','vinte')} su ${tot(cw[0])}, ${cw[0].gd>0?'+':''}${cw[0].gd} gol`:''});
+  awards.push(
+    one('flop',     eligible.filter(p=>p.vn), avg, -1, v=>`media ${v.toFixed(2)}`),
+    one('cucchiaio',eligible.filter(p=>p.w+p.d+p.l>0), p=>p.w/(p.w+p.d+p.l), -1, (v,p)=>`${p.w} ${pl(p.w,'vinta','vinte')} su ${p.w+p.d+p.l}`),
+    one('rigori',   list.filter(p=>p.rigori>0), p=>p.rigori, 1, v=>`${v} ${pl(v,'sbagliato','sbagliati')}`),
+    one('autogol',  list.filter(p=>p.autogol>0), p=>p.autogol, 1, v=>`${v} autogol`)
+  );
+  if(n<ALBO_MIN_MATCHES) awards.forEach(a=>{ a.winners=[]; a.value=''; });   // season too short for awards
+  const feats={};
+  FEATS.forEach(f=>{ feats[f.k]=list.filter(p=>p.feats[f.k]>0).map(p=>({name:p.name,count:p.feats[f.k]})).sort((x,y)=>y.count-x.count||x.name.localeCompare(y.name)); });
+  return {...s,n,minPres,awards,feats};
+}
+
+// rows written to the "albo_oro" sheet for one season
+function alboRows(S){
+  const base={stagione:S.label,chiave:S.key,dal:S.start,al:S.end,stato:S.status};
+  const rows=[];
+  S.awards.forEach(a=>a.winners.forEach(w=>rows.push({...base,premio:a.k,titolo:a.t,giocatore:w,valore:a.value})));
+  FEATS.forEach(f=>(S.feats[f.k]||[]).forEach(x=>rows.push({...base,premio:f.k,titolo:f.t,giocatore:x.name,valore:'×'+x.count})));
+  if(!rows.length) rows.push({...base,premio:'-',titolo:'(nessun premio)',giocatore:'',valore:''});
+  return rows;
+}
+// stored rows → same shape as computeSeasonAwards (for frozen seasons)
+function seasonFromRows(s,rows){
+  const awards=AWARDS.map(a=>{ const r=rows.filter(x=>x.premio===a.k); return {k:a.k,t:a.t,shame:!!a.shame,winners:r.map(x=>x.giocatore),value:r[0]?r[0].valore:''}; });
+  const feats={}; FEATS.forEach(f=>{ feats[f.k]=rows.filter(x=>x.premio===f.k).map(x=>({name:x.giocatore,count:parseInt(String(x.valore).replace('×',''))||0})); });
+  const n=(matches||[]).filter(m=>{const x=seasonOf(m.date);return x&&x.key===s.key;}).length;
+  return {...s,n,minPres:Math.max(2,Math.ceil(n*0.4)),awards,feats,frozen:true};
+}
+const isFrozen=(s,stored)=>s.status==='chiusa' && stored.length>0 && stored.every(r=>r.stato==='chiusa');
+// every season, newest first: frozen ones from the sheet, the others computed live
+function alboSeasons(){
+  const stored=matchesCache.data?.albo||[];
+  return seasonsList().reverse().map(s=>{ const st=stored.filter(r=>r.chiave===s.key);
+    return isFrozen(s,st)?seasonFromRows(s,st):computeSeasonAwards(s); });
+}
+// write to the sheet what changed (in-progress seasons, and the final "chiusa" version once)
+let _alboSyncing=false;
+async function syncAlbo(){
+  if(!backendUrl || !matchesCache.data || !Array.isArray(matchesCache.data.albo) || _alboSyncing) return;
+  _alboSyncing=true;
+  const sig=rows=>JSON.stringify(rows.map(r=>[r.premio,r.giocatore,String(r.valore),r.stato]).sort());
+  try{
+    for(const s of seasonsList()){
+      const stored=(matchesCache.data.albo||[]).filter(r=>r.chiave===s.key);
+      if(isFrozen(s,stored)) continue;
+      const rows=alboRows(computeSeasonAwards(s));
+      if(sig(rows)===sig(stored)) continue;
+      await backendCall('saveAlbo',{chiave:s.key,rows});
+      matchesCache.data.albo=(matchesCache.data.albo||[]).filter(r=>r.chiave!==s.key).concat(rows);
+    }
+    saveCacheToStorage();
+  }catch(e){ /* silent: retried at the next load */ }
+  _alboSyncing=false;
+}
+
+// 🤝 all-time companions / rivals of a player (min 3 matches; each line only if "more than half")
+function playerPairs(p){
+  const me=playerKey(p.id,p.name).key, tog={}, vs={}, num=v=>{const n=parseInt(v);return isNaN(n)?null:n;};
+  const add=(map,k,name,res)=>{ const c=map[k]||(map[k]={name,w:0,d:0,l:0,n:0}); c.n++; if(res>0)c.w++; else if(res===0)c.d++; else c.l++; };
+  (matches||[]).forEach(m=>{
+    const a=num(m.scoreA), b=num(m.scoreB); if(a==null||b==null) return;
+    const A=normalizeTeam(m.teamA).map(pl=>playerKey(pl.id,pl.name)), B=normalizeTeam(m.teamB).map(pl=>playerKey(pl.id,pl.name));
+    const inA=A.some(x=>x.key===me), inB=B.some(x=>x.key===me); if(!inA&&!inB) return;
+    const [mine,theirs,res]=inA?[A,B,Math.sign(a-b)]:[B,A,Math.sign(b-a)];
+    const seen=new Set([me]);
+    mine.forEach(x=>{ if(!seen.has(x.key)){ seen.add(x.key); add(tog,x.key,x.name,res); } });
+    theirs.forEach(x=>{ if(!seen.has(x.key)){ seen.add(x.key); add(vs,x.key,x.name,res); } });
+  });
+  const T=Object.values(tog).filter(c=>c.n>=3), V=Object.values(vs).filter(c=>c.n>=3);
+  const top=(arr,f)=>arr.filter(c=>f(c)>0.5).sort((x,y)=>f(y)-f(x)||y.n-x.n||x.name.localeCompare(y.name))[0]||null;
+  return { friend:top(T,c=>c.w/c.n), cursed:top(T,c=>c.l/c.n), nemesis:top(V,c=>c.l/c.n), victim:top(V,c=>c.w/c.n) };
+}
+
 // season record of one roster player (null if he never played / has no pagelle)
 function playerSeason(p){ return seasonStats()[playerKey(p.id,p.name).key]||null; }
 
@@ -1238,7 +1467,8 @@ function openRosaCard(i){
       </div>
       <div class="photo-slot" id="pslot-${i}">${futMiniHTML(i)}</div><!-- 🃏 figurina da condividere -->
     </div>${sg}
-    <div id="pagelle-${i}" style="margin-top:4px;padding-top:6px;border-top:1px solid var(--gray2)"></div>`;
+    <div id="pagelle-${i}" style="margin-top:4px;padding-top:6px;border-top:1px solid var(--gray2)"></div>
+    ${playerExtrasHTML(p)}`;
   document.getElementById('match-modal').style.display='block';
   renderPlayerPagelle(i);
 }
@@ -1284,7 +1514,8 @@ function openPlayerCardByIdx(idx){
       <div style="width:84px">${futMiniHTML(idx)}</div>
     </div>
     ${sg}
-    <div id="modal-pagelle" style="margin-top:4px;padding-top:6px;border-top:1px solid var(--gray2)"></div>`;
+    <div id="modal-pagelle" style="margin-top:4px;padding-top:6px;border-top:1px solid var(--gray2)"></div>
+    ${playerExtrasHTML(p)}`;
   document.getElementById('match-modal').style.display='block';
   // draw the pagelle chart + stats into the modal container (same as Rosa)
   const container=document.getElementById('modal-pagelle');
@@ -1320,7 +1551,7 @@ async function loadAndRefreshPagelle(i){
     const data=await backendCall('matches');
     if(data.ok){
       matches=data.matches||[];
-      matchesCache.data={matches, ratings:data.ratings||[]};
+      matchesCache.data={matches, ratings:data.ratings||[], albo:Array.isArray(data.albo)?data.albo:null};
       matchesCache.timestamp=Date.now();
       saveCacheToStorage();
     }
@@ -2912,7 +3143,7 @@ async function ensureMatchesCachedForRosa(){
     const data=await backendCall('matches');
     if(data.ok){
       matches=data.matches||[];
-      matchesCache.data={matches,ratings:data.ratings||[]};
+      matchesCache.data={matches,ratings:data.ratings||[], albo:Array.isArray(data.albo)?data.albo:null};
       matchesCache.timestamp=Date.now();
       saveCacheToStorage();
       // refresh all pag badges on Rosa
@@ -3006,12 +3237,14 @@ function getAppsScriptCode(){
   return `// CalcioLercio backend — incolla in Apps Script del tuo foglio Google
 const SHEET_MATCHES = 'partite';
 const SHEET_RATINGS = 'pagelle';
+const SHEET_ALBO = 'albo_oro';   // albo d'oro: premi e imprese di ogni stagione
+const ALBO_HEADERS = ['stagione','chiave','dal','al','stato','premio','titolo','giocatore','valore','aggiornato'];
 
 function doGet(e) {
   const action = e.parameter.action || 'ping';
   try {
     if (action === 'ping') return out({ok:true, matchCount:getMatches().length});
-    if (action === 'matches') return out({ok:true, matches:getMatches(), ratings:getRatings()});
+    if (action === 'matches') return out({ok:true, matches:getMatches(), ratings:getRatings(), albo:getAlbo()});
     return out({ok:false, error:'unknown action'});
   } catch(err) {
     return out({ok:false, error:String(err)});
@@ -3026,6 +3259,7 @@ function doPost(e) {
     if (action === 'deleteMatch') return out({ok:true, deleted:deleteMatch(body.id)});
     if (action === 'saveRatings') return out({ok:true, saved:saveRatings(body)});
     if (action === 'updateScore') return out({ok:true, updated:updateScore(body)});
+    if (action === 'saveAlbo')    return out({ok:true, saved:saveAlbo(body)});
     return out({ok:false, error:'unknown action'});
   } catch(err) {
     return out({ok:false, error:String(err)});
@@ -3070,6 +3304,30 @@ function getMatches() {
     pred: (r[7] === '' || r[7] == null) ? null : Number(r[7]),
     predRank: (r[8] === '' || r[8] == null) ? null : Number(r[8])
   })).filter(m => m.id);
+}
+
+function getAlbo() {
+  const sh = getSheet(SHEET_ALBO, ALBO_HEADERS);
+  const data = sh.getDataRange().getValues();
+  if (data.length < 2) return [];
+  return data.slice(1).filter(r => r[1]).map(r => {
+    const o = {}; ALBO_HEADERS.forEach((h, i) => { o[h] = (r[i] instanceof Date) ? Utilities.formatDate(r[i], 'Europe/Rome', 'yyyy-MM-dd') : r[i]; });
+    return o;
+  });
+}
+
+// replaces all the rows of one season (payload.chiave) with payload.rows
+function saveAlbo(payload) {
+  const sh = getSheet(SHEET_ALBO, ALBO_HEADERS);
+  const data = sh.getDataRange().getValues();
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][1] === payload.chiave) sh.deleteRow(i + 1);
+  }
+  const now = new Date().toISOString();
+  (payload.rows || []).forEach(r => {
+    sh.appendRow(ALBO_HEADERS.map(h => h === 'aggiornato' ? now : (r[h] === undefined ? '' : r[h])));
+  });
+  return (payload.rows || []).length;
 }
 
 function getRatings() {
@@ -3170,10 +3428,11 @@ async function loadMatches(force){
     const data=await backendCall('matches');
     if(!data.ok)throw new Error(data.error||'errore sconosciuto');
     matches=data.matches||[];
-    matchesCache.data={matches, ratings:data.ratings||[]};
+    matchesCache.data={matches, ratings:data.ratings||[], albo:Array.isArray(data.albo)?data.albo:null};
     matchesCache.timestamp=Date.now();
     saveCacheToStorage();
     renderMatchesList();
+    syncAlbo();   // save to the sheet the albo of seasons still open
   }catch(e){
     // keep showing cached data on error; only show error if we had nothing
     if(!haveCache){
@@ -3233,6 +3492,7 @@ function renderScorers(){
   renderStatsTable();
   renderSeasonDash();
   renderLastMatch();
+  if(storicoTab==='albo') renderAlbo();
 }
 
 function renderScorersList(){
@@ -3275,12 +3535,64 @@ function renderScorersList(){
   }).join('');
 }
 
+// ── 🏆 Albo d'oro (Storico) ──
+const SEASON_ICON={PRI:'🌸',EST:'☀️',AUT:'🍂',INV:'❄️'};
+// a player name, tappable when he's in the roster (opens his card)
+function nameLink(n){
+  const i=players.findIndex(p=>p.name===n);
+  return i>=0?`<span class="albo-name" onclick="openPlayerCardByIdx(${i})">${esc(n)}</span>`:esc(n);
+}
+const winnersHTML=(ws,sep)=>ws.map(w=>w.split(' & ').map(nameLink).join(' & ')).join(sep||', ');
+function renderAlbo(){
+  const el=document.getElementById('albo-list'); if(!el) return;
+  const seasons=alboSeasons();
+  if(!seasons.length){ el.innerHTML='<div class="section-header" style="margin:0 0 10px">🏆 Albo d\'oro</div><div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">Nessuna partita ancora</div>'; return; }
+  const chip={'in corso':'<span class="albo-chip live">in corso</span>','in chiusura':'<span class="albo-chip soon">in chiusura</span>','chiusa':'<span class="albo-chip done">🔒 chiusa</span>'};
+  const row=a=>`<div class="albo-row"><span class="albo-t">${a.t}</span><span class="albo-w">${winnersHTML(a.winners,a.k==='coppia'?'<br>':', ')}</span><span class="albo-v">${esc(a.value)}</span></div>`;
+  el.innerHTML=`<div class="section-header" style="margin:0 0 4px">🏆 Albo d'oro</div>
+    <div class="albo-note">Premi per stagione. Medie e Cucchiaio contano solo chi ha giocato almeno il 40% delle partite.</div>`+
+  seasons.map(S=>{
+    const won=S.awards.filter(a=>a.winners.length), prize=won.filter(a=>!a.shame), shame=won.filter(a=>a.shame);
+    const feats=FEATS.filter(f=>(S.feats[f.k]||[]).length).map(f=>`<div class="albo-feat"><span class="albo-t">${f.t}</span><span>${S.feats[f.k].map(x=>nameLink(x.name)+' <b>×'+x.count+'</b>').join(' · ')}</span></div>`).join('');
+    const body=S.n<ALBO_MIN_MATCHES
+      ? `<div class="albo-empty">Stagione troppo corta per i premi (servono almeno ${ALBO_MIN_MATCHES} partite).</div>`
+      : (prize.map(row).join('')+(shame.length?`<div class="albo-grp">Premi della vergogna</div>`+shame.map(row).join(''):''));
+    return `<div class="albo-season">
+      <div class="albo-head"><span class="albo-title">${SEASON_ICON[S.key.slice(-3)]||'🏆'} ${S.label}</span>${chip[S.status]||''}</div>
+      <div class="albo-sub">${S.n} ${S.n===1?'partita':'partite'}${S.n>=ALBO_MIN_MATCHES?` · medie e Cucchiaio da ${S.minPres} presenze`:''}</div>
+      ${body}
+      ${feats?`<div class="albo-grp">Imprese</div>${feats}`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── player card extras: 🏆 Bacheca + 🤝 Compagni e avversari ──
+function playerExtrasHTML(p){
+  const name=playerKey(p.id,p.name).name, seasons=alboSeasons();
+  const trophies=[];
+  seasons.forEach(S=>S.awards.forEach(a=>{ if(a.winners.some(w=>w===name||w.split(' & ').includes(name)))
+    trophies.push(`<span class="trophy${a.shame?' shame':''}">${a.t}<small>${S.label}${S.status!=='chiusa'?' · in corso':''}</small></span>`); }));
+  const feats=FEATS.map(f=>{ const c=seasons.reduce((s,S)=>s+((S.feats[f.k]||[]).find(x=>x.name===name)?.count||0),0);
+    return c?`<span class="feat" title="${f.d}">${f.t.split(' ')[0]} ${f.t.split(' ').slice(1).join(' ')} <b>×${c}</b></span>`:''; }).join('');
+  const q=playerPairs(p), pct=(a,b)=>`${a} ${a===1?(b==='v'?'vinta':'persa'):(b==='v'?'vinte':'perse')}`;
+  const line=(ico,lbl,c,kind)=>c?`<div class="pair-line"><span class="pair-l">${ico} ${lbl}</span><span class="pair-n">${nameLink(c.name)}</span><span class="pair-v">${kind==='v'?pct(c.w,'v'):pct(c.l,'p')} su ${c.n}</span></div>`:'';
+  const pairs=line('🤝','Compagno d\'oro',q.friend,'v')+line('💔','Compagno maledetto',q.cursed,'p')+line('😈','Bestia nera',q.nemesis,'p')+line('🎯','Vittima preferita',q.victim,'v');
+  return `<div class="pe-sec"><div class="pe-title">🏆 Bacheca</div>
+      ${trophies.length||feats?`<div class="trophies">${trophies.join('')}${feats}</div>`:'<div class="pe-empty">Ancora nessun trofeo</div>'}
+    </div>
+    <div class="pe-sec"><div class="pe-title">🤝 Compagni e avversari</div>
+      ${pairs||'<div class="pe-empty">Servono almeno 3 partite con o contro lo stesso giocatore, e un bilancio di più di metà</div>'}
+    </div>`;
+}
+
 // ── Sub-tab switching in Storico ──
 let storicoTab='marcatori';
 function showStoricoTab(tab){
   storicoTab=tab;
-  document.querySelectorAll('.sub-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#storico-tabs .sub-tab').forEach(b=>b.classList.remove('active'));   // only the Storico tabs
   document.getElementById('stab-'+tab)?.classList.add('active');
+  document.getElementById('albo-card').style.display=tab==='albo'?'block':'none';
+  if(tab==='albo') renderAlbo();
   document.getElementById('scorers-card').style.display=tab==='marcatori'?'block':'none';
   document.getElementById('stats-card').style.display=tab==='statistiche'?'block':'none';
   document.getElementById('matches-card').style.display=tab==='partite'?'block':'none';
@@ -3615,8 +3927,7 @@ function matchHighlights(m){
     const ast=parseInt(r.assist)||0;
     const rs=parseInt(r.rigoriSbagliati)||0;
     if(!isNaN(rt)&&rt>=1){
-      // composite performance: voto + 0.5·gol + 0.3·assist − 0.3·autogol − 0.3·rigori sbagliati
-      const perf=rt + g*0.5 + ast*0.3 - ag*0.3 - rs*0.3;
+      const perf=mvpPerf(r);   // same formula as the albo d'oro (Re degli MVP)
       if(!mvp||perf>mvp.perf)   mvp={name, v:rt, perf};
       if(!worst||perf<worst.perf) worst={name, v:rt, perf};
       // team averages (which side is this player on?)

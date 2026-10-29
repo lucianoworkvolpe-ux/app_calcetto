@@ -106,8 +106,7 @@
         5,
         6
       ],
-      "id": "p_7a9e8570-80a4-43aa-a949-e8424fff1fef",
-      "archived": false
+      "id": "p_7a9e8570-80a4-43aa-a949-e8424fff1fef"
     },
     {
       "name": "Grosso",
@@ -489,7 +488,7 @@
   "sizeA": 5,
   "sizeB": 5,
   "asymMode": false,
-  "backendUrl": "https://script.google.com/macros/s/AKfycbyJGCKP5BM2rDdb0vg1v_lrDHsiVMO1z7p8ZytjLYFjDeTkNs49o0fCfX7vBtmxWChFcw/exec",
+  "backendUrl": "https://script.google.com/macros/s/AKfycbwbOefQeKE_zrmdcbXaSkK148Rij-XdOUJ7SKZdx8hNAioOsSc4piFQbnhp7dmRjfnxJA/exec",
   "version": 6,
-  "exported": "2026-10-29T11:39:57.584Z"
+  "exported": "2026-10-29T13:55:20.764Z"
 }
