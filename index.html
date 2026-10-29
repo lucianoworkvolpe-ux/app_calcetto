@@ -117,14 +117,17 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 @media(prefers-reduced-motion:reduce){.fut-mini::after{animation:none;display:none}}
 .fut-mini-cups{font-size:10px;font-weight:900;margin-top:4px;position:relative}
 /* Rosa card: the figurina preview is exactly as tall as the photo (width 75% × ratio 3:4 = column width) → no empty band */
-.photo-roles .fut-mini{width:75%;max-width:127px;border-radius:10px;gap:0}
-.photo-roles .fut-mini-ovr{font-size:26px}
-.photo-roles .fut-mini-pag{font-size:9px;padding:1px 5px;margin:2px 0 1px}
-.photo-roles .fut-mini-tier{font-size:7.5px;letter-spacing:1px}
-.photo-roles .fut-mini-cups{font-size:9px;margin-top:2px}
-.photo-roles .fut-mini-cta{font-size:9px;margin-top:3px}
-.photo-roles .role-section .role-toggles{gap:4px}
-.photo-roles .role-section .role-toggle{padding:4px 2px}
+.photo-roles{align-items:center}
+.photo-roles .photo-edit{max-width:none}
+.photo-roles .avatar-xl{width:100%;height:100%;max-width:none}
+.photo-roles .fut-mini{width:75%;max-width:none;aspect-ratio:auto;border-radius:10px;gap:0}
+.photo-roles .fut-mini-ovr{font-size:calc(26px*var(--s,1))}
+.photo-roles .fut-mini-pag{font-size:calc(9px*var(--s,1));padding:1px 5px;margin:2px 0 1px}
+.photo-roles .fut-mini-tier{font-size:calc(7.5px*var(--s,1));letter-spacing:1px}
+.photo-roles .fut-mini-cups{font-size:calc(9px*var(--s,1));margin-top:calc(2px*var(--s,1))}
+.photo-roles .fut-mini-cta{font-size:calc(9px*var(--s,1));margin-top:calc(3px*var(--s,1))}
+.photo-roles .role-section .role-toggles{gap:5px}
+.photo-roles .role-section .role-toggle{padding:5px 2px}
 .photo-roles .role-section .role-section-label{margin-bottom:3px}
 .fut-mini-pag{font-size:10px;font-weight:900;padding:2px 7px;border-radius:99px;margin:3px 0 2px;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.35);background:linear-gradient(#2a3243,#0c1018)!important;border:1.5px solid currentColor}
 .fut-mini-pag.pag-good{color:#5fd184}.fut-mini-pag.pag-mid{color:#ffd36b}.fut-mini-pag.pag-bad{color:#f07a6c}.fut-mini-pag.pag-none{color:#c9ced6}
@@ -1433,6 +1436,19 @@ function buildRosa(opts){
 }
 
 let rosaCardIdx=null;   // roster index of the Rosa card open on top (null = none)
+// Rosa card: photo and figurina exactly as tall as the roles column, on phone and desktop.
+// (CSS can't size a round photo / 3:4 card on a sibling column's height, so we measure it.)
+function fitPhotoBand(){
+  const band=document.querySelector('#match-modal .photo-roles'); if(!band) return;
+  const roles=band.querySelector('.role-section'), col=band.querySelector('.photo-row');
+  const photo=band.querySelector('.photo-edit'), mini=band.querySelector('.fut-mini');
+  if(!roles||!col) return;
+  const h=Math.round(roles.getBoundingClientRect().height), cw=col.getBoundingClientRect().width;
+  if(photo){ const s=Math.min(h,cw); photo.style.width=s+'px'; photo.style.height=s+'px'; }
+  if(mini){ const mw=Math.min(cw,h*0.75), mh=Math.round(mw/0.75);
+    mini.style.width=Math.round(mw)+'px'; mini.style.height=mh+'px'; mini.style.setProperty('--s',(mh/106).toFixed(3)); }
+}
+window.addEventListener('resize',()=>{ if(rosaCardIdx!=null) fitPhotoBand(); });
 // Full editable player card (photo, roles, stats, pagelle), opened on top of the Rosa list
 function openRosaCard(i){
   const p=players[i]; if(!p)return;
@@ -1491,6 +1507,7 @@ function openRosaCard(i){
     <div id="pagelle-${i}" style="margin-top:4px;padding-top:6px;border-top:1px solid var(--gray2)"></div>
     ${playerExtrasHTML(p)}`;
   document.getElementById('match-modal').style.display='block';
+  fitPhotoBand();
   renderPlayerPagelle(i);
 }
 
@@ -1729,7 +1746,7 @@ function upStat(i,j,v){
   const o='OVR '+calcOvr(players[i].stats).toFixed(1);
   const ov=document.getElementById('ov'+i); if(ov) ov.textContent=o;
   const mov=document.getElementById('mov'+i); if(mov) mov.textContent=o;
-  const slot=document.getElementById('pslot-'+i); if(slot) slot.innerHTML=futMiniHTML(i);
+  const slot=document.getElementById('pslot-'+i); if(slot){ slot.innerHTML=futMiniHTML(i); fitPhotoBand(); }
   save();
 }
 function toggleRole(i,r,e){
