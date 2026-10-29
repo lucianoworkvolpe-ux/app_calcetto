@@ -208,6 +208,20 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .fut-mini-pag{font-size:10px;font-weight:900;padding:2px 7px;border-radius:99px;margin:3px 0 2px;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.35);background:linear-gradient(#2a3243,#0c1018)!important;border:1.5px solid currentColor}
 .fut-mini-pag.pag-good{color:#5fd184}.fut-mini-pag.pag-mid{color:#ffd36b}.fut-mini-pag.pag-bad{color:#f07a6c}.fut-mini-pag.pag-none{color:#c9ced6}
 .fut-mini:active{transform:scale(0.95)}
+/* 🔥 on fire */
+.fire-chip{flex-shrink:0;margin-left:2px;font-size:14px;filter:drop-shadow(0 0 4px rgba(255,120,0,.8))}
+.fut-mini.fire{border-color:#ffb347!important;animation:fireGlow 1.6s ease-in-out infinite}
+.fut-mini.fire::before{background:linear-gradient(to top,rgba(255,100,0,.6),rgba(255,170,0,.18) 38%,transparent 62%),repeating-linear-gradient(115deg,rgba(255,255,255,.10) 0 2px,transparent 2px 9px)}
+.fut-mini.fire .fut-mini-tier{color:#fff;text-shadow:0 0 6px #ff6a00,0 0 2px #b32000;opacity:1}
+@keyframes fireGlow{0%,100%{box-shadow:0 0 8px 1px rgba(255,110,0,.75),0 4px 14px rgba(0,0,0,.35)}50%{box-shadow:0 0 18px 4px rgba(255,150,0,.95),0 4px 14px rgba(0,0,0,.35)}}
+@media(prefers-reduced-motion:reduce){.fut-mini.fire{animation:none;box-shadow:0 0 12px 2px rgba(255,120,0,.85)}}
+/* 🌧️ in crisi */
+.crisi-chip{filter:drop-shadow(0 0 4px rgba(120,150,190,.8))}
+.fut-mini.crisi{border-color:#9aa7b8!important;filter:saturate(.5) brightness(.9);box-shadow:0 0 10px 1px rgba(90,110,140,.75),0 4px 14px rgba(0,0,0,.35)}
+.fut-mini.crisi::before{background:repeating-linear-gradient(105deg,rgba(200,215,240,.38) 0 1px,transparent 1px 7px),linear-gradient(to bottom,rgba(28,36,48,.5),transparent 55%);background-size:30px 60px,100% 100%;animation:rainFall .8s linear infinite}
+.fut-mini.crisi .fut-mini-tier{color:#eef3fa;text-shadow:0 0 4px #1f2630;opacity:1}
+@keyframes rainFall{to{background-position:-12px 60px,0 0}}
+@media(prefers-reduced-motion:reduce){.fut-mini.crisi::before{animation:none}}
 /* iOS Safari: no native button padding/appearance, every line full-width and centred */
 .fut-mini{-webkit-appearance:none;appearance:none;padding:0;margin:0;text-align:center}
 .fut-mini>span{display:block;width:100%;text-align:center}
@@ -240,7 +254,7 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .avatar-stack{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0}
 .ph-info{flex:1;min-width:0;display:flex;flex-direction:row;align-items:center;gap:6px}
 .ph-name-row{display:flex;align-items:center;gap:3px;flex:1;min-width:0}
-.player-name-display{flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.player-name-display{flex:0 1 auto;min-width:0;font-size:13px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .role-pills-display{display:flex;gap:2px;flex-wrap:wrap;flex-shrink:0}
 /* narrow screens: role pills under the name, so names aren't truncated next to the big initials */
 @media(max-width:520px){.ph-info{flex-direction:column;align-items:flex-start;gap:3px}.ph-name-row{width:100%}}
@@ -742,7 +756,7 @@ input[type=file]{display:none}
 ════════════════════════════════════ */
 // Version of the code that is RUNNING (bump at every release). The installed home-screen app has no reload
 // button and iOS keeps it frozen in memory: comparing this with the file on GitHub tells if it's outdated.
-const APP_VERSION='2026.10.29-i';
+const APP_VERSION='2026.10.29-o';
 let BUILD_DATE='—'; // date of the file ON THE SERVER (Last-Modified of index.html), not of the running code
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
@@ -1594,7 +1608,7 @@ function buildRosa(opts){
         </div>
         <div class="ph-info">
           <div class="ph-name-row">
-            <span class="player-name-display">${esc(p.name)}</span>
+            <span class="player-name-display">${esc(p.name)}</span>${fireChip(p)}
           </div>
           <div class="role-pills-display">${pills}</div>
         </div>
@@ -1655,7 +1669,7 @@ function openRosaCard(i){
           <span class="ovr-badge" id="mov${i}">OVR ${ovr}</span>
         </div>
         <div class="ph-info">
-          <div class="ph-name-row"><span class="player-name-display">${esc(p.name)}</span></div>
+          <div class="ph-name-row"><span class="player-name-display">${esc(p.name)}</span>${fireChip(p)}</div>
           <div class="role-pills-display">${pills}</div>
         </div>
       </div>
@@ -1711,7 +1725,7 @@ function openPlayerCardByIdx(idx){
           <span class="ovr-badge">OVR ${ovr}</span>
         </div>
         <div class="ph-info">
-          <div class="ph-name-row"><span class="player-name-display">${esc(p.name)}</span></div>
+          <div class="ph-name-row"><span class="player-name-display">${esc(p.name)}</span>${fireChip(p)}</div>
           <div class="role-pills-display">${pills}</div>
         </div>
       </div>
@@ -1841,10 +1855,10 @@ function drawPagelle(i,player,container){
   const trendEnd=intercept+slope*(n-1);       // value at last match
   // trend verdict
   const totalChange=trendEnd-trendStart;
-  let trendLabel, trendCol, trendArrow;
-  if(totalChange>0.4){ trendLabel='In crescita'; trendCol='var(--green)'; trendArrow='↗'; }
-  else if(totalChange<-0.4){ trendLabel='In calo'; trendCol='var(--red)'; trendArrow='↘'; }
-  else { trendLabel='Stabile'; trendCol='var(--amber)'; trendArrow='→'; }
+  // header: the app-wide form state (same as the figurina); dashed line: long-term trend, neutral colour
+  const fsKey=formState(player), FS=fsKey?FORM_STATES[fsKey]:null;
+  const trendLabel=FS?FS.label:'', trendArrow=FS?FS.arrow:'', trendCol=FS?FS.col:'var(--text3)';
+  const lineCol='#5aa9ff';
 
   // ── geometry: bars chart ──
   const W=320, H=56, padL=22, padR=10, padT=10, padB=3;   // compact: no labels under the bars
@@ -1881,7 +1895,7 @@ function drawPagelle(i,player,container){
   const ty1=yToPx(Math.max(yMin,Math.min(yMax,trendStart)));
   const ty2=yToPx(Math.max(yMin,Math.min(yMax,trendEnd)));
   const trendLine=n>=2
-    ? `<line x1="${tx1.toFixed(1)}" y1="${ty1.toFixed(1)}" x2="${tx2.toFixed(1)}" y2="${ty2.toFixed(1)}" stroke="${trendCol}" stroke-width="2" stroke-linecap="round" stroke-dasharray="1,5" opacity="0.95"/>`
+    ? `<line x1="${tx1.toFixed(1)}" y1="${ty1.toFixed(1)}" x2="${tx2.toFixed(1)}" y2="${ty2.toFixed(1)}" stroke="${lineCol}" stroke-width="2" stroke-linecap="round" stroke-dasharray="1,5" opacity="0.95"/>`
     : '';
 
   container.innerHTML=`
@@ -1905,7 +1919,7 @@ function drawPagelle(i,player,container){
       ${bars}
       ${trendLine}
     </svg>
-    <div style="font-size:9px;color:var(--text3);text-align:center;margin-top:3px">Da ${formatDate(dated[0].date)} a ${formatDate(dated[dated.length-1].date)} · linea tratteggiata = tendenza</div>
+    <div style="font-size:9px;color:var(--text3);text-align:center;margin-top:3px">Da ${formatDate(dated[0].date)} a ${formatDate(dated[dated.length-1].date)} · linea tratteggiata = tendenza di tutta la storia</div>
   `;
 }
 function upStat(i,j,v){
@@ -2756,36 +2770,58 @@ function drawFieldSheet(m){
 }
 
 /* ── 🃏 Figurina stile FIFA ──
-   Valutazione = OVR × 10. Oro ≥ 70, Argento ≥ 60, Bronzo sotto.
-   "In forma" (nera e oro, olografica) se la media delle ultime 3 pagelle è almeno 7.
+   Valutazione = OVR × 10. Fasce: Top player ≥ 74 · Oro 68–73 · Argento 60–67 · Bronzo 55–59 · Cacca 40–54 · Marcia < 40.
+   Stato di forma (In forma / Costante / In calo) come etichetta sotto il badge PAG.
    In basso le medaglie dei trofei vinti (stessa fonte della bacheca: playerTrophies). */
 const FUT_TIERS={
-  inform:{label:'IN FORMA', metal:['#46557a','#1d2538','#0b0f18','#2c3654','#05070b'], text:'#f7d774', sub:'#dfe6f2', line:'#f7d774',
-          glow:'#f7d774', spark:'#ffe9a0', emboss:'rgba(0,0,0,0.65)', stripe:'rgba(255,255,255,0.045)', holo:true},
   gold:  {label:'ORO',      metal:['#fff4c2','#f0cc55','#c4951c','#f8df85','#8a650e'], text:'#2a1c00', sub:'#4b3810', line:'#fff7d6',
           glow:'#f2c94c', spark:'#fff2a8', emboss:'rgba(255,250,220,0.75)', stripe:'rgba(255,255,255,0.10)'},
   silver:{label:'ARGENTO',  metal:['#ffffff','#e1e6ee','#a7b0be','#eff2f7','#6c7788'], text:'#111721', sub:'#333c4b', line:'#ffffff',
           glow:'#c9d4e6', spark:'#ffffff', emboss:'rgba(255,255,255,0.85)', stripe:'rgba(255,255,255,0.14)'},
   bronze:{label:'BRONZO',   metal:['#ffdcb5','#e39f62','#a5612d','#ecb57f','#66371a'], text:'#291304', sub:'#4a2a12', line:'#ffe6cd',
-          glow:'#e39b5c', spark:'#ffd6ad', emboss:'rgba(255,232,210,0.65)', stripe:'rgba(255,255,255,0.10)'}
+          glow:'#e39b5c', spark:'#ffd6ad', emboss:'rgba(255,232,210,0.65)', stripe:'rgba(255,255,255,0.10)'},
+  top:   {label:'TOP PLAYER', metal:['#8b6cff','#4b2fd1','#1c1063','#6a4cf0','#0b0630'], text:'#ffe27a', sub:'#ece6ff', line:'#ffe27a',
+          glow:'#9d86ff', spark:'#fff1a8', emboss:'rgba(0,0,0,0.6)', stripe:'rgba(255,255,255,0.07)', holo:true},
+  cacca: {label:'CACCA',    metal:['#b8946a','#86603a','#55391c','#9c7648','#2f1e0c'], text:'#fff1d9', sub:'#f1dcbc', line:'#dcbc8e',
+          glow:'#8a6a3a', spark:'#c9a578', emboss:'rgba(0,0,0,0.45)', stripe:'rgba(255,255,255,0.06)', critter:'💩'},
+  marcia:{label:'MARCIA',   metal:['#a9bd72','#71863a','#3f4c18','#8ca252','#212a0a'], text:'#f4ffdb', sub:'#e2eec2', line:'#c8d98c',
+          glow:'#7f9a3a', spark:'#d3e39a', emboss:'rgba(0,0,0,0.45)', stripe:'rgba(255,255,255,0.06)', critter:'🪰'}
 };
 // FIFA-style 6 stats from our 11 (indices of STATS)
 const FUT_STATS=[['VEL',[3]],['TIR',[4]],['PAS',[5]],['DRI',[2]],['DIF',[7]],['FIS',[0,1]]];
 const futRating=p=>Math.round(calcOvr(p.stats)*10);
 const futStat=(p,idx)=>Math.round(idx.reduce((s,j)=>s+p.stats[j],0)/idx.length*10);
+// 📈 STATO DI FORMA — one rule everywhere (player card, figurina, mini preview):
+// average of the last 3 pagelle vs his all-time average → ≥ +0.2 In forma · ≤ −0.2 In calo · otherwise Costante.
+// Needs at least 4 pagelle and the last one among the group's 5 most recent matches (otherwise: no state).
+const FORM_DELTA=0.2;   // ± margin on his own average
+const FORM_STATES={up:{label:'In forma',arrow:'↗',col:'#3aad5e'},flat:{label:'Costante',arrow:'→',col:'#e0a92e'},down:{label:'In calo',arrow:'↘',col:'#e05c5c'}};
+function formState(p){
+  const a=playerSeason(p); if(!a||a.votes.length<4) return null;
+  const since=(matches||[]).map(m=>m.date).filter(Boolean).sort().slice(-5)[0];
+  if(since && a.votes[a.votes.length-1].date<since) return null;
+  const d=a.votes.slice(-3).reduce((s,x)=>s+x.v,0)/3 - a.voteAvg;
+  return d>=FORM_DELTA-1e-9?'up':d<=-FORM_DELTA+1e-9?'down':'flat';
+}
+// 🔥 ON FIRE = the visual side of "↗ In forma" (same rule as the form state: last 3 pagelle ≥ +0.2 over his average).
+// Returns 1/0 (kept as a number so the drawing code can stay as it is).
+function onFire(p){ return formState(p)==='up'?1:0; }
+// 🌧️ IN CRISI = the visual side of "↘ In calo" (last 3 pagelle ≤ −0.2 under his average)
+function inCrisi(p){ return formState(p)==='down'?1:0; }
+const fireChip=p=>onFire(p)?`<span class="fire-chip" title="In forma: le ultime pagelle sono sopra la sua media">🔥</span>`
+  :inCrisi(p)?`<span class="fire-chip crisi-chip" title="In crisi: le ultime pagelle sono sotto la sua media">🌧️</span>`:'';
 function futTier(p){
-  const a=playerSeason(p), last=a?a.votes.slice(-3):[];
-  if(last.length===3 && last.reduce((s,x)=>s+x.v,0)/3>=7) return 'inform';
-  const r=futRating(p); return r>=70?'gold':r>=60?'silver':'bronze';
+  const r=futRating(p);
+  return r>=74?'top':r>=68?'gold':r>=60?'silver':r>=55?'bronze':r>=40?'cacca':'marcia';
 }
 // small card preview used as the button (third column of the player card)
 function futMiniHTML(i){
-  const p=players[i], t=FUT_TIERS[futTier(p)], tr=playerTrophies(p), n=tr.awards.filter(a=>!a.shame).length;
-  return `<button class="fut-mini${t.holo?' holo':''}" onclick="shareFutCard(${i})" title="Condividi la figurina"
+  const p=players[i], t=FUT_TIERS[futTier(p)], tr=playerTrophies(p), n=tr.awards.filter(a=>!a.shame).length, fire=onFire(p), crisi=inCrisi(p);
+  return `<button class="fut-mini${t.holo?' holo':''}${fire?' fire':''}${crisi?' crisi':''}" onclick="shareFutCard(${i})" title="Condividi la figurina"
     style="background:linear-gradient(150deg,${t.metal.join(',')});color:${t.text}">
     <span class="fut-mini-ovr">${futRating(p)}</span>
-    <span class="fut-mini-pag ${getPlayerPagInfo(p).cls}">${getPlayerPagInfo(p).label}</span>
-    <span class="fut-mini-tier">${t.label}</span>
+    <span class="fut-mini-pag ${getPlayerPagInfo(p).cls}">${getPlayerPagInfo(p).label}${(k=>k?` <b style="color:${FORM_STATES[k].col}" title="${FORM_STATES[k].label}">${FORM_STATES[k].arrow}</b>`:'')(formState(p))}</span>
+    <span class="fut-mini-tier">${fire?'🔥 ON FIRE':crisi?'🌧️ IN CRISI':t.label}</span>
     ${n?`<span class="fut-mini-cups">🏆×${n}</span>`:''}
     <span class="fut-mini-cta">🃏 Figurina</span>
   </button>`;
@@ -2813,7 +2849,7 @@ const seasonShort=label=>label.replace('Primavera','Pri').replace('Estate','Est'
 // strip U+FE0F (emoji variation selector): it doesn't change the look but breaks Safari's canvas text measuring
 const noVS=s=>String(s).replace(/\uFE0F/g,'');
 function drawFutCard(p, photoImg){
-  const tk=futTier(p), t=FUT_TIERS[tk], a=playerSeason(p), tr=playerTrophies(p);
+  const tk=futTier(p), t=FUT_TIERS[tk], a=playerSeason(p), tr=playerTrophies(p), fire=onFire(p), crisi=inCrisi(p);
   const W=720, H=1140, {canvas,ctx}=newShareCanvas(W,H);
   const F=SHARE_FONT, x=60, y=48, w=600, h=1000, cx=x+w/2;
   // deterministic sparkle positions (same card → same picture)
@@ -2826,13 +2862,60 @@ function drawFutCard(p, photoImg){
   for(let k=0;k<24;k++){ ctx.rotate(Math.PI*2/24); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-38,-900); ctx.lineTo(38,-900); ctx.closePath();
     ctx.fillStyle=k%2?t.glow+'0d':t.glow+'05'; ctx.fill(); }
   ctx.restore();
+  // a flame tongue: base centre (fx,fy), width fw, height fh, upwards; lean = how much the tip bends sideways
+  const flame=(fx,fy,fw,fh,alpha,lean)=>{
+    const g=ctx.createLinearGradient(0,fy,0,fy-fh);
+    g.addColorStop(0,`rgba(255,120,20,0)`); g.addColorStop(0.12,`rgba(255,196,70,${alpha})`);
+    g.addColorStop(0.45,`rgba(255,128,24,${alpha*0.9})`); g.addColorStop(0.8,`rgba(214,42,8,${alpha*0.55})`); g.addColorStop(1,'rgba(160,10,0,0)');
+    const tx=fx+lean, ty=fy-fh;
+    ctx.beginPath(); ctx.moveTo(fx-fw/2,fy);
+    ctx.bezierCurveTo(fx-fw*0.55,fy-fh*0.35, tx-fw*0.35+lean*0.2,fy-fh*0.55, tx-fw*0.06,fy-fh*0.86);   // left side, curling
+    ctx.quadraticCurveTo(tx,ty-fh*0.04, tx+fw*0.04,ty);                                                   // pointed tip
+    ctx.bezierCurveTo(tx+fw*0.18,fy-fh*0.7, fx+fw*0.48,fy-fh*0.45, fx+fw/2,fy);                          // right side
+    ctx.closePath(); ctx.fillStyle=g; ctx.fill(); };
+  const fireBand=(front)=>{ ctx.save(); ctx.globalCompositeOperation='screen';
+    for(let fx=x-50; fx<=x+w+50; fx+=front?38:27+rnd()*12){
+      const edge=Math.min(1,Math.abs(fx-cx)/(w/2)), side=fx<cx?-1:1;   // taller on the sides: they climb the card edges
+      const fh=front?28+rnd()*40:70+edge*320+rnd()*110, fw=front?30+rnd()*24:34+rnd()*44;
+      const base=front?y+h+18:y+h+46-edge*80;
+      flame(fx,base,fw,fh,front?0.7:0.85,(rnd()-0.5)*fw*0.9+side*edge*(18+rnd()*30));
+      if(!front && rnd()>0.45) flame(fx+(rnd()-0.5)*16,base,fw*0.55,fh*(0.55+rnd()*0.3),0.9,(rnd()-0.5)*fw*0.7);   // inner brighter tongue
+    }
+    ctx.restore(); };
+  // 🌧️ storm helpers: slanted rain, dark clouds (union of puffs), lightning bolt
+  const rain=(n,alpha,y0,y1)=>{ ctx.save(); ctx.lineCap='round';
+    for(let k=0;k<n;k++){ const rx=rnd()*(W+80), ry=y0+rnd()*(y1-y0), L=16+rnd()*24;
+      ctx.strokeStyle=`rgba(180,198,222,${alpha*(0.6+rnd()*0.4)})`; ctx.lineWidth=1+rnd()*1.6;
+      ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(rx-L*0.34,ry+L); ctx.stroke(); } ctx.restore(); };
+  const cloud=(c0x,c0y,s,alpha)=>{ ctx.save(); ctx.globalAlpha=alpha;
+    const g=ctx.createLinearGradient(0,c0y-70*s,0,c0y+45*s); g.addColorStop(0,'#6b7686'); g.addColorStop(1,'#262c36');
+    ctx.fillStyle=g; ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=18; ctx.beginPath();
+    [[-78,12,40],[-38,-12,52],[16,-24,60],[66,-4,48],[104,16,34],[-112,22,28]].forEach(([dx,dy,r])=>{ ctx.moveTo(c0x+dx*s+r*s,c0y+dy*s); ctx.arc(c0x+dx*s,c0y+dy*s,r*s,0,Math.PI*2); });
+    ctx.moveTo(c0x-118*s,c0y+20*s); ctx.rect(c0x-118*s,c0y+8*s,248*s,38*s); ctx.fill(); ctx.restore(); };
+  const bolt=(bx,by,s)=>{ ctx.save(); ctx.shadowColor='#ffe680'; ctx.shadowBlur=22; ctx.fillStyle='#ffe066'; ctx.beginPath();
+    ctx.moveTo(bx,by); ctx.lineTo(bx-26*s,by+92*s); ctx.lineTo(bx-6*s,by+92*s); ctx.lineTo(bx-30*s,by+200*s); ctx.lineTo(bx+22*s,by+70*s); ctx.lineTo(bx+2*s,by+70*s); ctx.lineTo(bx+22*s,by); ctx.closePath(); ctx.fill(); ctx.restore(); };
+  if(crisi){ // overcast stage: grey-blue light, rain behind the card, heavy clouds and a bolt on the left
+    const sg=ctx.createLinearGradient(0,0,0,H); sg.addColorStop(0,'rgba(60,72,90,0.55)'); sg.addColorStop(1,'rgba(20,26,36,0.2)');
+    ctx.fillStyle=sg; ctx.fillRect(0,0,W,H);
+    rain(150,0.45,-40,H);
+    bolt(44,y+40,1);
+  }
+  if(fire){ // embers floating up and an orange furnace glow behind the card
+    const fg=ctx.createRadialGradient(W/2,y+h*0.8,80,W/2,y+h*0.8,620); fg.addColorStop(0,'rgba(255,110,0,0.45)'); fg.addColorStop(1,'rgba(255,60,0,0)');
+    ctx.fillStyle=fg; ctx.fillRect(0,0,W,H);
+    for(let k=0;k<46;k++){ const ex=20+rnd()*(W-40), ey=H*0.25+rnd()*H*0.72; ctx.save(); ctx.globalAlpha=0.35+rnd()*0.6;
+      ctx.shadowColor='#ff7a00'; ctx.shadowBlur=10; ctx.beginPath(); ctx.arc(ex,ey,1.2+rnd()*3,0,Math.PI*2); ctx.fillStyle=rnd()>0.5?'#ffd166':'#ff8a1f'; ctx.fill(); ctx.restore(); }
+  }
   const glow=ctx.createRadialGradient(W/2,H*0.42,60,W/2,H*0.42,560);
   glow.addColorStop(0,t.glow+'66'); glow.addColorStop(0.55,t.glow+'1a'); glow.addColorStop(1,t.glow+'00');
   ctx.fillStyle=glow; ctx.fillRect(0,0,W,H);
   const star=(sx,sy,r,alpha)=>{ ctx.save(); ctx.globalAlpha=alpha; ctx.fillStyle=t.spark; ctx.beginPath();
     ctx.moveTo(sx,sy-r); ctx.quadraticCurveTo(sx,sy,sx+r,sy); ctx.quadraticCurveTo(sx,sy,sx,sy+r); ctx.quadraticCurveTo(sx,sy,sx-r,sy); ctx.quadraticCurveTo(sx,sy,sx,sy-r);
     ctx.fill(); ctx.restore(); };
-  for(let k=0;k<16;k++){ const side=k%2, sx=side?W-12-rnd()*52:12+rnd()*52, sy=40+rnd()*(H-120); star(sx,sy,4+rnd()*9,0.35+rnd()*0.5); }
+  for(let k=0;k<16;k++){ const side=k%2, sx=side?W-12-rnd()*52:12+rnd()*52, sy=40+rnd()*(H-120);
+    if(t.critter){ ctx.save(); ctx.globalAlpha=0.55+rnd()*0.35; ctx.textAlign='left'; ctx.font=F('400 '+Math.round(18+rnd()*16)+'px');
+      ctx.fillText(t.critter, side?W-50+rnd()*8:6+rnd()*8, sy); ctx.restore(); }
+    else if(!crisi) star(sx,sy,4+rnd()*9,0.35+rnd()*0.5); }
 
   // ── shield silhouette (k = inset) ──
   const shield=(k)=>{ const X=x+k, Y=y+k, Wd=w-2*k, Ht=h-2*k, c=46-k*0.6;
@@ -2840,7 +2923,9 @@ function drawFutCard(p, photoImg){
     ctx.lineTo(X+Wd,Y+Ht-140); ctx.quadraticCurveTo(X+Wd,Y+Ht-40,X+Wd/2,Y+Ht);
     ctx.quadraticCurveTo(X,Y+Ht-40,X,Y+Ht-140); ctx.lineTo(X,Y+c); ctx.closePath(); };
   // body: coloured halo + drop shadow + banded metal
-  ctx.save(); ctx.shadowColor=t.glow+'aa'; ctx.shadowBlur=70; shield(0); ctx.fillStyle=t.metal[1]; ctx.fill(); ctx.restore();
+  if(fire) fireBand(false);                                   // flames behind the card, climbing its sides
+  if(crisi){ cloud(W*0.27,y+4,1.25,0.97); cloud(W*0.74,y-8,1.45,0.97); }   // clouds behind the card, peeking above it
+  ctx.save(); ctx.shadowColor=fire?'#ff6a00':crisi?'#56677e':t.glow+'aa'; ctx.shadowBlur=fire?90:70; shield(0); ctx.fillStyle=t.metal[1]; ctx.fill(); ctx.restore();
   ctx.save(); ctx.shadowColor='rgba(0,0,0,0.6)'; ctx.shadowBlur=30; ctx.shadowOffsetY=16;
   const g=ctx.createLinearGradient(x,y,x+w*0.85,y+h);
   [0,0.28,0.5,0.68,1].forEach((st,k)=>g.addColorStop(st,t.metal[k]));
@@ -2881,6 +2966,11 @@ function drawFutCard(p, photoImg){
   shield(3);  ctx.strokeStyle='rgba(255,255,255,0.75)'; ctx.lineWidth=3; ctx.stroke();
   shield(16); ctx.strokeStyle=t.line; ctx.globalAlpha=0.85; ctx.lineWidth=2.5; ctx.stroke();
   shield(20); ctx.strokeStyle='rgba(0,0,0,0.22)'; ctx.lineWidth=1.5; ctx.stroke(); ctx.globalAlpha=1;
+  if(crisi){ ctx.save(); shield(0); ctx.clip();
+    ctx.globalCompositeOperation='saturation'; ctx.fillStyle='rgba(128,128,128,0.6)'; ctx.fillRect(x,y,w,h);   // colours washed out
+    ctx.globalCompositeOperation='source-over';
+    const oc=ctx.createLinearGradient(0,y,0,y+340); oc.addColorStop(0,'rgba(18,24,34,0.5)'); oc.addColorStop(1,'rgba(18,24,34,0)');
+    ctx.fillStyle=oc; ctx.fillRect(x,y,w,340); ctx.restore(); }
 
   // embossed text helper
   const etext=(txt,tx,ty,font,col,align)=>{ ctx.font=font; ctx.textAlign=align||'center';
@@ -2927,11 +3017,21 @@ function drawFutCard(p, photoImg){
   ctx.textAlign='left'; ctx.font=F('800 15px'); ctx.fillStyle='#c9d2e3'; ctx.fillText('PAG',sx0,by+32);
   ctx.save(); ctx.shadowColor=pc[0]; ctx.shadowBlur=10; ctx.font=F('900 30px'); ctx.fillStyle=pc[0];
   ctx.fillText(pTxt,sx0+wP+10,by+35); ctx.restore();
+  // 📈 form state label
+  const fk=formState(p);
+  if(fk){ const S=FORM_STATES[fk], lbl=S.label.toUpperCase();
+    ctx.font=F('900 15px'); const tw=ctx.measureText(lbl).width, aw=16, gw=aw+6+tw+22, gx=lx-gw/2, gy=y+256;
+    roundRect(ctx,gx,gy,gw,28,14); ctx.fillStyle=S.col; ctx.fill(); ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=1.5; ctx.stroke();
+    // arrow drawn as a shape (no font glyph needed)
+    const ax=gx+11, ay=gy+14; ctx.save(); ctx.translate(ax+aw/2,ay); ctx.rotate(fk==='up'?-Math.PI/4:fk==='down'?Math.PI/4:0);
+    ctx.strokeStyle='#fff'; ctx.lineWidth=3; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(-7,0); ctx.lineTo(6,0); ctx.moveTo(1,-5); ctx.lineTo(6,0); ctx.lineTo(1,5); ctx.stroke(); ctx.restore();
+    ctx.textAlign='left'; ctx.fillStyle='#fff'; ctx.fillText(lbl,gx+11+aw+6,gy+19);
+  }
   const roles=[primaryRole(p),...p.roles.filter(r=>r!==primaryRole(p))];
-  etext(roles[0],lx,y+294,F('800 40px'),t.text);
-  if(roles.length>1) etext(roles.slice(1).join(' · '),lx,y+326,F('700 23px'),t.sub);
+  etext(roles[0],lx,y+320,F('800 38px'),t.text);
+  if(roles.length>1) etext(roles.slice(1).join(' · '),lx,y+350,F('700 22px'),t.sub);
   const logo=document.querySelector('header img');
-  if(logo && logo.complete && logo.naturalWidth){ ctx.save(); ctx.shadowColor='rgba(0,0,0,0.35)'; ctx.shadowBlur=8; ctx.drawImage(logo,lx-34,y+344,68,68); ctx.restore(); }
+  if(logo && logo.complete && logo.naturalWidth){ ctx.save(); ctx.shadowColor='rgba(0,0,0,0.35)'; ctx.shadowBlur=8; ctx.drawImage(logo,lx-28,y+364,56,56); ctx.restore(); }
 
   // ── name ──
   ctx.font=F('900 52px'); const nm=fitText(ctx,p.name.toUpperCase(),w-90);
@@ -3000,6 +3100,25 @@ function drawFutCard(p, photoImg){
   const season=a&&a.pres ? `${a.pres} PG  ·  ${a.w} V  ·  ${a.goals} GOL  ·  ${a.assist} ASSIST` : 'Nessuna partita ancora';
   etext(season,cx,y+926,F('800 26px'),t.text);
 
+  // diagonal ribbon on the top-right corner (text only, centred: no emoji for Safari)
+  const ribbon=(label,stops,textShadow)=>{
+    ctx.save(); shield(0); ctx.clip(); ctx.translate(x+w-64,y+64); ctx.rotate(Math.PI/4);
+    const rg=ctx.createLinearGradient(-160,0,160,0); stops.forEach((c,k)=>rg.addColorStop(k/(stops.length-1),c));
+    ctx.shadowColor='rgba(0,0,0,0.45)'; ctx.shadowBlur=10; ctx.fillStyle=rg; ctx.fillRect(-160,-23,320,46);
+    ctx.shadowBlur=0; ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=2; ctx.strokeRect(-160,-23,320,46);
+    ctx.fillStyle='#ffffff'; ctx.textAlign='center'; ctx.font=F('900 21px');
+    ctx.shadowColor=textShadow; ctx.shadowBlur=4; ctx.fillText(label,0,8); ctx.restore(); };
+  if(crisi){
+    ctx.save(); shield(0); ctx.clip(); rain(70,0.32,y-20,y+h); ctx.restore();   // rain falling on the card too
+    cloud(x+62,y+8,0.62,0.95);                                                     // a cloud sitting on the top-left corner
+    ribbon('IN CRISI',['#a3b0c2','#5d6a7d','#2c3440'],'rgba(10,14,22,0.9)');
+  }
+  if(fire){
+    fireBand(true);                                            // small flames licking the bottom of the card
+    const fd=ctx.createLinearGradient(0,y+h-6,0,y+h+64); fd.addColorStop(0,'rgba(10,14,22,0)'); fd.addColorStop(1,'rgba(10,14,22,0.95)');
+    ctx.fillStyle=fd; ctx.fillRect(0,y+h-6,W,70);
+    ribbon('ON FIRE',['#ffd23f','#ff7a00','#e0230b'],'rgba(120,20,0,0.8)');
+  }
   // caption under the card
   ctx.fillStyle='#8a94a6'; ctx.font=F('italic 500 18px'); ctx.textAlign='center';
   ctx.fillText('CalcioLercio · figurina ufficiale della Redazione Avv. Peppe Rella',W/2,H-38);
