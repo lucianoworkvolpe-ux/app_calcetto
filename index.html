@@ -100,6 +100,41 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .rec-who{font-size:12px;color:var(--text);line-height:1.5}
 .rec-v{font-size:15px;font-weight:900;color:var(--green);white-space:nowrap}
 .cl-date{color:var(--text3);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+/* 📝 pagella della Redazione (match card) */
+.pgt-view{margin-top:6px;padding:6px 8px;border-radius:8px;background:rgba(242,201,76,.10);border-left:3px solid #e0b93c;cursor:pointer}
+.pgt-title{font-size:12.5px;font-weight:800;font-style:italic;color:var(--text)}
+.pgt-desc{font-size:11.5px;color:var(--text2);line-height:1.4;margin-top:2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap}
+.pgt-view.open .pgt-desc{display:block;-webkit-line-clamp:unset}
+.pgt-add{width:auto!important;height:auto!important;margin-top:6px;padding:5px 10px!important;font-size:11px!important;font-weight:800;border-radius:99px!important}
+.rate-btn.pgt-add{display:inline-flex;background:var(--gray2);color:var(--text)}
+#pgt-dialog{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:650;padding:18px;padding-top:calc(18px + env(safe-area-inset-top,0px));align-items:center;justify-content:center}
+.pgt-box{width:100%;max-width:520px;background:var(--gray);border-radius:var(--radius);padding:18px;box-shadow:0 12px 36px rgba(0,0,0,0.4)}
+.pgt-h{font-size:15px;color:var(--text);margin-bottom:12px}
+.pgt-box label{display:block;font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:8px 0 4px}
+.pgt-box input,.pgt-box textarea{width:100%;box-sizing:border-box;font-family:inherit;font-size:16px;padding:9px 11px;border-radius:10px;border:1.5px solid var(--gray3);background:var(--gray2);color:var(--text)}
+.pgt-box input{font-weight:800;font-style:italic}
+.pgt-box textarea{resize:vertical;min-height:120px;line-height:1.4}
+.pgt-count{text-align:right;font-size:10px;color:var(--text3);margin-top:3px}
+.pgt-btns{display:flex;gap:8px;margin-top:12px}.pgt-btns .btn{flex:1}
+/* 📥 import from WhatsApp */
+.wa-import{margin:4px 0 12px;padding:11px;border-radius:var(--radius-sm);background:rgba(37,211,102,.08);border:1.5px dashed rgba(37,211,102,.55)}
+.wa-h{font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px}
+.wa-import textarea{width:100%;box-sizing:border-box;font-family:inherit;font-size:16px;padding:9px 11px;border-radius:10px;border:1.5px solid var(--gray3);background:var(--gray2);color:var(--text);margin-bottom:8px;resize:vertical;min-height:96px}
+.wa-sum{font-size:12px;color:var(--text);margin:10px 0 6px}
+.wa-row{padding:8px 9px;border-radius:9px;background:var(--gray);margin-bottom:5px;border-left:4px solid #3aad5e}
+.wa-row.guess,.wa-row.manual{border-left-color:#e0a92e}.wa-row.miss{border-left-color:#e05c5c}
+.wa-top{display:flex;align-items:center;gap:6px}
+.wa-written{font-size:12px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:38%}
+.wa-arrow{color:var(--text3)}
+.wa-top select{flex:1;min-width:0;font-size:14px;padding:4px 6px;border-radius:8px;border:1px solid var(--gray3);background:var(--gray2);color:var(--text)}
+.wa-det{font-size:11.5px;color:var(--text2);margin-top:4px}
+.wa-why{color:#e0a92e;font-weight:700}.wa-row.miss .wa-why{color:#e05c5c}
+.wa-desc{font-size:11px;color:var(--text3);margin-top:3px;line-height:1.35}
+#pt-dialog{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:650;padding:14px;padding-top:calc(14px + env(safe-area-inset-top,0px));align-items:center;justify-content:center}
+.pt-box{max-height:calc(100vh - 40px);display:flex;flex-direction:column}
+.pt-text{flex:1;min-height:0;overflow-y:auto;white-space:pre-wrap;font-size:13px;line-height:1.45;color:var(--text);background:var(--gray2);border-radius:10px;padding:12px;-webkit-user-select:text;user-select:text;overscroll-behavior:contain}
+.pt-box .pgt-btns .btn{padding-left:6px;padding-right:6px;font-size:13px}
+.rate-btn.pgt-add[style*="none"]{display:none!important}
 /* ⚖️ Equilibrio squadre (match card) */
 .eq-toggle{margin-top:10px;font-size:13px;min-height:40px}
 #match-balance{margin-top:8px}
@@ -756,7 +791,7 @@ input[type=file]{display:none}
 ════════════════════════════════════ */
 // Version of the code that is RUNNING (bump at every release). The installed home-screen app has no reload
 // button and iOS keeps it frozen in memory: comparing this with the file on GitHub tells if it's outdated.
-const APP_VERSION='2026.10.29-o';
+const APP_VERSION='2026.10.29-s';
 let BUILD_DATE='—'; // date of the file ON THE SERVER (Last-Modified of index.html), not of the running code
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
@@ -2547,7 +2582,8 @@ function shareMatchSummary(id){
       name:playerKey(pl.id,pl.name).name,
       v:(!isNaN(v)&&v>=1)?v:null,
       g:r?parseInt(r.goals)||0:0, a:r?parseInt(r.assist)||0:0,
-      ag:r?parseInt(r.autogol)||0:0, mt:r?parseInt(r.meta)||0:0, rs:r?parseInt(r.rigoriSbagliati)||0:0
+      ag:r?parseInt(r.autogol)||0:0, mt:r?parseInt(r.meta)||0:0, rs:r?parseInt(r.rigoriSbagliati)||0:0,
+      tit:r&&r.titolo?String(r.titolo).trim():''
     };
   }).sort((x,y)=>(y.v??-1)-(x.v??-1) || x.name.localeCompare(y.name)); // best voto first
   const tA=rowsFor(m.teamA), tB=rowsFor(m.teamB);
@@ -2558,7 +2594,7 @@ function shareMatchSummary(id){
   const sbY=notes?130:110, sbH=128;           // scoreboard
   const hlY=sbY+sbH+18, hlH=84;               // highlights tiles
   const tbY=hlY+hlH+22, tbH=58;               // team blocks
-  const rowH=64, rowsY=tbY+tbH+10;
+  const anyTit=[...tA,...tB].some(p=>p.tit), rowH=anyTit?86:64, rowsY=tbY+tbH+10;   // taller rows when there are titles
   const bodyRows=Math.max(tA.length,tB.length);
   const H=rowsY+bodyRows*rowH+56;
   const {canvas,ctx}=newShareCanvas(W,H);
@@ -2620,8 +2656,9 @@ function shareMatchSummary(id){
       const isMvp=h.mvp && p.name===h.mvp.name;
       ctx.textAlign='left'; ctx.fillStyle=C.TXT; ctx.font=SHARE_FONT('700 20px');
       ctx.fillText(fitText(ctx,(isMvp?'⭐ ':'')+p.name,colW-90), x+16, y+25);
+      if(p.tit){ ctx.fillStyle='#f2c94c'; ctx.font=SHARE_FONT('italic 700 16px'); ctx.fillText(fitText(ctx,'«'+p.tit+'»',colW-90), x+16, y+48); }
       const chips=[p.g?`⚽ ${p.g}`:'', p.a?`🅰️ ${p.a}`:'', p.ag?`🙃 ${p.ag}`:'', p.rs?`❌ ${p.rs}`:'', p.mt?`🚀 ${p.mt}`:''].filter(Boolean).join('   ');
-      if(chips){ ctx.fillStyle=C.SUB; ctx.font=SHARE_FONT('600 15px'); ctx.fillText(fitText(ctx,chips,colW-90), x+16, y+46); }
+      if(chips){ ctx.fillStyle=C.SUB; ctx.font=SHARE_FONT('600 15px'); ctx.fillText(fitText(ctx,chips,colW-90), x+16, y+(anyTit?70:46)); }
       ctx.textAlign='right'; ctx.fillStyle=voteCol(p.v); ctx.font=SHARE_FONT('800 28px');
       ctx.fillText(p.v!=null?(Number.isInteger(p.v)?String(p.v):p.v.toFixed(1)):'—', x+colW-16, y+(rowH-8)/2+10);
       y+=rowH;
@@ -3785,11 +3822,11 @@ function saveAlbo(payload) {
 }
 
 function getRatings() {
-  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist','rigori_sbagliati']);
+  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist','rigori_sbagliati','titolo']);
   const data = sh.getDataRange().getValues();
   if (data.length < 2) return [];
   return data.slice(1).map(r => ({
-    matchId: r[0], player: r[1], rating: parseFloat(r[2]) || 0, notes: r[3] || '', playerId: r[4] || '', goals: parseInt(r[5]) || 0, autogol: parseInt(r[6]) || 0, meta: parseInt(r[7]) || 0, assist: parseInt(r[8]) || 0, rigoriSbagliati: parseInt(r[9]) || 0
+    matchId: r[0], player: r[1], rating: parseFloat(r[2]) || 0, notes: r[3] || '', playerId: r[4] || '', goals: parseInt(r[5]) || 0, autogol: parseInt(r[6]) || 0, meta: parseInt(r[7]) || 0, assist: parseInt(r[8]) || 0, rigoriSbagliati: parseInt(r[9]) || 0, titolo: r[10] || ''
   })).filter(r => r.matchId && (r.player || r.playerId));
 }
 
@@ -3813,7 +3850,7 @@ function deleteMatch(id) {
     if (data[i][0] === id) sh.deleteRow(i + 1);
   }
   // delete ratings too
-  const rs = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist','rigori_sbagliati']);
+  const rs = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist','rigori_sbagliati','titolo']);
   const rd = rs.getDataRange().getValues();
   for (let i = rd.length - 1; i >= 1; i--) {
     if (rd[i][0] === id) rs.deleteRow(i + 1);
@@ -3822,7 +3859,7 @@ function deleteMatch(id) {
 }
 
 function saveRatings(payload) {
-  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist','rigori_sbagliati']);
+  const sh = getSheet(SHEET_RATINGS, ['matchId','player','rating','notes','playerId','goals','autogol','meta','assist','rigori_sbagliati','titolo']);
   const data = sh.getDataRange().getValues();
   // remove old ratings for this match
   for (let i = data.length - 1; i >= 1; i--) {
@@ -3830,7 +3867,7 @@ function saveRatings(payload) {
   }
   // append new ones
   (payload.ratings || []).forEach(r => {
-    sh.appendRow([payload.matchId, r.player, r.rating, r.notes || '', r.playerId || '', r.goals || 0, r.autogol || 0, r.meta || 0, r.assist || 0, r.rigoriSbagliati || 0]);
+    sh.appendRow([payload.matchId, r.player, r.rating, r.notes || '', r.playerId || '', r.goals || 0, r.autogol || 0, r.meta || 0, r.assist || 0, r.rigoriSbagliati || 0, r.titolo || '']);
   });
   return (payload.ratings || []).length;
 }
@@ -4733,6 +4770,201 @@ function matchHighlights(m){
 }
 
 // Render the highlights panel (MVP / peggiore / capocannoniere / medie squadre)
+/* ════ 📥 IMPORTA PAGELLE DA WHATSAPP ════
+   Reads the pagellista's message as it is on WhatsApp. Supported styles (from real messages):
+   • "*Peppe 6,5* descrizione…"  + last line "_TITOLO_ 🔋" (or "…frase _TITOLO_ 💉", or "TITOLO 🔩")
+   • "_NICO voto 5,5_" / "NICO 6,5" / "FILIPPO voto 5,5" + description lines + last line in CAPS = title
+   • team lines "*BLU 8* 🔵" / "⚪ *BIANCHI 2*" separate the teams (their numbers are not used)
+   Only TITLE and DESCRIPTION are assigned: the vote is read just to recognise where a player's pagella starts.
+   Inline italics inside the description (_non abbiamo ruoli_) stay in the description. */
+const waNorm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const waWords=name=>waNorm(String(name).replace(/([a-zà-ÿ])([A-ZÀ-Þ])/g,'$1 $2')).split(' ').filter(Boolean);
+// nicknames learned by hand ("Gianluca" → Cioccolata): kept on this phone and in the roster (exported with the backup)
+function waAliasMap(){ try{ return JSON.parse(localStorage.getItem('calcio_alias')||'{}'); }catch(e){ return {}; } }
+function waRemember(written,p){
+  const k=waNorm(written).replace(/ /g,''); if(!k||!p) return;
+  const map=waAliasMap(); map[k]=p.id; try{ localStorage.setItem('calcio_alias',JSON.stringify(map)); }catch(e){}
+  p.aliases=[...new Set([...(p.aliases||[]),written.trim()])]; save();
+}
+// how strongly a written name points to a player (0 = not at all)
+function waNameScore(cand,p,map){
+  const cj=waNorm(cand).replace(/ /g,''); if(!cj||!p) return 0;
+  const words=waWords(p.name), full=words.join('');
+  if(map[cj]===p.id || (p.aliases||[]).some(a=>waNorm(a).replace(/ /g,'')===cj)) return 100;
+  if(cj===full) return 90;
+  if(words[0]===cj) return 70;
+  if(words.includes(cj)) return 60;
+  if(cj.length>=3 && full.startsWith(cj)) return 40;
+  return 0;
+}
+function waBest(name,slots,map){
+  let best=0, cands=[];
+  slots.forEach(s=>{ const sc=waNameScore(name,s.player||{id:'',name:s.name},map); if(sc>best){ best=sc; cands=[s]; } else if(sc&&sc===best) cands.push(s); });
+  return {score:best, slot:cands.length===1?cands[0]:null, ambiguous:cands.length>1?cands:null};
+}
+const WA_EMO=/[\p{Extended_Pictographic}\uFE0F\u200D\u20E3]/gu;
+// a title is short and (almost) all capitals: "RISPARMIO ENERGETICO", "SI’, CHEF!", "IN(PS)FERNALE"
+function waIsTitle(s){
+  const t=String(s).replace(WA_EMO,'').replace(/[*_~]/g,'').trim(), letters=t.match(/\p{L}/gu)||[];
+  if(letters.length<2||t.length>60||t.split(/\s+/).length>9) return false;
+  return letters.filter(c=>c!==c.toLowerCase()).length/letters.length>=0.85;
+}
+function parseWhatsAppPagelle(text,slots){
+  const map=waAliasMap(), out={blocks:[],score:{}};
+  const HEAD=/^[\s*_~]*([\p{L}'’.]+(?:\s+[\p{L}'’.]+){0,2}?)\s*[-–:]?\s*(?:voto\s*)?(10|[1-9](?:[.,]\d{1,2})?)\s*(½|\+|-)?(?!\d)[\s*_~]*(?:[-–:]\s*)?(.*)$/iu;
+  const TEAM=/^[^\p{L}\d]*(blu|bianchi)\s*(\d{1,2})?[^\p{L}\d]*$/iu;
+  let cur=null; const close=()=>{ if(cur){ out.blocks.push(cur); cur=null; } };
+  String(text).replace(/\r/g,'').split('\n').forEach(raw=>{
+    const line=raw.trim();
+    const tm=line.match(TEAM);
+    if(tm){ close(); if(tm[2]!=null) out.score[tm[1].toLowerCase()==='blu'?'A':'B']=parseInt(tm[2]); return; }
+    const hm=line.match(HEAD);
+    if(hm){
+      const name=hm[1].trim(), marked=/^[*_]/.test(line), caps=waIsTitle(name), m=waBest(name,slots,map);
+      if(m.score>0||marked||caps){        // "Altri 3 gol per lui" is not a player: no match, no markup, not in capitals
+        close();
+        let v=parseFloat(hm[2].replace(',','.')); if(hm[3]==='½') v+=0.5; else if(hm[3]==='+') v+=0.25; else if(hm[3]==='-') v-=0.25;
+        cur={written:name,vote:v,lines:[],m}; if(hm[4]&&hm[4].trim()) cur.lines.push(hm[4].trim()); return;
+      }
+    }
+    if(cur) cur.lines.push(raw.replace(/\s+$/,''));
+  });
+  close();
+  out.blocks.forEach(b=>{
+    const ls=b.lines.map(l=>l.trim()); while(ls.length&&!ls[ls.length-1]) ls.pop();
+    let title='';
+    if(ls.length){
+      const last=ls[ls.length-1];
+      if(waIsTitle(last)){ title=last; ls.pop(); }
+      else{ const mm=last.match(/^(.*?)\s*_([^_]{2,60})_\s*([\p{Extended_Pictographic}\uFE0F\u200D\s]*)$/u);
+        if(mm&&waIsTitle(mm[2])){ title=mm[2]+(mm[3].trim()?' '+mm[3].trim():''); ls[ls.length-1]=mm[1]; } }
+    }
+    b.title=title.replace(/[*_~]/g,'').replace(/\s+/g,' ').trim().slice(0,60);
+    b.desc=ls.join('\n').replace(/\n{3,}/g,'\n\n').trim().slice(0,2000);
+  });
+  return out;
+}
+let _wa=null;   // last analysis {id, res, slots}
+function waAnalyze(id){
+  const m=(matches||[]).find(x=>x.id===id), txt=document.getElementById('wa-text')?.value||''; if(!m) return;
+  if(!txt.trim()){ toast('Incolla prima il messaggio delle pagelle'); return; }
+  const A=normalizeTeam(m.teamA), B=normalizeTeam(m.teamB);
+  const slots=[...A,...B].map((pl,i)=>{ const k=playerKey(pl.id,pl.name);
+    return {pk:(i<A.length?'bl':'bi')+'-'+i, name:k.name, team:i<A.length?'A':'B', player:players.find(p=>playerKey(p.id,p.name).key===k.key)||null}; });
+  const res=parseWhatsAppPagelle(txt,slots), used=new Set();
+  res.blocks.forEach(b=>{ if(b.m.slot&&!used.has(b.m.slot.pk)){ b.assign=b.m.slot.pk; used.add(b.assign); } else b.assign=''; });
+  // one written name left and one player without a pagella → pair them (suggested, to be checked)
+  const freeB=res.blocks.filter(b=>!b.assign), freeS=slots.filter(s=>!used.has(s.pk));
+  if(freeB.length===1&&freeS.length===1){ freeB[0].assign=freeS[0].pk; freeB[0].guess=true; used.add(freeS[0].pk); }
+  _wa={id,res,slots};
+  waRenderPreview();
+}
+function waRenderPreview(){
+  const el=document.getElementById('wa-preview'); if(!el||!_wa) return;
+  const {res,slots}=_wa;
+  if(!res.blocks.length){ el.innerHTML='<div class="mb-note">Non ho trovato pagelle: controlla di aver incollato tutto il messaggio.</div>'; return; }
+  const opts=b=>`<option value="">— ignora —</option>`+slots.map(s=>`<option value="${s.pk}"${s.pk===b.assign?' selected':''}>${s.team==='A'?'🔵':'⚪'} ${esc(s.name)}</option>`).join('');
+  const rows=res.blocks.map((b,k)=>{
+    const st=!b.assign?'miss':b.guess?'guess':(b.m.slot&&b.m.slot.pk===b.assign)?'ok':'manual';
+    const why=st==='ok'?'':st==='guess'?'abbinato per esclusione: controlla':st==='miss'?(b.m.ambiguous?'nome ambiguo: scegli il giocatore':'non riconosciuto: scegli il giocatore'):'abbinato a mano';
+    return `<div class="wa-row ${st}">
+      <div class="wa-top"><input type="checkbox" id="wa-on-${k}" ${b.assign?'checked':''} onchange="_wa.res.blocks[${k}].on=this.checked">
+        <span class="wa-written">“${esc(b.written)}”</span><span class="wa-arrow">→</span>
+        <select onchange="waAssign(${k},this.value)">${opts(b)}</select></div>
+      <div class="wa-det">${b.title?`<i>«${esc(b.title)}»</i>`:'<span style="color:var(--text3)">senza titolo</span>'}${why?` · <span class="wa-why">${why}</span>`:''}${b.assign&&!(document.getElementById('rate-'+b.assign)?.value)?` · <span class="wa-why">manca il voto nell'app</span>`:''}</div>
+      ${b.desc?`<div class="wa-desc">${esc(b.desc.slice(0,140))}${b.desc.length>140?'…':''}</div>`:''}
+    </div>`; }).join('');
+  const assigned=new Set(res.blocks.filter(b=>b.assign).map(b=>b.assign));
+  const missing=slots.filter(s=>!assigned.has(s.pk)).map(s=>s.name);
+  el.innerHTML=`<div class="wa-sum">Trovate <b>${res.blocks.length}</b> pagelle · riconosciuti <b>${res.blocks.filter(b=>b.assign).length}</b> giocatori · verranno assegnati solo <b>titolo e descrizione</b></div>
+    ${rows}
+    ${missing.length?`<div class="mb-note">Senza pagella nel messaggio: ${missing.map(esc).join(', ')}</div>`:''}
+    <button type="button" class="btn btn-primary btn-full" style="margin-top:8px" onclick="waApply()">✅ Assegna titoli e descrizioni</button>`;
+}
+function waAssign(k,pk){
+  const b=_wa.res.blocks[k]; b.assign=pk; b.guess=false;
+  // the same player can't receive two pagelle
+  _wa.res.blocks.forEach((o,j)=>{ if(j!==k&&pk&&o.assign===pk){ o.assign=''; } });
+  waRenderPreview();
+}
+function waApply(){
+  if(!_wa) return;
+  let n=0;
+  _wa.res.blocks.forEach((b,k)=>{
+    const on=document.getElementById('wa-on-'+k)?.checked; if(!on||!b.assign) return;
+    const pk=b.assign, slot=_wa.slots.find(s=>s.pk===pk);
+    // only TITLE and DESCRIPTION are assigned: voti, gol and risultato stay as entered by hand
+    const t=document.getElementById('tit-'+pk), d=document.getElementById('desc-'+pk);
+    if(t) t.value=b.title; if(d) d.value=b.desc;
+    const pv=document.getElementById('pv-'+pk); if(pv) pv.innerHTML=pgtViewHTML(b.title,b.desc);
+    const pb=document.getElementById('pb-'+pk); if(pb) pb.textContent=(b.title||b.desc)?'✏️ Modifica pagella':'＋ Pagella';
+    // remember nicknames matched by hand or by exclusion ("Gianluca" → Cioccolata)
+    if(slot&&slot.player&&waNameScore(b.written,slot.player,waAliasMap())<60) waRemember(b.written,slot.player);
+    n++;
+  });
+  toast(`📥 Titolo e descrizione assegnati a ${n} giocatori: controlla e salva 💾`);
+  document.getElementById('wa-preview').innerHTML='';
+}
+
+// 📜 All the pagelle of a match as ONE text (WhatsApp formatting: *bold*, _italic_), to read and share
+function pagelleText(m){
+  const ratings=(matchesCache.data?.ratings||[]).filter(r=>r.matchId===m.id);
+  const num=v=>{const n=parseInt(v);return isNaN(n)?null:n;}, sa=num(m.scoreA), sb=num(m.scoreB), has=sa!=null&&sb!=null;
+  const fmtV=v=>Number.isInteger(v)?String(v):v.toFixed(1);
+  const rows=team=>normalizeTeam(team).map(pl=>{
+    const k=playerKey(pl.id,pl.name), r=ratings.find(x=>playerKey(x.playerId,x.player).key===k.key);
+    const v=r?parseFloat(r.rating):NaN;
+    return {name:k.name, v:(!isNaN(v)&&v>=1)?v:null, tit:r&&r.titolo?String(r.titolo).trim():'', desc:r&&r.notes?String(r.notes).trim():'',
+            g:r?parseInt(r.goals)||0:0, a:r?parseInt(r.assist)||0:0, ag:r?parseInt(r.autogol)||0:0, rs:r?parseInt(r.rigoriSbagliati)||0:0};
+  }).sort((x,y)=>(y.v??-1)-(x.v??-1)||x.name.localeCompare(y.name));
+  const block=(label,team)=>{
+    const out=[label];
+    rows(team).forEach(p=>{
+      const stats=[p.g?`⚽${p.g}`:'',p.a?`🅰️${p.a}`:'',p.ag?`🙃${p.ag}`:'',p.rs?`❌${p.rs}`:''].filter(Boolean).join(' ');
+      out.push('',`*${p.name}${p.v!=null?' '+fmtV(p.v):''}*${p.tit?` — _«${p.tit}»_`:''}${stats?`  (${stats})`:''}`);
+      if(p.desc) out.push(p.desc);
+    });
+    return out.join('\n');
+  };
+  const h=matchHighlights(m);
+  const head=[`📰 *LE PAGELLE DI CALCIOLERCIO*`, `📅 ${formatDate(m.date)}`];
+  if(has) head.push(`🔵 Blu *${sa} – ${sb}* Bianchi ⚪ · ${sa===sb?'Pareggio':(sa>sb?'Vince Blu':'Vince Bianchi')}`);
+  if((m.notes||'').trim()) head.push(`_${m.notes.trim()}_`);
+  const foot=[];
+  if(h.mvp) foot.push(`⭐ MVP: *${h.mvp.name}*`);
+  if(h.worst && (!h.mvp || h.worst.name!==h.mvp.name)) foot.push(`🥴 Peggiore: *${h.worst.name}*`);
+  return [head.join('\n'), block('🔵 *BLU*',m.teamA), block('⚪ *BIANCHI*',m.teamB), [...foot,'','✒️ _a cura della Redazione Avv. Peppe Rella_'].join('\n')].join('\n\n');
+}
+function openPagelleText(id){
+  const m=(matches||[]).find(x=>x.id===id); if(!m) return;
+  const txt=pagelleText(m);
+  let dlg=document.getElementById('pt-dialog');
+  if(!dlg){ dlg=document.createElement('div'); dlg.id='pt-dialog'; document.body.appendChild(dlg); }
+  dlg.innerHTML=`<div class="pgt-box pt-box">
+      <div class="pgt-h">📜 Tutte le pagelle</div>
+      <div class="pt-text" id="pt-text"></div>
+      <div class="pgt-btns">
+        <button type="button" class="btn btn-secondary" onclick="closePagelleText()">Chiudi</button>
+        <button type="button" class="btn btn-secondary" onclick="copyPagelleText()">📋 Copia</button>
+        <button type="button" class="btn btn-primary" style="background:#25D366;border-color:#25D366" onclick="sharePagelleText()">📲 Condividi</button>
+      </div>
+      <div class="mb-note" style="text-align:center">Il testo usa il formato di WhatsApp: *grassetto* e _corsivo_.</div>
+    </div>`;
+  document.getElementById('pt-text').textContent=txt;   // shown exactly as it will be shared
+  dlg.dataset.txt=txt; dlg.style.display='flex';
+}
+function closePagelleText(){ const d=document.getElementById('pt-dialog'); if(d) d.style.display='none'; repairViewport(); }
+async function copyPagelleText(){
+  const t=document.getElementById('pt-dialog')?.dataset.txt||'';
+  try{ await navigator.clipboard.writeText(t); toast('📋 Testo copiato: incollalo su WhatsApp'); }
+  catch(e){ const r=document.createRange(); r.selectNodeContents(document.getElementById('pt-text')); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast('Seleziona e copia il testo'); }
+}
+async function sharePagelleText(){
+  const t=document.getElementById('pt-dialog')?.dataset.txt||'';
+  if(navigator.share){ try{ await navigator.share({text:t}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
+  copyPagelleText();   // no share sheet (computer): copy instead
+}
+
 // ⚖️ Equilibrio squadre of a saved match: the same data as the draw in Gioca
 function toggleMatchBalance(id){
   const box=document.getElementById('match-balance'), btn=document.getElementById('match-balance-btn'); if(!box) return;
@@ -4838,6 +5070,8 @@ function openMatch(id){
         const meta=r&&r.meta?r.meta:'';
         const ast=r&&r.assist?r.assist:'';
         const rig=r&&r.rigoriSbagliati?r.rigoriSbagliati:'';
+        const tit=r&&r.titolo?String(r.titolo):'', desc=r&&r.notes?String(r.notes):'';   // 📝 pagella della Redazione
+        const pk=cls+'-'+localIdx;
         // anyone with gol / assist / autogol / rigori sbagliati must have a voto → red outline if missing
         const chk=[gid,xid,aid,sid].map(x=>`checkGoalRating('${rid}','${x}')`).join(';');
         // compact counter: emoji label on top, [−][value][+] below
@@ -4865,6 +5099,12 @@ function openMatch(id){
             ${cnt(aid,'🙃','Autogol',og,20,true)}
             ${cnt(sid,'❌','Rigori sbagliati',rig,10,true)}
             ${cnt(mid,'🚀','Meta — tiri alle stelle',meta,50,false)}
+          </div>
+          <div id="pv-${pk}">${pgtViewHTML(tit,desc)}</div>
+          <button type="button" class="rate-btn pgt-add" id="pb-${pk}" data-name="${esc(pl.name)}" onclick="togglePagellaEdit('${pk}',this)">${(tit||desc)?'✏️ Modifica pagella':'＋ Pagella'}</button>
+          <div class="pgt-edit" id="pe-${pk}" style="display:none"><!-- hidden: filled by the 📝 dialog, read by saveRatings -->
+            <input type="text" id="tit-${pk}" maxlength="60" placeholder="Titolo (es. Il Muro di Berlino)" value="${esc(tit)}">
+            <textarea id="desc-${pk}" maxlength="2000" rows="3" placeholder="Descrizione della prestazione">${esc(desc)}</textarea>
           </div>
         </div>`;
       }).join('')}
@@ -4912,6 +5152,14 @@ function openMatch(id){
         ${renderTeam('🔵 Blu',teamA,true)}
         ${renderTeam('⚪ Bianchi',teamB,false)}
       </div>
+      <button type="button" class="btn btn-secondary btn-full" style="margin-bottom:12px" onclick="openPagelleText('${id}')">📜 Condividi tutte le pagelle</button>
+      <div id="wa-import" class="wa-import" style="display:none">
+        <div class="wa-h">📥 Importa pagelle da WhatsApp</div>
+        <div class="mb-note" style="margin:0 0 8px">Incolla qui tutto il messaggio delle pagelle: l'app riconosce i giocatori e assegna a ciascuno <b>titolo e descrizione</b>. Voti, gol e risultato restano quelli che inserisci tu. Prima di assegnare ti mostra cosa ha capito.</div>
+        <textarea id="wa-text" rows="5" placeholder="Incolla il messaggio di WhatsApp…"></textarea>
+        <button type="button" class="btn btn-secondary btn-full" onclick="waAnalyze('${id}')">🔍 Analizza il messaggio</button>
+        <div id="wa-preview"></div>
+      </div>
       <div id="match-actions" style="display:none;gap:8px">
         <button class="btn btn-primary" style="flex:1" onclick="saveRatings('${id}')">💾 Salva partita</button>
         <button class="btn btn-danger" onclick="deleteMatch('${id}')">🗑️</button>
@@ -4924,16 +5172,51 @@ function openMatch(id){
 }
 
 // Lock/unlock the match modal. Locked = read-only (view stats safely).
+// 📝 pagella della Redazione: preview under the player + full-width dialog to write it
+// WhatsApp markup → HTML (after escaping): *bold*, _italic_
+const waHTML=s=>esc(s).replace(/\*([^*\n]+)\*/g,'<b>$1</b>').replace(/(^|[\s(])_([^_\n]+)_(?=$|[\s.,;:!?)])/gm,'$1<i>$2</i>');
+function pgtViewHTML(tit,desc){
+  if(!tit&&!desc) return '';
+  return `<div class="pgt-view" onclick="this.classList.toggle('open')">${tit?`<div class="pgt-title">«${esc(tit)}»</div>`:''}${desc?`<div class="pgt-desc">${waHTML(desc)}</div>`:''}</div>`;
+}
+function togglePagellaEdit(pk,btn){
+  const T=document.getElementById('tit-'+pk), D=document.getElementById('desc-'+pk); if(!T||!D) return;
+  let dlg=document.getElementById('pgt-dialog');
+  if(!dlg){ dlg=document.createElement('div'); dlg.id='pgt-dialog'; document.body.appendChild(dlg); }
+  dlg.innerHTML=`<div class="pgt-box">
+      <div class="pgt-h">📝 Pagella di <b>${esc(btn?.dataset.name||'')}</b></div>
+      <label for="pgt-d-tit">Titolo</label>
+      <input type="text" id="pgt-d-tit" maxlength="60" placeholder="es. Il Muro di Berlino">
+      <label for="pgt-d-desc">Descrizione della prestazione</label>
+      <textarea id="pgt-d-desc" maxlength="2000" rows="6" placeholder="Scrivi qui la pagella…" oninput="document.getElementById('pgt-d-n').textContent=this.value.length"></textarea>
+      <div class="pgt-count"><span id="pgt-d-n">0</span>/2000</div>
+      <div class="pgt-btns"><button type="button" class="btn btn-secondary" onclick="closePagellaDialog()">Annulla</button>
+        <button type="button" class="btn btn-primary" onclick="applyPagella('${pk}')">Fatto</button></div>
+    </div>`;
+  document.getElementById('pgt-d-tit').value=T.value; document.getElementById('pgt-d-desc').value=D.value;
+  document.getElementById('pgt-d-n').textContent=D.value.length;
+  dlg.style.display='flex';
+}
+function closePagellaDialog(){ releaseKeyboard(); const d=document.getElementById('pgt-dialog'); if(d) d.style.display='none'; repairViewport(); }
+function applyPagella(pk){
+  const t=document.getElementById('pgt-d-tit').value.trim().slice(0,60), d=document.getElementById('pgt-d-desc').value.trim().slice(0,2000);
+  document.getElementById('tit-'+pk).value=t; document.getElementById('desc-'+pk).value=d;
+  document.getElementById('pv-'+pk).innerHTML=pgtViewHTML(t,d);
+  const b=document.getElementById('pb-'+pk); if(b) b.textContent=(t||d)?'✏️ Modifica pagella':'＋ Pagella';
+  closePagellaDialog();
+  if(t||d) toast('📝 Pagella pronta: ricordati di salvare 💾');
+}
 function setMatchEditable(on){
   const body=document.getElementById('match-fields');
   if(!body)return;
   // all inputs (voto, gol, punteggio, note)
-  body.querySelectorAll('input').forEach(el=>{ el.disabled=!on; });
+  body.querySelectorAll('input,textarea').forEach(el=>{ el.disabled=!on; });
   // all +/- stepper buttons
   body.querySelectorAll('.rate-btn').forEach(el=>{ el.style.display=on?'':'none'; });
   // save/delete actions only when editing
   const actions=document.getElementById('match-actions');
   if(actions)actions.style.display=on?'flex':'none';
+  const wa=document.getElementById('wa-import'); if(wa) wa.style.display=on?'block':'none';   // 📥 only while editing
   // the Edita button hides once editing
   const eb=document.getElementById('edit-toggle-btn');
   if(eb)eb.style.display=on?'none':'';
@@ -5013,6 +5296,8 @@ async function saveRatings(matchId){
     const mEl=document.getElementById('meta-'+teamCls+'-'+i);
     const xEl=document.getElementById('ast-'+teamCls+'-'+i);
     const sEl=document.getElementById('rig-'+teamCls+'-'+i);
+    const tit=(document.getElementById('tit-'+teamCls+'-'+i)?.value||'').trim().slice(0,60);
+    const desc=(document.getElementById('desc-'+teamCls+'-'+i)?.value||'').trim().slice(0,2000);
     const v=clampRating(el?.value);          // null if empty/invalid, else 1–10 snapped to .5
     const g=clampInt(gEl?.value, 0, 20, 0);  // 0–20 integer
     const asv=clampInt(xEl?.value, 0, 20, 0); // assist 0–20
@@ -5021,7 +5306,7 @@ async function saveRatings(matchId){
     const mt=clampInt(mEl?.value, 0, 50, 0); // meta (tiri alle stelle) 0–50
     const hasRating=(v!==null);
     // RULE: chi ha gol, assist, autogol o rigori sbagliati deve avere un voto (ha per forza giocato)
-    if((g>0||asv>0||ag>0||rsv>0) && !hasRating){
+    if((g>0||asv>0||ag>0||rsv>0||tit||desc) && !hasRating){
       goalNoRating.push(pl.name);
       return;
     }
@@ -5034,7 +5319,8 @@ async function saveRatings(matchId){
         playerId:pl.id||'',
         player:pl.name,
         rating:v,
-        notes:'',
+        notes:desc,          // 📝 descrizione della prestazione (colonna "notes" del foglio pagelle)
+        titolo:tit,          // 📝 titolo della pagella (colonna "titolo")
         goals:g,
         autogol:ag,
         meta:mt,
@@ -5046,7 +5332,7 @@ async function saveRatings(matchId){
 
   // block save if anyone with gol/assist/autogol is missing a rating
   if(goalNoRating.length){
-    toast(`⚠️ Metti il voto a: ${goalNoRating.join(', ')} (ha gol/assist/autogol/rigori registrati)`);
+    toast(`⚠️ Metti il voto a: ${goalNoRating.join(', ')} (ha gol, assist, autogol, rigori o pagella)`);
     return;
   }
 
