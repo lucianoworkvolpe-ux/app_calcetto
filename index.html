@@ -116,6 +116,31 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .pgt-box textarea{resize:vertical;min-height:120px;line-height:1.4}
 .pgt-count{text-align:right;font-size:10px;color:var(--text3);margin-top:3px}
 .pgt-btns{display:flex;gap:8px;margin-top:12px}.pgt-btns .btn{flex:1}
+/* 📰 La Gazzetta */
+.gaz-sec{margin-top:10px}
+.gaz-h{font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.gaz-thumb{display:block;width:100%;max-height:420px;object-fit:contain;border-radius:12px;background:#000;cursor:zoom-in;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.gaz-edit{gap:6px;margin-top:8px;flex-wrap:wrap}
+#gaz-viewer{display:none;position:fixed;inset:0;z-index:800;background:#000;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.gv-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;color:#fff;font-size:14px;font-weight:700}
+.gv-top button{background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer}
+.gv-img{flex:1;min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.gv-img img{max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-in}
+.gv-img.zoom{display:block}
+.gv-img.zoom img{max-width:none;max-height:none;width:200%;cursor:zoom-out}
+.gv-btns{display:flex;gap:8px;padding:10px 14px}
+.gv-btns button{flex:1;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;background:#25D366;color:#fff;font-family:inherit}
+.gv-btns button+button{background:rgba(255,255,255,.15)}
+.gaz-strip-card{padding:10px 11px}
+.gaz-strip-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.gaz-strip-h button{border:none;background:none;color:var(--green);font-weight:800;font-size:12px;cursor:pointer;font-family:inherit}
+.gaz-strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.gaz-strip::-webkit-scrollbar{display:none}
+.gaz-tile{flex:0 0 auto;cursor:pointer;text-align:center}
+.gaz-strip .gaz-tile img{width:108px;height:144px;object-fit:cover;border-radius:10px;background:#000;display:block;box-shadow:0 3px 10px rgba(0,0,0,.3)}
+.gaz-tile span{display:block;font-size:10px;color:var(--text2);margin-top:4px;font-weight:700}
+.gaz-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:6px}
+.gaz-grid .gaz-tile img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;background:#000;display:block}
 /* 📥 import from WhatsApp */
 .wa-import{margin:4px 0 12px;padding:11px;border-radius:var(--radius-sm);background:rgba(37,211,102,.08);border:1.5px dashed rgba(37,211,102,.55)}
 .wa-h{font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px}
@@ -699,6 +724,8 @@ input[type=file]{display:none}
   <div id="partite-content" style="display:none">
     <!-- ultima partita in evidenza, con Formazioni / Riepilogo / Foglio -->
     <div id="last-match"></div>
+    <!-- 📰 le Gazzette più recenti -->
+    <div id="gaz-strip"></div>
     <!-- tutte le partite, divise per stagione -->
     <div class="card" id="matches-card">
       <div id="matches-list">
@@ -791,7 +818,7 @@ input[type=file]{display:none}
 ════════════════════════════════════ */
 // Version of the code that is RUNNING (bump at every release). The installed home-screen app has no reload
 // button and iOS keeps it frozen in memory: comparing this with the file on GitHub tells if it's outdated.
-const APP_VERSION='2026.10.29-s';
+const APP_VERSION='2026.10.29-t';
 let BUILD_DATE='—'; // date of the file ON THE SERVER (Last-Modified of index.html), not of the running code
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
@@ -1807,7 +1834,7 @@ async function loadAndRefreshPagelle(i){
     const data=await backendCall('matches');
     if(data.ok){
       matches=data.matches||[];
-      matchesCache.data={matches, ratings:data.ratings||[], albo:Array.isArray(data.albo)?data.albo:null};
+      matchesCache.data={matches, ratings:data.ratings||[], albo:Array.isArray(data.albo)?data.albo:null, gazzette:Array.isArray(data.gazzette)?data.gazzette:null};
       matchesCache.timestamp=Date.now();
       saveCacheToStorage();
     }
@@ -3633,7 +3660,7 @@ async function ensureMatchesCachedForRosa(){
     const data=await backendCall('matches');
     if(data.ok){
       matches=data.matches||[];
-      matchesCache.data={matches,ratings:data.ratings||[], albo:Array.isArray(data.albo)?data.albo:null};
+      matchesCache.data={matches,ratings:data.ratings||[], albo:Array.isArray(data.albo)?data.albo:null, gazzette:Array.isArray(data.gazzette)?data.gazzette:null};
       matchesCache.timestamp=Date.now();
       saveCacheToStorage();
       // refresh all pag badges on Rosa
@@ -3728,14 +3755,18 @@ function getAppsScriptCode(){
   return `// CalcioLercio backend — incolla in Apps Script del tuo foglio Google
 const SHEET_MATCHES = 'partite';
 const SHEET_RATINGS = 'pagelle';
-const SHEET_ALBO = 'albo_oro';   // albo d'oro: premi e imprese di ogni stagione
+const SHEET_ALBO = 'albo_oro';
+const SHEET_GAZ = 'gazzette';     // 📰 one row per Gazzetta (image saved in Google Drive)
+const GAZ_HEADERS = ['matchId','data','fileId','url','nome','caricata'];
+const GAZ_FOLDER = 'CalcioLercio – Gazzette';   // albo d'oro: premi e imprese di ogni stagione
 const ALBO_HEADERS = ['stagione','chiave','dal','al','stato','premio','titolo','giocatore','valore','aggiornato'];
 
 function doGet(e) {
   const action = e.parameter.action || 'ping';
   try {
     if (action === 'ping') return out({ok:true, matchCount:getMatches().length});
-    if (action === 'matches') return out({ok:true, matches:getMatches(), ratings:getRatings(), albo:getAlbo()});
+    if (action === 'matches') return out({ok:true, matches:getMatches(), ratings:getRatings(), albo:getAlbo(), gazzette:getGazzette()});
+    if (action === 'gazFile') return out(Object.assign({ok:true}, getGazFile(e.parameter.id)));
     return out({ok:false, error:'unknown action'});
   } catch(err) {
     return out({ok:false, error:String(err)});
@@ -3751,6 +3782,8 @@ function doPost(e) {
     if (action === 'saveRatings') return out({ok:true, saved:saveRatings(body)});
     if (action === 'updateScore') return out({ok:true, updated:updateScore(body)});
     if (action === 'saveAlbo')    return out({ok:true, saved:saveAlbo(body)});
+    if (action === 'uploadGazzetta') return out(Object.assign({ok:true}, uploadGazzetta(body)));
+    if (action === 'deleteGazzetta') return out({ok:true, deleted:deleteGazzetta(body)});
     return out({ok:false, error:'unknown action'});
   } catch(err) {
     return out({ok:false, error:String(err)});
@@ -3855,7 +3888,52 @@ function deleteMatch(id) {
   for (let i = rd.length - 1; i >= 1; i--) {
     if (rd[i][0] === id) rs.deleteRow(i + 1);
   }
+  deleteGazzetta({matchId: id});   // its Gazzetta goes to the Drive bin too
   return true;
+}
+
+// ── 📰 Gazzette: images in the Drive folder GAZ_FOLDER, references in the sheet "gazzette" ──
+function getGazFolder() {
+  const it = DriveApp.getFoldersByName(GAZ_FOLDER);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(GAZ_FOLDER);
+}
+function getGazzette() {
+  const sh = getSheet(SHEET_GAZ, GAZ_HEADERS);
+  const data = sh.getDataRange().getValues();
+  if (data.length < 2) return [];
+  return data.slice(1).filter(r => r[0] && r[2]).map(r => ({
+    matchId: r[0],
+    data: (r[1] instanceof Date) ? Utilities.formatDate(r[1], 'Europe/Rome', 'yyyy-MM-dd') : String(r[1] || ''),
+    fileId: r[2], url: r[3], nome: r[4],
+    caricata: (r[5] instanceof Date) ? r[5].toISOString() : String(r[5] || '')
+  }));
+}
+// one Gazzetta per match: a new upload replaces the previous one (the old file goes to the Drive bin)
+function uploadGazzetta(p) {
+  if (!p.matchId || !p.data) throw new Error('dati mancanti');
+  deleteGazzetta({matchId: p.matchId});
+  const blob = Utilities.newBlob(Utilities.base64Decode(p.data), p.mime || 'image/jpeg', p.name || ('gazzetta_' + p.matchId + '.jpg'));
+  const file = getGazFolder().createFile(blob);
+  try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
+  getSheet(SHEET_GAZ, GAZ_HEADERS).appendRow([p.matchId, p.date || '', file.getId(), file.getUrl(), file.getName(), new Date()]);
+  return {fileId: file.getId(), url: file.getUrl(), nome: file.getName()};
+}
+function deleteGazzetta(p) {
+  const sh = getSheet(SHEET_GAZ, GAZ_HEADERS);
+  const data = sh.getDataRange().getValues();
+  let n = 0;
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (data[i][0] === p.matchId) {
+      try { DriveApp.getFileById(data[i][2]).setTrashed(true); } catch (e) {}
+      sh.deleteRow(i + 1); n++;
+    }
+  }
+  return n;
+}
+// the image itself (base64), so the app can share or save it as a file
+function getGazFile(id) {
+  const f = DriveApp.getFileById(id), b = f.getBlob();
+  return {mime: b.getContentType(), data: Utilities.base64Encode(b.getBytes()), nome: f.getName()};
 }
 
 function saveRatings(payload) {
@@ -3926,7 +4004,7 @@ async function loadMatches(force){
     const data=await backendCall('matches');
     if(!data.ok)throw new Error(data.error||'errore sconosciuto');
     matches=data.matches||[];
-    matchesCache.data={matches, ratings:data.ratings||[], albo:Array.isArray(data.albo)?data.albo:null};
+    matchesCache.data={matches, ratings:data.ratings||[], albo:Array.isArray(data.albo)?data.albo:null, gazzette:Array.isArray(data.gazzette)?data.gazzette:null};
     matchesCache.timestamp=Date.now();
     saveCacheToStorage();
     renderMatchesList();
@@ -3967,6 +4045,7 @@ function renderMatchesList(){
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
           <span style="font-size:13px;font-weight:800;color:var(--text)">${formatDate(m.date)}</span>
           ${score?`<span style="font-size:13px;font-weight:800;color:var(--green)">${score}</span>`:''}
+          ${gazOf(m.id)?'<span title="Ha la Gazzetta" style="font-size:13px">📰</span>':''}
         </div>
         <div style="font-size:11px;color:var(--text2)">${totalPlayers} giocatori · ${ratedCount}/${totalPlayers} pagelle</div>
         ${m.notes?`<div style="font-size:11px;color:var(--text3);font-style:italic;margin-top:2px">${esc(m.notes)}</div>`:''}
@@ -3989,6 +4068,7 @@ function renderMatchesList(){
 // everything that depends on matches/pagelle: Partite, Classifiche, precision in Gioca
 function renderScorers(){
   renderLastMatch();
+  renderGazStrip();
   renderClassifiche();
   renderGiocaPrecision();
 }
@@ -4906,6 +4986,120 @@ function waApply(){
   document.getElementById('wa-preview').innerHTML='';
 }
 
+/* ════ 📰 LA GAZZETTA — images saved in Google Drive (via the Apps Script), one per match ════ */
+const gazList=()=>matchesCache.data?.gazzette||[];
+const gazOf=id=>gazList().find(g=>g.matchId===id)||null;
+// Drive serves public images through the thumbnail endpoint: small for lists, big for the viewer
+const gazImg=(g,w)=>`https://drive.google.com/thumbnail?id=${encodeURIComponent(g.fileId)}&sz=w${w||600}`;
+function gazSectionHTML(m){
+  const g=gazOf(m.id);
+  return `<div class="gaz-sec" id="gaz-sec">
+    ${g?`<div class="gaz-h">📰 La Gazzetta</div><img class="gaz-thumb" src="${gazImg(g,900)}" alt="La Gazzetta" loading="lazy" onclick="openGazzetta('${m.id}')">`:''}
+    <div class="gaz-edit" style="display:none">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="pickGazzetta('${m.id}')">${g?'🔄 Sostituisci la Gazzetta':'📰 Carica la Gazzetta'}</button>
+      ${g?`<button type="button" class="btn btn-secondary btn-sm" style="color:var(--red)" onclick="removeGazzetta('${m.id}')">🗑 Rimuovi</button>`:''}
+    </div>
+  </div>`;
+}
+let _gazTarget=null;
+// opened directly from the tap (iOS only opens the photo picker inside a user gesture)
+function pickGazzetta(id){
+  _gazTarget=id;
+  let inp=document.getElementById('gaz-input');
+  if(!inp){ inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.id='gaz-input'; inp.style.display='none';
+    inp.addEventListener('change',onGazFile); document.body.appendChild(inp); }
+  inp.value=''; inp.click();
+}
+// compressed on the phone: long side ≤ 2000 px, JPEG — about 0.5 MB instead of 3–5 MB, same look
+async function gazCompress(file){
+  const url=URL.createObjectURL(file), im=new Image(); im.src=url;
+  try{ await im.decode(); }catch(e){ URL.revokeObjectURL(url); throw new Error('immagine non leggibile'); }
+  const s=Math.min(1,2000/Math.max(im.naturalWidth,im.naturalHeight)), w=Math.round(im.naturalWidth*s), h=Math.round(im.naturalHeight*s);
+  const c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d');
+  x.fillStyle='#fff'; x.fillRect(0,0,w,h); x.drawImage(im,0,0,w,h); URL.revokeObjectURL(url);
+  return c.toDataURL('image/jpeg',0.86).split(',')[1];
+}
+async function onGazFile(e){
+  const f=e.target.files&&e.target.files[0], id=_gazTarget; if(!f||!id) return;
+  const m=(matches||[]).find(x=>x.id===id);
+  toast('⏳ Carico la Gazzetta…');
+  try{
+    const data=await gazCompress(f);
+    const r=await backendCall('uploadGazzetta',{matchId:id,date:m?.date||'',mime:'image/jpeg',data,name:`gazzetta_${m?.date||id}.jpg`});
+    if(!r||!r.ok) throw new Error(r&&r.error||'errore');
+    const g={matchId:id,data:m?.date||'',fileId:r.fileId,url:r.url,nome:r.nome,caricata:new Date().toISOString()};
+    matchesCache.data={...(matchesCache.data||{}),gazzette:gazList().filter(x=>x.matchId!==id).concat([g])};
+    saveCacheToStorage(); refreshGazUI(id);
+    toast('📰 Gazzetta salvata');
+  }catch(err){
+    toast(String(err&&err.message||err).includes('unknown action')?'⚠️ Aggiorna lo script Google per salvare le Gazzette':'❌ Caricamento non riuscito: '+(err&&err.message||err));
+  }
+}
+async function removeGazzetta(id){
+  const ok=await confirmModal({title:'Rimuovere la Gazzetta?',msg:'L\'immagine finisce nel cestino di Google Drive.',icon:'📰',okLabel:'Rimuovi',danger:true});
+  if(!ok) return;
+  try{ const r=await backendCall('deleteGazzetta',{matchId:id}); if(!r||!r.ok) throw new Error(r&&r.error||'errore');
+    matchesCache.data={...matchesCache.data,gazzette:gazList().filter(x=>x.matchId!==id)}; saveCacheToStorage(); refreshGazUI(id); toast('🗑 Gazzetta rimossa');
+  }catch(err){ toast('❌ Non riuscito: '+(err&&err.message||err)); }
+}
+// redraw what shows the Gazzetta: the open match card (still in edit mode), the Partite strip and list
+function refreshGazUI(id){
+  const sec=document.getElementById('gaz-sec'), m=(matches||[]).find(x=>x.id===id);
+  if(sec&&m){ const tmp=document.createElement('div'); tmp.innerHTML=gazSectionHTML(m); sec.replaceWith(tmp.firstElementChild);
+    document.querySelectorAll('#gaz-sec .gaz-edit').forEach(el=>el.style.display='flex'); }
+  renderMatchesList();
+}
+// full-screen viewer: tap the image to zoom, share/save the original file
+function openGazzetta(id,fromArchive){
+  const g=gazOf(id); if(!g) return;
+  const m=(matches||[]).find(x=>x.id===id), num=v=>{const n=parseInt(v);return isNaN(n)?null:n;};
+  const res=m&&num(m.scoreA)!=null&&num(m.scoreB)!=null?` · 🔵 ${m.scoreA} – ${m.scoreB} ⚪`:'';
+  let v=document.getElementById('gaz-viewer');
+  if(!v){ v=document.createElement('div'); v.id='gaz-viewer'; document.body.appendChild(v); }
+  v.innerHTML=`<div class="gv-top"><span>📰 ${formatDate(m?.date||g.data)}${res}</span><button type="button" onclick="closeGazzetta()" aria-label="Chiudi">✕</button></div>
+    <div class="gv-img" onclick="this.classList.toggle('zoom')"><img src="${gazImg(g,2000)}" alt="La Gazzetta"></div>
+    <div class="gv-btns"><button type="button" onclick="shareGazzetta('${id}')">📲 Condividi o salva</button>
+      ${fromArchive&&m?`<button type="button" onclick="closeGazzetta();closeMatchModal();openMatch('${id}')">📋 Vai alla partita</button>`:''}</div>`;
+  v.style.display='flex';
+}
+function closeGazzetta(){ const v=document.getElementById('gaz-viewer'); if(v) v.style.display='none'; }
+async function shareGazzetta(id){
+  const g=gazOf(id); if(!g) return;
+  toast('⏳ Preparo l\'immagine…');
+  try{
+    const res=await fetch(backendUrl+'?action=gazFile&id='+encodeURIComponent(g.fileId)); const r=await res.json();
+    if(!r.ok) throw new Error(r.error||'errore');
+    const bytes=Uint8Array.from(atob(r.data),c=>c.charCodeAt(0)), name=r.nome||`gazzetta_${g.data||id}.jpg`;
+    const file=new File([bytes],name,{type:r.mime||'image/jpeg'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file],title:'La Gazzetta',text:'📰 La Gazzetta di CalcioLercio'}); return; }catch(e){ if(e.name==='AbortError') return; } }
+    const url=URL.createObjectURL(file), a=document.createElement('a'); a.href=url; a.download=name; a.style.display='none';
+    document.body.appendChild(a); a.click(); setTimeout(()=>{ a.remove(); URL.revokeObjectURL(url); },300); toast('⬇️ Gazzetta salvata');
+  }catch(err){ window.open(g.url,'_blank'); }   // fallback: open it on Drive
+}
+// Partite page: the latest Gazzette in a scrollable strip
+function renderGazStrip(){
+  const el=document.getElementById('gaz-strip'); if(!el) return;
+  const byDate=gazList().map(g=>({g,m:(matches||[]).find(x=>x.id===g.matchId)})).filter(x=>x.m)
+    .sort((a,b)=>String(b.m.date).localeCompare(String(a.m.date)));
+  if(!byDate.length){ el.innerHTML=''; return; }
+  el.innerHTML=`<div class="card gaz-strip-card"><div class="gaz-strip-h"><span class="section-header" style="margin:0">📰 Le Gazzette</span>
+      <button type="button" onclick="openGazArchive()">Vedi tutte ›</button></div>
+    <div class="gaz-strip">${byDate.slice(0,10).map(({g,m})=>`<div class="gaz-tile" onclick="openGazzetta('${m.id}',true)">
+      <img src="${gazImg(g,400)}" alt="" loading="lazy"><span>${formatDate(m.date)}</span></div>`).join('')}</div></div>`;
+}
+// the whole archive, grouped by season
+function openGazArchive(){
+  const items=gazList().map(g=>({g,m:(matches||[]).find(x=>x.id===g.matchId)})).filter(x=>x.m)
+    .sort((a,b)=>String(b.m.date).localeCompare(String(a.m.date)));
+  const groups=[]; items.forEach(it=>{ const S=seasonOf(it.m.date)||{key:'?',label:'Senza data'}; let gr=groups.find(x=>x.key===S.key); if(!gr){ gr={key:S.key,label:S.label,list:[]}; groups.push(gr); } gr.list.push(it); });
+  document.getElementById('match-modal-title').textContent='📰 Le Gazzette';
+  document.getElementById('match-modal-body').innerHTML=groups.length?groups.map(gr=>`<div class="season-head">${SEASON_ICON[String(gr.key).slice(-3)]||'📅'} ${gr.label} <span>· ${gr.list.length} ${gr.list.length===1?'Gazzetta':'Gazzette'}</span></div>
+      <div class="gaz-grid">${gr.list.map(({g,m})=>`<div class="gaz-tile" onclick="openGazzetta('${m.id}',true)"><img src="${gazImg(g,500)}" alt="" loading="lazy">
+        <span>${formatDate(m.date)}${m.scoreA!==''&&m.scoreB!==''?` · ${m.scoreA}-${m.scoreB}`:''}</span></div>`).join('')}</div>`).join('')
+    :'<div class="mb-note" style="text-align:center;padding:20px">Ancora nessuna Gazzetta</div>';
+  document.getElementById('match-modal').style.display='block';
+}
+
 // 📜 All the pagelle of a match as ONE text (WhatsApp formatting: *bold*, _italic_), to read and share
 function pagelleText(m){
   const ratings=(matchesCache.data?.ratings||[]).filter(r=>r.matchId===m.id);
@@ -5145,6 +5339,7 @@ function openMatch(id){
       <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-top:8px">Risultato</div>
       ${scoreEditor}
       ${matchHighlightsHTML(m)}
+      ${gazSectionHTML(m)}
       <button type="button" class="btn btn-secondary btn-full eq-toggle" id="match-balance-btn" onclick="toggleMatchBalance('${id}')">⚖️ Equilibrio squadre ▾</button>
       <div id="match-balance" style="display:none"></div>
       <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px">Pagelle (1–10)</div>
@@ -5217,6 +5412,7 @@ function setMatchEditable(on){
   const actions=document.getElementById('match-actions');
   if(actions)actions.style.display=on?'flex':'none';
   const wa=document.getElementById('wa-import'); if(wa) wa.style.display=on?'block':'none';   // 📥 only while editing
+  document.querySelectorAll('#gaz-sec .gaz-edit').forEach(el=>{ el.style.display=on?'flex':'none'; });   // 📰 upload/replace/remove only while editing
   // the Edita button hides once editing
   const eb=document.getElementById('edit-toggle-btn');
   if(eb)eb.style.display=on?'none':'';
