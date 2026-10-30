@@ -121,13 +121,14 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .gaz-h{font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
 .gaz-thumb{display:block;width:100%;max-height:420px;object-fit:contain;border-radius:12px;background:#000;cursor:zoom-in;box-shadow:0 6px 18px rgba(0,0,0,.35)}
 .gaz-edit{gap:6px;margin-top:8px;flex-wrap:wrap}
-#gaz-viewer{display:none;position:fixed;inset:0;z-index:800;background:#000;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#gaz-viewer,#img-viewer{display:none;position:fixed;inset:0;z-index:800;background:#000;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 .gv-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;color:#fff;font-size:14px;font-weight:700}
 .gv-top button{background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer}
 .gv-img{flex:1;min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .gv-img img{max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-in}
 .gv-img.zoom{display:block}
 .gv-img.zoom img{max-width:none;max-height:none;width:200%;cursor:zoom-out}
+.gv-note{color:rgba(255,255,255,.6);font-size:11px;text-align:center;padding:4px 16px 0}
 .gv-btns{display:flex;gap:8px;padding:10px 14px}
 .gv-btns button{flex:1;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;background:#25D366;color:#fff;font-family:inherit}
 .gv-btns button+button{background:rgba(255,255,255,.15)}
@@ -257,7 +258,6 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 /* Rosa card: the figurina preview is exactly as tall as the photo (width 75% × ratio 3:4 = column width) → no empty band */
 .photo-roles{align-items:center}
 .photo-roles .photo-edit{max-width:none}
-.photo-roles .avatar-xl{width:100%;height:100%;max-width:none}
 .photo-roles .fut-mini{width:75%;max-width:none;aspect-ratio:auto;border-radius:10px;gap:0}
 .photo-roles .fut-mini-ovr{font-size:calc(26px*var(--s,1))}
 .photo-roles .fut-mini-pag{font-size:calc(9px*var(--s,1));padding:1px 5px;margin:2px 0 1px}
@@ -321,7 +321,7 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 /* narrow screens: role pills under the name, so names aren't truncated next to the big initials */
 @media(max-width:520px){.ph-info{flex-direction:column;align-items:flex-start;gap:3px}.ph-name-row{width:100%}}
 .avatar{width:26px;height:26px;border-radius:50%;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.avatar.has-photo,.conv-avatar.has-photo{background-size:cover;background-position:center;color:transparent}
+.avatar.has-photo{background-size:cover;background-position:center;color:transparent}
 .avatar-xl{width:104px;height:104px;font-size:34px;border:3px solid var(--gray3);box-shadow:0 4px 14px rgba(0,0,0,0.18)}
 .photo-row{display:flex;flex-direction:column;align-items:center;gap:8px;margin:4px 0 10px}
 .av-att{background:var(--att-light);color:var(--att)}
@@ -672,12 +672,12 @@ input[type=file]{display:none}
     <!-- teams -->
     <div style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:8px">✋ Trascina un giocatore sull'altra squadra per scambiarlo</div>
     <div class="team-row">
-      <div class="team-card team-blue" id="team-card-A">
+      <div class="team-card team-blue">
         <div class="team-hd"><span class="team-nm bl">🔵 Blu</span><span class="media-pill mp-bl" id="avg-a">—</span></div>
         <div style="font-size:11px;color:var(--blue);font-weight:700;opacity:.7;margin-bottom:7px" id="mod-label-a"></div>
         <div id="chips-a"></div>
       </div>
-      <div class="team-card team-bianchi" id="team-card-B">
+      <div class="team-card team-bianchi">
         <div class="team-hd"><span class="team-nm bi">⚪ Bianchi</span><span class="media-pill mp-bi" id="avg-b">—</span></div>
         <div style="font-size:11px;color:var(--teamb);font-weight:700;opacity:.7;margin-bottom:7px" id="mod-label-b"></div>
         <div id="chips-b"></div>
@@ -729,7 +729,7 @@ input[type=file]{display:none}
     <!-- 📰 le Gazzette più recenti -->
     <div id="gaz-strip"></div>
     <!-- tutte le partite, divise per stagione -->
-    <div class="card" id="matches-card">
+    <div class="card">
       <div id="matches-list">
         <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">⏳ Caricamento...</div>
       </div>
@@ -820,7 +820,7 @@ input[type=file]{display:none}
 ════════════════════════════════════ */
 // Version of the code that is RUNNING (bump at every release). The installed home-screen app has no reload
 // button and iOS keeps it frozen in memory: comparing this with the file on GitHub tells if it's outdated.
-const APP_VERSION='2026.10.29-u';
+const APP_VERSION='2026.10.30-a';
 let BUILD_DATE='—'; // date of the file ON THE SERVER (Last-Modified of index.html), not of the running code
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
@@ -1448,14 +1448,47 @@ const AWARDS=[
   {k:'cucchiaio', t:'🥄 Cucchiaio di legno',       shame:true},
   {k:'rigori',    t:'❌ Re dei rigori sbagliati',  shame:true},
   {k:'autogol',   t:'🙃 Re degli autogol',         shame:true},
+  // 🧳 OCCASIONALI: who played at least 2 matches but less than 40% of the season (automatic)
+  {k:'occMedia',     t:'💎 Miglior Occasionale', occ:true},
+  {k:'occBomber',    t:'🎯 Bomber a gettone',    occ:true},
+  {k:'occFortuna',   t:'🍀 Portafortuna',        occ:true},
+  {k:'occPendolare', t:"✈️ Pendolare d'oro",     occ:true},
 ];
+// categories added later: for seasons already closed in the sheet they're added once, without touching the rest
+const ALBO_NEW_KEYS=['occMedia','occBomber','occFortuna','occPendolare','ritorno','botto','debutto'];
 const FEATS=[
   {k:'tripletta',   t:'🎩 Tripletta',   d:'3+ gol in una partita'},
   {k:'manita',      t:'🖐️ Manita',      d:'5+ gol in una partita'},
   {k:'regista',     t:'🧠 Regista',     d:'3+ assist in una partita'},
   {k:'fuoriclasse', t:'🌟 Fuoriclasse', d:'voto 8 o più'},
   {k:'imbattibile', t:'🧱 Imbattibile', d:'5 partite di fila senza sconfitte'},
+  {k:'ritorno',     t:'🏠 Il Ritorno',   d:'torna in campo dopo almeno 4 partite di assenza'},
+  {k:'botto',       t:'🎆 Ritorno col botto', d:'al ritorno vince o segna almeno 2 gol'},
+  {k:'debutto',     t:'🎟️ Il Debutto',   d:'la prima partita con CalcioLercio'},
 ];
+// 🏠 / 🎆 / 🎟️ need the whole history (an absence can span two seasons): events per match, memoised
+let _evMemo=null;
+function matchEvents(){
+  const ms=matches||[], rs=matchesCache.data?.ratings||[];
+  if(_evMemo&&_evMemo.ms===ms&&_evMemo.rs===rs&&_evMemo.pl===players&&_evMemo.n===players.length) return _evMemo.ev;
+  const sorted=ms.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.id).localeCompare(String(b.id)));
+  const firstDate=sorted.length?String(sorted[0].date):'', last={}, ev={}, num=v=>{const n=parseInt(v);return isNaN(n)?null:n;};
+  sorted.forEach((m,k)=>{
+    const list=ev[m.id]=[], sa=num(m.scoreA), sb=num(m.scoreB), has=sa!=null&&sb!=null;
+    [[m.teamA,has?Math.sign(sa-sb):null],[m.teamB,has?Math.sign(sb-sa):null]].forEach(([team,res])=>{
+      new Map(normalizeTeam(team).map(pl=>{const x=playerKey(pl.id,pl.name);return [x.key,x.name];})).forEach((name,key)=>{
+        if(!(key in last)){ if(String(m.date)!==firstDate) list.push({key,name,type:'debutto'}); }   // the very first match day: everyone "debuts", not counted
+        else if(k-last[key]-1>=4){
+          const r=rs.find(x=>x.matchId===m.id&&playerKey(x.playerId,x.player).key===key), g=r?parseInt(r.goals)||0:0;
+          list.push({key,name,type:'ritorno'});
+          if(res===1||g>=2) list.push({key,name,type:'botto'});
+        }
+        last[key]=k;
+      });
+    });
+  });
+  _evMemo={ms,rs,pl:players,n:players.length,ev}; return ev;
+}
 function seasonOf(date){
   const m=String(date||'').match(/^(\d{4})-(\d{2})/); if(!m) return null;
   const y=+m[1], mo=+m[2];
@@ -1487,7 +1520,7 @@ function computeSeasonAwards(s){
   const rs=(matchesCache.data?.ratings||[]).filter(r=>ids.has(r.matchId));
   const P={}, pairs={}, num=v=>{const n=parseInt(v);return isNaN(n)?null:n;};
   const get=(k,name)=>P[k]||(P[k]={name,pres:0,w:0,d:0,l:0,goals:0,assist:0,autogol:0,rigori:0,meta:0,vs:0,vn:0,mvp:0,streak:0,
-    feats:{tripletta:0,manita:0,regista:0,fuoriclasse:0,imbattibile:0}});
+    feats:{tripletta:0,manita:0,regista:0,fuoriclasse:0,imbattibile:0,ritorno:0,botto:0,debutto:0}});
   ms.forEach(m=>{
     const a=num(m.scoreA), b=num(m.scoreB), has=a!=null&&b!=null;
     [[m.teamA,has?Math.sign(a-b):null],[m.teamB,has?Math.sign(b-a):null]].forEach(([team,res])=>{
@@ -1515,6 +1548,7 @@ function computeSeasonAwards(s){
     const pf=mvpPerf(r); if(pf!=null && (!best[r.matchId]||pf>best[r.matchId].pf)) best[r.matchId]={pf,key};
   });
   Object.values(best).forEach(b=>P[b.key].mvp++);
+  const EV=matchEvents(); ms.forEach(m=>(EV[m.id]||[]).forEach(e=>{ get(e.key,e.name).feats[e.type]++; }));
 
   const list=Object.values(P), n=ms.length, minPres=Math.max(2,Math.ceil(n*0.4));
   const avg=p=>p.vn?p.vs/p.vn:null, eligible=list.filter(p=>p.pres>=minPres);
@@ -1528,7 +1562,7 @@ function computeSeasonAwards(s){
     return c;
   };
   const one=(k,cands,val,dir,fmt)=>{ const def=AWARDS.find(a=>a.k===k), w=pick(cands,val,dir,!!def.shame);
-    return {k,t:def.t,shame:!!def.shame,winners:w.map(p=>p.name),value:w.length?fmt(val(w[0]),w[0]):''}; };
+    return {k,t:def.t,shame:!!def.shame,occ:!!def.occ,winners:w.map(p=>p.name),value:w.length?fmt(val(w[0]),w[0]):''}; };
   const pl=(v,s,p)=>v===1?s:p;
   const awards=[
     one('goleador', list.filter(p=>p.goals>0), p=>p.goals, 1, v=>`${v} gol`),
@@ -1551,6 +1585,20 @@ function computeSeasonAwards(s){
     one('rigori',   list.filter(p=>p.rigori>0), p=>p.rigori, 1, v=>`${v} ${pl(v,'sbagliato','sbagliati')}`),
     one('autogol',  list.filter(p=>p.autogol>0), p=>p.autogol, 1, v=>`${v} autogol`)
   );
+  const occ=list.filter(p=>p.pres>=2&&p.pres<minPres);
+  const pickOcc=(cands,val)=>{ let c=cands.filter(p=>val(p)!=null); if(!c.length) return [];
+    const top=Math.max(...c.map(val)); c=c.filter(p=>eq(val(p),top));
+    if(c.length>1){ const bp=Math.max(...c.map(p=>p.pres)); c=c.filter(p=>p.pres===bp); }
+    if(c.length>1){ const tv=p=>avg(p)??-1, bt=Math.max(...c.map(tv)); c=c.filter(p=>eq(tv(p),bt)); }
+    return c; };
+  const occAward=(k,cands,val,fmt)=>{ const def=AWARDS.find(a=>a.k===k), w=pickOcc(cands,val);
+    return {k,t:def.t,shame:false,occ:true,winners:w.map(p=>p.name),value:w.length?fmt(val(w[0]),w[0]):''}; };
+  awards.push(
+    occAward('occMedia',     occ.filter(p=>p.vn>=2), avg, v=>`media ${v.toFixed(2)}`),
+    occAward('occBomber',    occ.filter(p=>p.goals>0), p=>p.goals/p.pres, (v,p)=>`${v.toFixed(1)} gol a partita (${p.goals} in ${p.pres})`),
+    occAward('occFortuna',   occ.filter(p=>p.w>0&&p.w+p.d+p.l>0), p=>p.w/(p.w+p.d+p.l), (v,p)=>`${p.w} ${pl(p.w,'vinta','vinte')} su ${p.w+p.d+p.l}`),
+    occAward('occPendolare', occ, p=>p.pres, v=>`${v} presenze`)
+  );
   if(n<ALBO_MIN_MATCHES) awards.forEach(a=>{ a.winners=[]; a.value=''; });   // season too short for awards
   const feats={};
   FEATS.forEach(f=>{ feats[f.k]=list.filter(p=>p.feats[f.k]>0).map(p=>({name:p.name,count:p.feats[f.k]})).sort((x,y)=>y.count-x.count||x.name.localeCompare(y.name)); });
@@ -1568,7 +1616,7 @@ function alboRows(S){
 }
 // stored rows → same shape as computeSeasonAwards (for frozen seasons)
 function seasonFromRows(s,rows){
-  const awards=AWARDS.map(a=>{ const r=rows.filter(x=>x.premio===a.k); return {k:a.k,t:a.t,shame:!!a.shame,winners:r.map(x=>x.giocatore),value:r[0]?r[0].valore:''}; });
+  const awards=AWARDS.map(a=>{ const r=rows.filter(x=>x.premio===a.k); return {k:a.k,t:a.t,shame:!!a.shame,occ:!!a.occ,winners:r.map(x=>x.giocatore),value:r[0]?r[0].valore:''}; });
   const feats={}; FEATS.forEach(f=>{ feats[f.k]=rows.filter(x=>x.premio===f.k).map(x=>({name:x.giocatore,count:parseInt(String(x.valore).replace('×',''))||0})); });
   const n=(matches||[]).filter(m=>{const x=seasonOf(m.date);return x&&x.key===s.key;}).length;
   return {...s,n,minPres:Math.max(2,Math.ceil(n*0.4)),awards,feats,frozen:true};
@@ -1578,7 +1626,13 @@ const isFrozen=(s,stored)=>s.status==='chiusa' && stored.length>0 && stored.ever
 function alboSeasons(){
   const stored=matchesCache.data?.albo||[];
   return seasonsList().reverse().map(s=>{ const st=stored.filter(r=>r.chiave===s.key);
-    return isFrozen(s,st)?seasonFromRows(s,st):computeSeasonAwards(s); });
+    if(!isFrozen(s,st)) return computeSeasonAwards(s);
+    const S=seasonFromRows(s,st), C=computeSeasonAwards(s);
+    // categories that didn't exist when the season was closed: taken from the live computation
+    ALBO_NEW_KEYS.forEach(k=>{ if(st.some(r=>r.premio===k)) return;
+      const ca=C.awards.find(a=>a.k===k); if(ca){ const i=S.awards.findIndex(a=>a.k===k); if(i>=0) S.awards[i]=ca; }
+      if(C.feats[k]) S.feats[k]=C.feats[k]; });
+    return S; });
 }
 // write to the sheet what changed (in-progress seasons, and the final "chiusa" version once)
 let _alboSyncing=false;
@@ -1589,7 +1643,15 @@ async function syncAlbo(){
   try{
     for(const s of seasonsList()){
       const stored=(matchesCache.data.albo||[]).filter(r=>r.chiave===s.key);
-      if(isFrozen(s,stored)) continue;
+      if(isFrozen(s,stored)){
+        // closed season: only add, once, the categories introduced later (the rest stays frozen)
+        const extra=alboRows(computeSeasonAwards(s)).filter(r=>ALBO_NEW_KEYS.includes(r.premio)&&!stored.some(x=>x.premio===r.premio)).map(r=>({...r,stato:'chiusa'}));
+        if(!extra.length) continue;
+        const rows=stored.concat(extra);
+        await backendCall('saveAlbo',{chiave:s.key,rows});
+        matchesCache.data.albo=(matchesCache.data.albo||[]).filter(r=>r.chiave!==s.key).concat(rows);
+        continue;
+      }
       const rows=alboRows(computeSeasonAwards(s));
       if(sig(rows)===sig(stored)) continue;
       await backendCall('saveAlbo',{chiave:s.key,rows});
@@ -1816,7 +1878,6 @@ function openPlayerCardByIdx(idx){
 function renderPlayerPagelle(i){
   const container=document.getElementById('pagelle-'+i);
   if(!container)return;
-  const name=players[i].name;
   if(!backendUrl){
     container.innerHTML=`<div style="font-size:12px;color:var(--text3);text-align:center">📊 Configura il backend in Settings per vedere le pagelle</div>`;
     return;
@@ -1918,7 +1979,6 @@ function drawPagelle(i,player,container){
   const trendStart=intercept;                 // value at first match
   const trendEnd=intercept+slope*(n-1);       // value at last match
   // trend verdict
-  const totalChange=trendEnd-trendStart;
   // header: the app-wide form state (same as the figurina); dashed line: long-term trend, neutral colour
   const fsKey=formState(player), FS=fsKey?FORM_STATES[fsKey]:null;
   const trendLabel=FS?FS.label:'', trendArrow=FS?FS.arrow:'', trendCol=FS?FS.col:'var(--text3)';
@@ -2569,7 +2629,7 @@ function shareTeams(){
     modA:c.modA?c.modA.notation:'', modB:c.modB?c.modB.notation:'',
     diff:c.diff, subtitle:'Formazioni del '+dstr
   });
-  shareCanvas(canvas,'formazioni.png','⚽ Formazioni di oggi');
+  openImageViewer('⚽ Formazioni di oggi', canvas, 'formazioni.png', '⚽ Formazioni di oggi');   // look first, then share or save
 }
 
 // resolve a saved {id,name} team entry to the current roster player (id first, then name)
@@ -2593,7 +2653,7 @@ function shareMatchFormations(id){
     diff:(sA!=null&&sB!=null)?Math.abs(sA-sB):null,
     subtitle:'Formazioni del '+formatDate(m.date)
   });
-  shareCanvas(canvas,'formazioni_'+(m.date||'partita')+'.png','⚽ Formazioni della partita del '+formatDate(m.date));
+  openImageViewer('⚽ Formazioni · '+formatDate(m.date), canvas, 'formazioni_'+(m.date||'partita')+'.png', '⚽ Formazioni della partita del '+formatDate(m.date));
 }
 
 // Storico → share a match summary: score, highlights, per-player pagelle with gol/assist
@@ -2699,7 +2759,7 @@ function shareMatchSummary(id){
   ctx.textAlign='center'; ctx.fillStyle=C.SUB; ctx.font=SHARE_FONT('italic 500 14px');
   ctx.fillText('✒️ pagelle a cura della Redazione Avv. Peppe Rella', W/2, H-22);
 
-  shareCanvas(canvas,'riepilogo_'+(m.date||'partita')+'.png','⚽ Riepilogo della partita del '+formatDate(m.date));
+  openImageViewer('🖼️ Riepilogo · '+formatDate(m.date), canvas, 'riepilogo_'+(m.date||'partita')+'.png', '⚽ Riepilogo della partita del '+formatDate(m.date));
 }
 
 // Gioca → printable field sheet of the combination on screen (no need to create the match first).
@@ -2883,7 +2943,7 @@ function futTier(p){
 // small card preview used as the button (third column of the player card)
 function futMiniHTML(i){
   const p=players[i], t=FUT_TIERS[futTier(p)], tr=playerTrophies(p), n=tr.awards.filter(a=>!a.shame).length, fire=onFire(p), crisi=inCrisi(p);
-  return `<button class="fut-mini${t.holo?' holo':''}${fire?' fire':''}${crisi?' crisi':''}" onclick="shareFutCard(${i})" title="Condividi la figurina"
+  return `<button class="fut-mini${t.holo?' holo':''}${fire?' fire':''}${crisi?' crisi':''}" onclick="openFutCard(${i})" title="Apri la figurina"
     style="background:linear-gradient(150deg,${t.metal.join(',')});color:${t.text}">
     <span class="fut-mini-ovr">${futRating(p)}</span>
     <span class="fut-mini-pag ${getPlayerPagInfo(p).cls}">${getPlayerPagInfo(p).label}${(k=>k?` <b style="color:${FORM_STATES[k].col}" title="${FORM_STATES[k].label}">${FORM_STATES[k].arrow}</b>`:'')(formState(p))}</span>
@@ -2900,16 +2960,51 @@ function futPreload(p){
   if(c && c.src===p.photo) return;
   const im=new Image(); im.src=p.photo; futPhotoCache[p.id]=im;
 }
-async function shareFutCard(i){
+async function openFutCard(i){
   const p=players[i]; if(!p) return;
+  toast('⏳ Preparo la figurina…');
   futPreload(p);
   const im=p.photo?futPhotoCache[p.id]:null;
   if(im && !im.complete){ try{ await im.decode(); }catch(e){} }
-  shareCanvas(drawFutCard(p, im&&im.complete&&im.naturalWidth?im:null), 'figurina_'+p.name.replace(/\s+/g,'_')+'.png', '🃏 La figurina di '+p.name);
+  const canvas=drawFutCard(p, im&&im.complete&&im.naturalWidth?im:null);
+  openImageViewer('🃏 La figurina di '+p.name, canvas, 'figurina_'+p.name.replace(/\s+/g,'_')+'.png', '🃏 La figurina di '+p.name);
+}
+// ── full-screen image viewer: look first, then decide to share or save ──
+let _imgView=null;   // {blob, url, name, text}
+function openImageViewer(title,canvas,name,text){
+  canvas.toBlob(blob=>{
+    if(!blob){ toast('Errore immagine'); return; }
+    if(_imgView&&_imgView.url) URL.revokeObjectURL(_imgView.url);
+    _imgView={blob,url:URL.createObjectURL(blob),name,text};
+    let v=document.getElementById('img-viewer');
+    if(!v){ v=document.createElement('div'); v.id='img-viewer'; document.body.appendChild(v); }
+    v.innerHTML=`<div class="gv-top"><span>${esc(title)}</span><button type="button" onclick="closeImageViewer()" aria-label="Chiudi">✕</button></div>
+      <div class="gv-img" onclick="this.classList.toggle('zoom')"><img src="${canvas.toDataURL('image/png')}" alt="${esc(title)}"></div>
+      <div class="gv-note">Tocca l'immagine per ingrandirla.</div>
+      <div class="gv-btns"><button type="button" onclick="shareViewerImage()">📲 Condividi</button><button type="button" onclick="saveViewerImage()">⬇️ Salva</button></div>`;
+    v.style.display='flex';
+    document.getElementById('toast')?.classList.remove('show');   // the "⏳ Preparo…" notice is done: don't cover the viewer
+  },'image/png');
+}
+function closeImageViewer(){ const v=document.getElementById('img-viewer'); if(v) v.style.display='none'; }
+async function shareViewerImage(){
+  const v=_imgView; if(!v) return;
+  const file=new File([v.blob],v.name,{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file],title:'CalcioLercio',text:v.text}); return; }catch(e){ if(e.name==='AbortError') return; }
+  }
+  saveViewerImage();   // no share sheet (computer): save instead
+}
+function saveViewerImage(){
+  const v=_imgView; if(!v) return;
+  const a=document.createElement('a'); a.href=v.url; a.download=v.name; a.style.display='none';
+  document.body.appendChild(a); a.click(); setTimeout(()=>a.remove(),300);
+  toast('⬇️ Immagine salvata');
 }
 // short captions for the medals
 const FUT_SHORT={goleador:'Goleador',assistman:'Assist',media:'Top media',mvp:'Re MVP',stelle:'Re Stelle',stakanov:'Presenze',
-  coppia:'Coppia',flop:'Flop media',cucchiaio:'Cucchiaio',rigori:'Rigori',autogol:'Autogol'};
+  coppia:'Coppia',flop:'Flop media',cucchiaio:'Cucchiaio',rigori:'Rigori',autogol:'Autogol',
+  occMedia:'Top occas.',occBomber:'Gettone',occFortuna:'Portafortuna',occPendolare:'Pendolare'};
 const seasonShort=label=>label.replace('Primavera','Pri').replace('Estate','Est').replace('Autunno','Aut').replace('Inverno','Inv').replace(/ 20(\d\d)/,' $1').replace(/\/(\d\d)$/,'/$1');
 
 // strip U+FE0F (emoji variation selector): it doesn't change the look but breaks Safari's canvas text measuring
@@ -3452,7 +3547,7 @@ function buildSettings(){
           <span style="font-size:11px;font-weight:500;color:var(--text3);margin-left:4px">${n} giocatori per squadra</span>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="mod-list-${n}">`;
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">`;
 
     MODULES[n].forEach((m,idx)=>{
       const c=moduleComposition(m.slots);
@@ -4130,13 +4225,13 @@ function renderAlbo(){
   const chip={'in corso':'<span class="albo-chip live">in corso</span>','in chiusura':'<span class="albo-chip soon">in chiusura</span>','chiusa':'<span class="albo-chip done">🔒 chiusa</span>'};
   const row=a=>`<div class="albo-row"><span class="albo-t">${a.t}</span><span class="albo-w">${winnersHTML(a.winners,a.k==='coppia'?'<br>':', ')}</span><span class="albo-v">${esc(a.value)}</span></div>`;
   el.innerHTML=`<div class="section-header" style="margin:0 0 4px">🏆 Albo d'oro</div>
-    <div class="albo-note">Premi per stagione. Medie e Cucchiaio contano solo chi ha giocato almeno il 40% delle partite.</div>`+
+    <div class="albo-note">Premi per stagione. Medie e Cucchiaio contano solo chi ha giocato almeno il 40% delle partite; chi ne ha giocate meno (da 2 in su) concorre ai <b>Premi Occasionali</b>.</div>`+
   seasons.map(S=>{
-    const won=S.awards.filter(a=>a.winners.length), prize=won.filter(a=>!a.shame), shame=won.filter(a=>a.shame);
+    const won=S.awards.filter(a=>a.winners.length), prize=won.filter(a=>!a.shame&&!a.occ), occA=won.filter(a=>a.occ), shame=won.filter(a=>a.shame);
     const feats=FEATS.filter(f=>(S.feats[f.k]||[]).length).map(f=>`<div class="albo-feat"><span class="albo-t">${f.t}</span><span>${S.feats[f.k].map(x=>nameLink(x.name)+' <b>×'+x.count+'</b>').join(' · ')}</span></div>`).join('');
     const body=S.n<ALBO_MIN_MATCHES
       ? `<div class="albo-empty">Stagione troppo corta per i premi (servono almeno ${ALBO_MIN_MATCHES} partite).</div>`
-      : (prize.map(row).join('')+(shame.length?`<div class="albo-grp">Premi della vergogna</div>`+shame.map(row).join(''):''));
+      : (prize.map(row).join('')+(occA.length?`<div class="albo-grp">🧳 Premi Occasionali</div>`+occA.map(row).join(''):'')+(shame.length?`<div class="albo-grp">Premi della vergogna</div>`+shame.map(row).join(''):''));
     return `<div class="albo-season">
       <div class="albo-head"><span class="albo-title">${SEASON_ICON[S.key.slice(-3)]||'🏆'} ${S.label}</span>${chip[S.status]||''}</div>
       <div class="albo-sub">${S.n} ${S.n===1?'partita':'partite'}${S.n>=ALBO_MIN_MATCHES?` · medie e Cucchiaio da ${S.minPres} presenze`:''}</div>
@@ -4223,10 +4318,14 @@ function renderMediaList(){
   const ok=all.filter(p=>p.pres>=minP).sort((a,b)=>b.voteAvg-a.voteAvg||b.votes.length-a.votes.length||a.name.localeCompare(b.name));
   const out=all.filter(p=>p.pres<minP).length;
   const head=`<div class="section-header" style="margin:0 0 4px">⭐ Classifica media voto</div>
-    <div class="cl-note">Conta chi ha giocato almeno ${minP} partite${out?` · ${out} ${out===1?'giocatore escluso':'giocatori esclusi'} per poche presenze`:''}.</div>`;
-  if(!ok.length){ el.innerHTML=head+clEmpty('Nessun voto ancora'); return; }
+    <div class="cl-note">Conta chi ha giocato almeno ${minP} partite${out?` · gli Occasionali hanno la loro classifica qui sotto`:''}.</div>`;
   const col=v=>v>=6.5?'var(--green)':v<5.5?'var(--red)':'var(--amber)';
-  el.innerHTML=head+ok.map((p,i)=>clRow(i,p.name,`${p.votes.length} pagelle · ${p.pres} presenze`,`<span style="color:${col(p.voteAvg)}">${p.voteAvg.toFixed(2)}</span>`)).join('');
+  const occ=all.filter(p=>p.pres>=2&&p.pres<minP).sort((a,b)=>b.voteAvg-a.voteAvg||b.pres-a.pres||a.name.localeCompare(b.name));
+  const occList=occ.length?`<div class="section-header" style="margin:14px 0 4px">🧳 Occasionali</div>
+      <div class="cl-note">Chi ha giocato da 2 a ${minP-1} partite: la loro classifica, a parte.</div>`
+      +occ.map((p,i)=>clRow(i,p.name,`${p.votes.length} pagelle · ${p.pres} presenze`,`<span style="color:${col(p.voteAvg)}">${p.voteAvg.toFixed(2)}</span>`)).join(''):'';
+  if(!ok.length){ el.innerHTML=head+clEmpty('Nessun voto ancora')+occList; return; }
+  el.innerHTML=head+ok.map((p,i)=>clRow(i,p.name,`${p.votes.length} pagelle · ${p.pres} presenze`,`<span style="color:${col(p.voteAvg)}">${p.voteAvg.toFixed(2)}</span>`)).join('')+occList;
 }
 
 // 🤝 Coppie: who wins (and loses) the most when playing in the same team (min 3 matches together)
@@ -4602,11 +4701,7 @@ function renderLastMatch(){
       <span style="font-size:13px;font-weight:700;color:var(--teamb)">⚪ Bianchi</span>
     </div>
     <div style="text-align:center;font-size:12px;margin-top:4px">${winTxt}</div>
-    <div class="lm-actions" onclick="event.stopPropagation()">
-      <button class="btn btn-primary btn-sm mbar-btn" onclick="shareMatchFormations('${m.id}')" style="background:#25D366;border-color:#25D366">📲 Formazioni</button>
-      <button class="btn btn-primary btn-sm mbar-btn" onclick="shareMatchSummary('${m.id}')">🖼️ Riepilogo</button>
-      <button class="btn btn-secondary btn-sm mbar-btn" onclick="shareMatchSheet('${m.id}')">🖨️ Foglio</button>
-    </div>
+    <div class="lm-actions" onclick="event.stopPropagation()">${matchShareButtons(m)}</div>
     <div style="text-align:center;font-size:10px;color:var(--text3);margin-top:6px">Tocca la partita per i dettagli e le pagelle</div>
   </div>`;
 }
@@ -4641,6 +4736,7 @@ function statsFilterTabs(minPres){
   return `<div class="sub-tabs" style="margin-bottom:10px">
     ${t('all','👥 Tutti')}
     ${t('regulars','⭐ Titolari (≥'+minPres+')')}
+    ${t('occ','🧳 Occasionali')}
   </div>`;
 }
 
@@ -4654,14 +4750,13 @@ function renderStatsTable(){
 
   let rows=Object.values(agg).map(s=>({...s, ratingSum:s.voteSum, ratingCount:s.votes.length}));
   const totMatches=allMatches.length;
-  // "regulars" = played at least 30% of the season's matches (rounded up, inclusive)
-  const minPres=Math.ceil(totMatches*0.30);
-  if(statsFilter==='regulars'){
-    rows=rows.filter(r=>r.pres>=minPres);
-  }
+  // same rule as medie and albo: Titolari ≥ 40% of the matches, Occasionali from 2 matches up to that
+  const minPres=Math.max(2,Math.ceil(totMatches*0.4));
+  if(statsFilter==='regulars') rows=rows.filter(r=>r.pres>=minPres);
+  else if(statsFilter==='occ') rows=rows.filter(r=>r.pres>=2&&r.pres<minPres);
   if(!rows.length){
-    const msg=statsFilter==='regulars'
-      ? `Nessun giocatore con almeno ${minPres} presenze (30%)`
+    const msg=statsFilter==='regulars' ? `Nessun giocatore con almeno ${minPres} presenze (40%)`
+      : statsFilter==='occ' ? `Nessun Occasionale: nessuno ha giocato da 2 a ${minPres-1} partite`
       : 'Nessuna statistica ancora';
     el.innerHTML=`<div class="section-header" style="margin:0 0 10px">📈 Statistiche giocatori</div>${statsFilterTabs(minPres)}<div style="text-align:center;padding:14px;color:var(--text3);font-size:13px">${msg}</div>`;
     return;
@@ -4831,9 +4926,7 @@ function matchHighlights(m){
     const {name}=playerKey(r.playerId, r.player);
     const rt=parseFloat(r.rating);
     const g=parseInt(r.goals)||0;
-    const ag=parseInt(r.autogol)||0;
     const ast=parseInt(r.assist)||0;
-    const rs=parseInt(r.rigoriSbagliati)||0;
     if(!isNaN(rt)&&rt>=1){
       const perf=mvpPerf(r);   // same formula as the albo d'oro (Re degli MVP)
       if(!mvp||perf>mvp.perf)   mvp={name, v:rt, perf};
@@ -4991,6 +5084,20 @@ function waApply(){
   document.getElementById('wa-preview').innerHTML='';
 }
 
+// share buttons of a match (Ultima partita + match card): before playing → Formazioni / Riepilogo / Foglio;
+// once played (result entered) → Riepilogo, + 📰 Gazzetta if uploaded, + 📜 Pagelle if any pagella has title/description
+function matchHasDesc(id){ return (matchesCache.data?.ratings||[]).some(r=>r.matchId===id&&(String(r.notes||'').trim()||String(r.titolo||'').trim())); }
+function matchShareButtons(m){
+  const num=v=>{const n=parseInt(v);return isNaN(n)?null:n;}, played=num(m.scoreA)!=null&&num(m.scoreB)!=null, id=m.id;
+  const sum=`<button class="btn btn-primary btn-sm mbar-btn" onclick="shareMatchSummary('${id}')">🖼️ Riepilogo</button>`;
+  if(!played) return `<button class="btn btn-primary btn-sm mbar-btn" onclick="shareMatchFormations('${id}')" style="background:#25D366;border-color:#25D366">📲 Formazioni</button>
+    ${sum}
+    <button class="btn btn-secondary btn-sm mbar-btn" onclick="shareMatchSheet('${id}')" title="Foglio A4 in bianco e nero da stampare e compilare in campo">🖨️ Foglio</button>`;
+  return `${sum}
+    ${gazOf(id)?`<button class="btn btn-secondary btn-sm mbar-btn" onclick="openGazzetta('${id}')" title="Apri la Gazzetta">📰 Gazzetta</button>`:''}
+    ${matchHasDesc(id)?`<button class="btn btn-primary btn-sm mbar-btn" onclick="openPagelleText('${id}')" style="background:#25D366;border-color:#25D366" title="Tutte le pagelle in un testo">📜 Pagelle</button>`:''}`;
+}
+
 /* ════ 📰 LA GAZZETTA — images saved in Google Drive (via the Apps Script), one per match ════ */
 const gazList=()=>matchesCache.data?.gazzette||[];
 const gazOf=id=>gazList().find(g=>g.matchId===id)||null;
@@ -5050,6 +5157,7 @@ async function removeGazzetta(id){
 // redraw what shows the Gazzetta: the open match card (still in edit mode), the Partite strip and list
 function refreshGazUI(id){
   const sec=document.getElementById('gaz-sec'), m=(matches||[]).find(x=>x.id===id);
+  const bar=document.getElementById('mbar-share'); if(bar&&m) bar.innerHTML=matchShareButtons(m);
   if(sec&&m){ const tmp=document.createElement('div'); tmp.innerHTML=gazSectionHTML(m); sec.replaceWith(tmp.firstElementChild);
     document.querySelectorAll('#gaz-sec .gaz-edit').forEach(el=>el.style.display='flex'); }
   renderMatchesList();
@@ -5301,7 +5409,7 @@ function openMatch(id){
           </div>
           <div id="pv-${pk}">${pgtViewHTML(tit,desc)}</div>
           <button type="button" class="rate-btn pgt-add" id="pb-${pk}" data-name="${esc(pl.name)}" onclick="togglePagellaEdit('${pk}',this)">${(tit||desc)?'✏️ Modifica pagella':'＋ Pagella'}</button>
-          <div class="pgt-edit" id="pe-${pk}" style="display:none"><!-- hidden: filled by the 📝 dialog, read by saveRatings -->
+          <div class="pgt-edit" style="display:none"><!-- hidden: filled by the 📝 dialog, read by saveRatings -->
             <input type="text" id="tit-${pk}" maxlength="60" placeholder="Titolo (es. Il Muro di Berlino)" value="${esc(tit)}">
             <textarea id="desc-${pk}" maxlength="2000" rows="3" placeholder="Descrizione della prestazione">${esc(desc)}</textarea>
           </div>
@@ -5330,12 +5438,8 @@ function openMatch(id){
     </div>`;
 
   document.getElementById('match-modal-body').innerHTML=`
-    <div id="match-edit-bar" style="display:flex;justify-content:space-between;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:10px">
-      <div style="display:flex;gap:4px;flex-wrap:wrap">
-        <button class="btn btn-primary btn-sm mbar-btn" onclick="shareMatchFormations('${id}')" style="background:#25D366;border-color:#25D366">📲 Formazioni</button>
-        <button class="btn btn-primary btn-sm mbar-btn" onclick="shareMatchSummary('${id}')">🖼️ Riepilogo</button>
-        <button class="btn btn-secondary btn-sm mbar-btn" onclick="shareMatchSheet('${id}')" title="Foglio A4 in bianco e nero da stampare e compilare in campo">🖨️ Foglio</button>
-      </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:10px">
+      <div id="mbar-share" style="display:flex;gap:4px;flex-wrap:wrap">${matchShareButtons(m)}</div>
       <button id="edit-toggle-btn" class="btn btn-secondary btn-sm mbar-btn" onclick="setMatchEditable(true)" title="Modifica partita" aria-label="Modifica partita" style="border:2px solid var(--green);color:var(--green);margin-left:auto;font-size:15px;padding:6px 9px">✏️</button>
     </div>
     <div id="match-fields">
@@ -5352,7 +5456,6 @@ function openMatch(id){
         ${renderTeam('🔵 Blu',teamA,true)}
         ${renderTeam('⚪ Bianchi',teamB,false)}
       </div>
-      <button type="button" class="btn btn-secondary btn-full" style="margin-bottom:12px" onclick="openPagelleText('${id}')">📜 Condividi tutte le pagelle</button>
       <div id="wa-import" class="wa-import" style="display:none">
         <div class="wa-h">📥 Importa pagelle da WhatsApp</div>
         <div class="mb-note" style="margin:0 0 8px">Incolla qui tutto il messaggio delle pagelle: l'app riconosce i giocatori e assegna a ciascuno <b>titolo e descrizione</b>. Voti, gol e risultato restano quelli che inserisci tu. Prima di assegnare ti mostra cosa ha capito.</div>
