@@ -817,7 +817,7 @@ input[type=file]{display:none}
 ════════════════════════════════════ */
 // Version of the code that is RUNNING (bump at every release). The installed home-screen app has no reload
 // button and iOS keeps it frozen in memory: comparing this with the file on GitHub tells if it's outdated.
-const APP_VERSION='2026.10.30-e';
+const APP_VERSION='2026.10.30-f';
 let BUILD_DATE='—'; // date of the file ON THE SERVER (Last-Modified of index.html), not of the running code
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
@@ -5668,7 +5668,13 @@ async function saveRatings(matchId){
     }
     closeMatchModal();                 // ← always close once ratings are saved
     toast(`Salvato: ${ratings.length} pagelle`);
-    loadMatches(true);
+    const sentTit=ratings.filter(r=>r.titolo).length;
+    await loadMatches(true);
+    // a script deployed before the "titolo" column keeps voti and descrizioni but silently drops the titles: say so
+    if(sentTit && !(matchesCache.data?.ratings||[]).some(r=>r.matchId===matchId&&String(r.titolo||'').trim()))
+      confirmModal({icon:'⚠️',title:'Titoli non salvati',
+        msg:'Lo script Google ha salvato voti e descrizioni, ma <b>non i titoli</b>: è una versione vecchia.<br><br>Incolla l\'ultimo <b>Codice.gs</b>, ridistribuisci (Deploy → Manage deployments → ✏️ → New version) e salva di nuovo la partita.',
+        okLabel:'Ho capito',cancelLabel:'Chiudi'});
   }catch(e){
     toast('Errore: '+e.message);       // ratings failed → keep modal open to retry
   }
