@@ -100,6 +100,40 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .rec-who{font-size:12px;color:var(--text);line-height:1.5}
 .rec-v{font-size:15px;font-weight:900;color:var(--green);white-space:nowrap}
 .cl-date{color:var(--text3);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+/* 📈 player card: pagelle header, tappable chart, latest pagella, the list window */
+#match-modal-title .fire-chip{font-size:15px}
+.mt-roles{display:inline-flex;gap:3px;margin-left:8px;vertical-align:middle}
+.mt-roles .rp{font-size:9px}
+.pg-title{font-size:11px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.pg-chart{position:relative}
+.pg-hit{cursor:pointer}
+.pg-bar.sel{stroke:var(--text);stroke-width:1.4;opacity:1}
+.pg-cap{font-size:9px;color:var(--text3);text-align:center;margin-top:3px}
+.pg-pop{position:absolute;top:calc(100% + 4px);z-index:5;background:var(--gray2);border:1px solid var(--gray3);border-radius:10px;padding:8px 10px;box-shadow:0 8px 22px rgba(0,0,0,.35);font-size:11.5px;color:var(--text2)}
+.pgp-top{color:var(--text2)}.pgp-top b{color:var(--text)}
+.pgp-tit{font-weight:800;font-style:italic;color:var(--text);margin-top:3px}
+.pgp-desc{margin-top:2px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pgp-go{margin-top:5px;border:none;background:none;color:var(--green);font-weight:800;font-size:11.5px;padding:0;cursor:pointer;font-family:inherit}
+.pg-last{display:flex;align-items:center;gap:4px;width:100%;margin-top:7px;padding:7px 9px;border-radius:9px;border:none;border-left:3px solid #e0b93c;background:rgba(242,201,76,.10);color:var(--text2);font-size:12px;text-align:left;cursor:pointer;font-family:inherit;white-space:nowrap;overflow:hidden}
+.pg-last b{color:var(--text);font-style:italic;overflow:hidden;text-overflow:ellipsis}
+.pg-last-n{margin-left:auto;color:var(--text3);font-weight:800;flex-shrink:0}
+#pl-dialog{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:650;padding:14px;padding-top:calc(14px + env(safe-area-inset-top,0px));align-items:center;justify-content:center}
+.pl-head{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:15px;color:var(--text);margin-bottom:10px}
+.pl-head button{background:var(--gray2);border:none;color:var(--text);width:32px;height:32px;border-radius:50%;font-size:15px;cursor:pointer;flex-shrink:0}
+.pl-list{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:7px}
+.pl-item{background:var(--gray2);border-radius:10px;padding:9px 11px;border-left:3px solid #e0b93c;cursor:pointer}
+.pl-item.focus{box-shadow:0 0 0 2px var(--green)}
+.pl-top{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);font-weight:700}
+.pl-v{font-size:15px;font-weight:900}
+.pl-tit{font-size:13px;font-weight:800;font-style:italic;color:var(--text);margin-top:2px}
+.pl-desc{font-size:12px;color:var(--text2);line-height:1.4;margin-top:3px;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.pl-item.open .pl-desc{display:block;-webkit-line-clamp:unset}
+/* votes without a written pagella: one compact line */
+.pl-item.bare{padding:6px 11px;border-left-color:var(--gray3)}
+.pl-item.bare .pl-v{font-size:13px}
+.pl-go{display:none;margin-top:6px;border:none;background:none;color:var(--green);font-weight:800;font-size:12px;padding:0;cursor:pointer;font-family:inherit}
+.pl-item.open .pl-go{display:inline-block}
+.pl-by{font-size:10px;color:var(--text3);text-align:center;font-style:italic;margin-top:8px}
 /* 📝 pagella della Redazione (match card) */
 .pgt-view{margin-top:6px;padding:6px 8px;border-radius:8px;background:rgba(242,201,76,.10);border-left:3px solid #e0b93c;cursor:pointer}
 .pgt-title{font-size:12.5px;font-weight:800;font-style:italic;color:var(--text)}
@@ -402,7 +436,6 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .dash-val{font-size:19px;font-weight:800;color:var(--green);line-height:1.1}
 .dash-lbl{font-size:9px;color:var(--text2);margin-top:3px;text-transform:uppercase;letter-spacing:.3px}
 .pg-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:3px}
-.pg-by{font-size:9px;color:var(--text3);font-style:italic;opacity:.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .pg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px 4px}
 .pg-cell{background:var(--gray);border-radius:7px;padding:2px 4px;text-align:center}
 .pg-lbl{font-size:10px;color:var(--text2);line-height:1.25}
@@ -817,7 +850,7 @@ input[type=file]{display:none}
 ════════════════════════════════════ */
 // Version of the code that is RUNNING (bump at every release). The installed home-screen app has no reload
 // button and iOS keeps it frozen in memory: comparing this with the file on GitHub tells if it's outdated.
-const APP_VERSION='2026.10.30-f';
+const APP_VERSION='2026.10.30-g';
 let BUILD_DATE='—'; // date of the file ON THE SERVER (Last-Modified of index.html), not of the running code
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
@@ -1758,7 +1791,6 @@ function openRosaCard(i){
   const p=players[i]; if(!p)return;
   rosaCardIdx=i;
   futPreload(p);
-  const ovr=calcOvr(p.stats).toFixed(1);
   const toggles=ROLES.map(r=>{
     const on=p.roles.includes(r);
     const baseCls=`role-toggle role-${ROLE_CLS[r]}${on?' tog-'+ROLE_CLS[r]:''}`;
@@ -1778,23 +1810,8 @@ function openRosaCard(i){
   });
   sg+=formWeightCell(p,'fw'+i);   // 12° valore, non modificabile
   sg+='</div>';
-  const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
-  const pagInfo=getPlayerPagInfo(p);
-  document.getElementById('match-modal-title').textContent='';
+  document.getElementById('match-modal-title').innerHTML=`${esc(p.name)}${fireChip(p)}`;   // name + 🔥/🌧️ next to the ✕
   document.getElementById('match-modal-body').innerHTML=`
-    <div class="player-header" style="margin:0 0 6px">
-      <div class="ph-top">
-        <div class="avatar-stack">
-          <span class="pag-badge ${pagInfo.cls}" title="Media pagelle">${pagInfo.label}</span>
-          ${initialsAvatar(p,'avatar avatar-ini','')}
-          <span class="ovr-badge" id="mov${i}">OVR ${ovr}</span>
-        </div>
-        <div class="ph-info">
-          <div class="ph-name-row"><span class="player-name-display">${esc(p.name)}</span>${fireChip(p)}</div>
-          <div class="role-pills-display">${pills}</div>
-        </div>
-      </div>
-    </div>
     <div class="photo-roles">
       <div class="photo-row">
         <div class="photo-edit" onclick="photoActions(${i},event)" title="${p.photo?'Tocca per cambiare o rimuovere la foto':'Tocca per caricare una foto'}">
@@ -1819,8 +1836,6 @@ function openPlayerCardByIdx(idx){
   if(idx<0||!players[idx]){toast('Giocatore non in rosa');return;}
   const p=players[idx];
   futPreload(p);
-  const ovr=calcOvr(p.stats).toFixed(1);
-  const pagInfo=getPlayerPagInfo(p);
   // role pills (read-only, same look as the compact header pills)
   const pills=p.roles.map(r=>`<span class="rp rp-${r.toLowerCase()}">${r}</span>`).join('');
   // stat rows identical to the Rosa grid, but read-only (value shown, no input)
@@ -1836,21 +1851,8 @@ function openPlayerCardByIdx(idx){
   sg+=formWeightCell(p);   // 12° valore, non modificabile
   sg+='</div>';
 
-  document.getElementById('match-modal-title').textContent='';
+  document.getElementById('match-modal-title').innerHTML=`${esc(p.name)}${fireChip(p)}<span class="mt-roles">${pills}</span>`;   // name + 🔥/🌧️ next to the ✕ (+ roles)
   document.getElementById('match-modal-body').innerHTML=`
-    <div class="player-header" style="margin:0 0 6px">
-      <div class="ph-top">
-        <div class="avatar-stack">
-          <span class="pag-badge ${pagInfo.cls}" title="Media pagelle">${pagInfo.label}</span>
-          ${initialsAvatar(p,'avatar avatar-ini','')}
-          <span class="ovr-badge">OVR ${ovr}</span>
-        </div>
-        <div class="ph-info">
-          <div class="ph-name-row"><span class="player-name-display">${esc(p.name)}</span>${fireChip(p)}</div>
-          <div class="role-pills-display">${pills}</div>
-        </div>
-      </div>
-    </div>
     <div class="photo-row" style="margin:2px 0 8px;flex-direction:row;justify-content:center;align-items:center;gap:16px">
       ${avatarHTML(p,'avatar avatar-xl','')}
       <div style="width:84px">${futMiniHTML(idx)}</div>
@@ -1902,6 +1904,58 @@ async function loadAndRefreshPagelle(i){
   }
 }
 
+// ── 📝 the player's pagelle (vote + Redazione title/description), newest first ──
+const _pgSeries={};   // card index → dated votes of its chart (for the bar taps)
+function playerPagelleList(p){
+  const key=playerKey(p.id,p.name).key, rs=matchesCache.data?.ratings||[];
+  return (matches||[]).filter(m=>m.date).map(m=>{ const r=rs.find(x=>x.matchId===m.id&&playerKey(x.playerId,x.player).key===key); return r?{m,r}:null; })
+    .filter(x=>x&&parseFloat(x.r.rating)>=1)
+    .map(({m,r})=>({m,v:parseFloat(r.rating),tit:String(r.titolo||'').trim(),desc:String(r.notes||'').trim(),g:parseInt(r.goals)||0,a:parseInt(r.assist)||0}))
+    .sort((a,b)=>String(b.m.date).localeCompare(String(a.m.date)));
+}
+const pgVoteCol=v=>v>=6.5?'#3aad5e':v>=5.5?'#d9a300':'#d9483b';
+// tap on a bar: small box with date, vote, «title», start of the description
+function pgBarTap(i,j,ev){
+  if(ev) ev.stopPropagation();
+  const pop=document.getElementById('pg-pop-'+i), chart=document.getElementById('pg-chart-'+i), d=(_pgSeries[i]||[])[j]; if(!pop||!d) return;
+  chart.querySelectorAll('.pg-bar').forEach(b=>b.classList.toggle('sel',+b.dataset.j===j));
+  if(pop.style.display!=='none'&&pop.dataset.j==j){ pop.style.display='none'; chart.querySelectorAll('.pg-bar').forEach(b=>b.classList.remove('sel')); return; }
+  const it=playerPagelleList(players[i]).find(x=>x.m.id===d.matchId);
+  const stats=it?[it.g?`⚽ ${it.g}`:'',it.a?`🅰️ ${it.a}`:''].filter(Boolean).join(' '):'';
+  pop.innerHTML=`<div class="pgp-top"><b>${formatDate(d.date)}</b> · voto <b style="color:${pgVoteCol(d.rating)}">${d.rating}</b>${stats?` · ${stats}`:''}</div>
+    ${it&&it.tit?`<div class="pgp-tit">«${esc(it.tit)}»</div>`:''}
+    ${it&&it.desc?`<div class="pgp-desc">${waHTML(it.desc)}</div>`:''}
+    <button type="button" class="pgp-go" onclick="event.stopPropagation();${it&&(it.tit||it.desc)?`openPlayerPagelle(${i},'${d.matchId}')`:`closeMatchModal();openMatch('${d.matchId}')`}">${it&&(it.tit||it.desc)?'Leggi tutto ›':'Apri la partita ›'}</button>`;
+  pop.dataset.j=j; pop.style.display='block';
+  // horizontally under the tapped bar, kept inside the chart
+  const W=chart.clientWidth, x=(j+0.5)/(_pgSeries[i].length)*W, pw=Math.min(260,W-8);
+  pop.style.width=pw+'px'; pop.style.left=Math.max(4,Math.min(W-pw-4,x-pw/2))+'px';
+}
+// the window with all the player's pagelle (optionally opened on one match)
+function openPlayerPagelle(i,focusId){
+  const p=players[i]; if(!p) return;
+  const list=playerPagelleList(p);
+  let dlg=document.getElementById('pl-dialog');
+  if(!dlg){ dlg=document.createElement('div'); dlg.id='pl-dialog'; dlg.onclick=e=>{ if(e.target===dlg) closePlayerPagelle(); }; document.body.appendChild(dlg); }
+  dlg.innerHTML=`<div class="pgt-box pt-box">
+      <div class="pl-head"><span>📝 Le pagelle di <b>${esc(p.name)}</b></span><button type="button" onclick="closePlayerPagelle()" aria-label="Chiudi">✕</button></div>
+      <div class="pl-list">${list.length?list.map(x=>`<div class="pl-item${x.tit||x.desc?'':' bare'}${x.m.id===focusId?' open focus':''}" id="pl-${x.m.id}" onclick="this.classList.toggle('open')">
+          <div class="pl-top"><span>${formatDate(x.m.date)}</span><span class="pl-v" style="color:${pgVoteCol(x.v)}">${x.v}</span></div>
+          ${x.tit?`<div class="pl-tit">«${esc(x.tit)}»</div>`:''}
+          ${x.desc?`<div class="pl-desc">${waHTML(x.desc)}</div>`:''}
+          <button type="button" class="pl-go" onclick="event.stopPropagation();closePlayerPagelle();closeMatchModal();openMatch('${x.m.id}')">Apri la partita ›</button>
+        </div>`).join(''):'<div class="mb-note" style="text-align:center;padding:16px">Nessuna pagella ancora</div>'}</div>
+      <div class="pl-by">✒️ a cura della Redazione Avv. Peppe Rella</div>
+    </div>`;
+  dlg.style.display='flex';
+  const f=focusId&&document.getElementById('pl-'+focusId); if(f) setTimeout(()=>f.scrollIntoView({block:'center'}),30);
+}
+document.addEventListener('click',e=>{
+  if(e.target.closest&&e.target.closest('.pg-pop')) return;
+  document.querySelectorAll('.pg-pop').forEach(p=>{ if(p.style.display!=='none'){ p.style.display='none'; p.parentElement.querySelectorAll('.pg-bar.sel').forEach(b=>b.classList.remove('sel')); } });
+});
+function closePlayerPagelle(){ const d=document.getElementById('pl-dialog'); if(d) d.style.display='none'; }
+
 function drawPagelle(i,player,container){
   // every number comes from the shared season stats → identical to tables, rankings and dashboard
   const a=playerSeason(player);
@@ -1936,7 +1990,7 @@ function drawPagelle(i,player,container){
   if(!dated.length){
     // player has appearances/goals but no votes yet
     container.innerHTML=`
-      <div class="pg-head"><span class="pg-by">✒️ a cura della Redazione Avv. Peppe Rella</span></div>
+      <div class="pg-head"><span class="pg-title">📈 Pagelle</span></div>
       <div class="pg-grid">
         ${cell('Partite',matchesPlayed,null,14)}
         ${cell('⚽ Gol',totGoals,'var(--green)')}
@@ -2004,9 +2058,17 @@ function drawPagelle(i,player,container){
     const bx=cx-barW/2;
     const by=yToPx(r.rating);
     const bh=padT+plotH-by;
-    return `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" rx="2.5" fill="${barColor(r.rating)}" opacity="0.88"><title>${formatDate(r.date)}: ${r.rating}</title></rect>
+    return `<rect class="pg-bar" data-j="${j}" x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" rx="2.5" fill="${barColor(r.rating)}" opacity="0.88"><title>${formatDate(r.date)}: ${r.rating}</title></rect>
     <text x="${cx.toFixed(1)}" y="${(by-3).toFixed(1)}" font-size="7.5" font-weight="800" fill="var(--text2)" text-anchor="middle">${r.rating}</text>`;
   }).join('');
+
+  // invisible full-height hit areas: one per match, easy to tap on a phone
+  const hits=dated.map((r,j)=>`<rect class="pg-hit" x="${(padL+slotW*j).toFixed(1)}" y="0" width="${slotW.toFixed(1)}" height="${H}" fill="transparent" onclick="pgBarTap(${i},${j},event)"/>`).join('');
+  _pgSeries[i]=dated;
+  const shortD=d=>formatDate(d).slice(0,5);
+  // 📝 latest written pagella (title or description) → opens the whole list
+  const texts=playerPagelleList(player).filter(x=>x.tit||x.desc), lp=texts[0];
+  const lastLine=lp?`<button type="button" class="pg-last" onclick="openPlayerPagelle(${i})">📝 Ultima pagella: ${lp.tit?`<b>«${esc(lp.tit)}»</b>`:`<i>${esc(lp.desc.slice(0,40))}${lp.desc.length>40?'…':''}</i>`} · ${shortD(lp.m.date)} <span class="pg-last-n">${texts.length>1?texts.length+' ›':'›'}</span></button>`:'';
 
   // trend line across bar centers
   const tx1=padL+slotW*0+slotW/2;
@@ -2018,7 +2080,7 @@ function drawPagelle(i,player,container){
     : '';
 
   container.innerHTML=`
-    <div class="pg-head"><span class="pg-by">✒️ a cura della Redazione Avv. Peppe Rella</span><span style="font-size:11px;font-weight:800;color:${trendCol}">${trendArrow} ${trendLabel}</span></div>
+    <div class="pg-head"><span class="pg-title">📈 Pagelle</span><span style="font-size:11px;font-weight:800;color:${trendCol}">${trendArrow} ${trendLabel}</span></div>
     <div class="pg-grid" style="margin-bottom:4px">
       ${cell('Media voto',avg.toFixed(2))}
       ${cell('Partite',matchesPlayed,null,14)}
@@ -2033,12 +2095,17 @@ function drawPagelle(i,player,container){
       ${cell('❌ Rig. sbagliati',totRigori,totRigori>0?'var(--red)':null)}
       ${cell('🚀 Meta',totMeta,totMeta>0?'var(--amber)':null)}
     </div>
-    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:var(--gray);border-radius:8px;display:block">
-      ${grid}
-      ${bars}
-      ${trendLine}
-    </svg>
-    <div style="font-size:9px;color:var(--text3);text-align:center;margin-top:3px">Da ${formatDate(dated[0].date)} a ${formatDate(dated[dated.length-1].date)} · linea tratteggiata = tendenza di tutta la storia</div>
+    <div class="pg-chart" id="pg-chart-${i}">
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:var(--gray);border-radius:8px;display:block">
+        ${grid}
+        ${bars}
+        ${trendLine}
+        ${hits}
+      </svg>
+      <div class="pg-pop" id="pg-pop-${i}" style="display:none"></div>
+    </div>
+    <div class="pg-cap">${shortD(dated[0].date)} → ${shortD(dated[dated.length-1].date)} · ┄ tendenza · tocca una barra</div>
+    ${lastLine}
   `;
 }
 function upStat(i,j,v){
@@ -2047,7 +2114,6 @@ function upStat(i,j,v){
   document.getElementById('b'+i+'-'+j).style.width=(n*10)+'%';
   const o='OVR '+calcOvr(players[i].stats).toFixed(1);
   const ov=document.getElementById('ov'+i); if(ov) ov.textContent=o;
-  const mov=document.getElementById('mov'+i); if(mov) mov.textContent=o;
   const slot=document.getElementById('pslot-'+i); if(slot){ slot.innerHTML=futMiniHTML(i); fitPhotoBand(); }
   save();
 }
