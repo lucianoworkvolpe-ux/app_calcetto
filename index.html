@@ -137,8 +137,10 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .gaz-strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
 .gaz-strip::-webkit-scrollbar{display:none}
 .gaz-tile{flex:0 0 auto;cursor:pointer;text-align:center}
-.gaz-strip .gaz-tile img{width:108px;height:144px;object-fit:cover;border-radius:10px;background:#000;display:block;box-shadow:0 3px 10px rgba(0,0,0,.3)}
+.gaz-strip .gaz-tile img{width:92px;height:123px;object-fit:cover;border-radius:10px;background:#000;display:block;box-shadow:0 3px 10px rgba(0,0,0,.3)}
 .gaz-tile span{display:block;font-size:10px;color:var(--text2);margin-top:4px;font-weight:700}
+.desc-badge{font-size:12px;font-weight:800;color:var(--text2);white-space:nowrap}
+.desc-badge.part{color:#e0a92e}
 .gaz-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:6px}
 .gaz-grid .gaz-tile img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;background:#000;display:block}
 /* 📥 import from WhatsApp */
@@ -818,7 +820,7 @@ input[type=file]{display:none}
 ════════════════════════════════════ */
 // Version of the code that is RUNNING (bump at every release). The installed home-screen app has no reload
 // button and iOS keeps it frozen in memory: comparing this with the file on GitHub tells if it's outdated.
-const APP_VERSION='2026.10.29-t';
+const APP_VERSION='2026.10.29-u';
 let BUILD_DATE='—'; // date of the file ON THE SERVER (Last-Modified of index.html), not of the running code
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
@@ -4037,6 +4039,8 @@ function renderMatchesList(){
 
   const row=m=>{
     const ratedCount=ratings.filter(r=>r.matchId===m.id).length;
+    // ✍️ how many pagelle already have the Redazione's title/description
+    const descCount=ratings.filter(r=>r.matchId===m.id && (String(r.notes||'').trim()||String(r.titolo||'').trim())).length;
     const totalPlayers=(m.teamA?.length||0)+(m.teamB?.length||0);
     const hasRatings=ratedCount>0;
     const score=(m.scoreA!==''&&m.scoreB!=='')?`${m.scoreA} - ${m.scoreB}`:'';
@@ -4046,6 +4050,7 @@ function renderMatchesList(){
           <span style="font-size:13px;font-weight:800;color:var(--text)">${formatDate(m.date)}</span>
           ${score?`<span style="font-size:13px;font-weight:800;color:var(--green)">${score}</span>`:''}
           ${gazOf(m.id)?'<span title="Ha la Gazzetta" style="font-size:13px">📰</span>':''}
+          ${descCount?`<span class="desc-badge${descCount<ratedCount?' part':''}" title="Pagelle con descrizione: ${descCount} su ${ratedCount}">✍️${descCount<ratedCount?` ${descCount}/${ratedCount}`:''}</span>`:''}
         </div>
         <div style="font-size:11px;color:var(--text2)">${totalPlayers} giocatori · ${ratedCount}/${totalPlayers} pagelle</div>
         ${m.notes?`<div style="font-size:11px;color:var(--text3);font-style:italic;margin-top:2px">${esc(m.notes)}</div>`:''}
