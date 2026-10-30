@@ -134,6 +134,23 @@ header{background:linear-gradient(120deg,var(--green) 0%,var(--green-mid) 100%);
 .pl-go{display:none;margin-top:6px;border:none;background:none;color:var(--green);font-weight:800;font-size:12px;padding:0;cursor:pointer;font-family:inherit}
 .pl-item.open .pl-go{display:inline-block}
 .pl-by{font-size:10px;color:var(--text3);text-align:center;font-style:italic;margin-top:8px}
+/* 🏆 Bacheca: summary line + compact body */
+.bach-sum{display:flex;align-items:center;gap:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.bach-sum.static{cursor:default}
+.bach-sumt{font-size:12px;color:var(--text2);font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bach-arr{margin-left:auto;color:var(--text3);font-weight:800;transition:transform var(--tr)}
+.bach.open .bach-arr{transform:rotate(180deg)}
+.bach-body{display:none;margin-top:7px}
+.bach.open .bach-body{display:block}
+.bach-live{display:flex;align-items:center;gap:8px;margin-top:6px;padding:5px 9px;border-radius:9px;background:rgba(255,255,255,.05);border:1px dashed var(--gray3);font-size:12px;color:var(--text2);cursor:pointer}
+.bach-lbl{font-weight:800;white-space:nowrap}
+.bach-emo{font-size:15px;letter-spacing:2px}
+.bach-names{display:none;font-size:11.5px;color:var(--text)}
+.bach-live.open .bach-emo{display:none}.bach-live.open .bach-names{display:inline}
+.bach-more{margin-left:auto;color:var(--text3);font-weight:800}
+.bach-live.open .bach-more{transform:rotate(90deg)}
+.bach-feats{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:12px;color:var(--text2)}
+.bach-feats b{color:var(--text)}
 /* 📝 pagella della Redazione (match card) */
 .pgt-view{margin-top:6px;padding:6px 8px;border-radius:8px;background:rgba(242,201,76,.10);border-left:3px solid #e0b93c;cursor:pointer}
 .pgt-title{font-size:12.5px;font-weight:800;font-style:italic;color:var(--text)}
@@ -850,7 +867,7 @@ input[type=file]{display:none}
 ════════════════════════════════════ */
 // Version of the code that is RUNNING (bump at every release). The installed home-screen app has no reload
 // button and iOS keeps it frozen in memory: comparing this with the file on GitHub tells if it's outdated.
-const APP_VERSION='2026.10.30-g';
+const APP_VERSION='2026.10.30-l';
 let BUILD_DATE='—'; // date of the file ON THE SERVER (Last-Modified of index.html), not of the running code
 const STATS=['stamina','forza','dribling','velocità','tiro','passaggio','attacco','difesa','tecnica','porta','intelligenza'];
 const ICONS=['🏃','💪','⚡','💨','🎯','🔀','⚔️','🛡️','🎨','🧤','🧠'];
@@ -1905,6 +1922,7 @@ async function loadAndRefreshPagelle(i){
 }
 
 // ── 📝 the player's pagelle (vote + Redazione title/description), newest first ──
+const PG_CHART_MAX=10;   // bars shown in the player-card chart
 const _pgSeries={};   // card index → dated votes of its chart (for the bar taps)
 function playerPagelleList(p){
   const key=playerKey(p.id,p.name).key, rs=matchesCache.data?.ratings||[];
@@ -2017,12 +2035,14 @@ function drawPagelle(i,player,container){
   const barColor=v=> v>=6.5?'#3aad5e' : v>=5.5?'#d9a300' : '#d9483b';
 
   // ── linear regression (least squares) over rating series for the trend line ──
-  const n=dated.length;
-  const xsIdx=dated.map((_,j)=>j);
+  // chart: only the last PG_CHART_MAX votes (numbers above stay on the whole history; the full list is in 📝)
+  const ser=dated.slice(-PG_CHART_MAX);
+  const n=ser.length;
+  const xsIdx=ser.map((_,j)=>j);
   const meanX=xsIdx.reduce((s,v)=>s+v,0)/n;
-  const meanY=avg;
+  const meanY=ser.reduce((s,r)=>s+r.rating,0)/n;
   let num=0, den=0;
-  xsIdx.forEach((x,j)=>{num+=(x-meanX)*(dated[j].rating-meanY); den+=(x-meanX)*(x-meanX);});
+  xsIdx.forEach((x,j)=>{num+=(x-meanX)*(ser[j].rating-meanY); den+=(x-meanX)*(x-meanX);});
   const slope=den===0?0:num/den;
   const intercept=meanY-slope*meanX;
   const trendStart=intercept;                 // value at first match
@@ -2038,7 +2058,7 @@ function drawPagelle(i,player,container){
   const plotW=W-padL-padR, plotH=H-padT-padB;
   // scale fits the player's votes: from just below the lowest (never above 3) to just above the highest
   // (never below 8, max 10), so the bars use the whole height of the compact chart
-  const minV=Math.min(...dated.map(r=>r.rating)), maxV=Math.max(...dated.map(r=>r.rating));
+  const minV=Math.min(...ser.map(r=>r.rating)), maxV=Math.max(...ser.map(r=>r.rating));
   const yMin=Math.max(1,Math.min(3,Math.floor(minV)-1));
   const yMax=Math.min(10,Math.max(8,Math.ceil(maxV)+1));
   const yToPx=v=>padT+plotH-((v-yMin)/(yMax-yMin))*plotH;
@@ -2053,7 +2073,7 @@ function drawPagelle(i,player,container){
   }).join('');
 
   // bars
-  const bars=dated.map((r,j)=>{
+  const bars=ser.map((r,j)=>{
     const cx=padL+slotW*j+slotW/2;
     const bx=cx-barW/2;
     const by=yToPx(r.rating);
@@ -2063,8 +2083,8 @@ function drawPagelle(i,player,container){
   }).join('');
 
   // invisible full-height hit areas: one per match, easy to tap on a phone
-  const hits=dated.map((r,j)=>`<rect class="pg-hit" x="${(padL+slotW*j).toFixed(1)}" y="0" width="${slotW.toFixed(1)}" height="${H}" fill="transparent" onclick="pgBarTap(${i},${j},event)"/>`).join('');
-  _pgSeries[i]=dated;
+  const hits=ser.map((r,j)=>`<rect class="pg-hit" x="${(padL+slotW*j).toFixed(1)}" y="0" width="${slotW.toFixed(1)}" height="${H}" fill="transparent" onclick="pgBarTap(${i},${j},event)"/>`).join('');
+  _pgSeries[i]=ser;
   const shortD=d=>formatDate(d).slice(0,5);
   // 📝 latest written pagella (title or description) → opens the whole list
   const texts=playerPagelleList(player).filter(x=>x.tit||x.desc), lp=texts[0];
@@ -2104,7 +2124,7 @@ function drawPagelle(i,player,container){
       </svg>
       <div class="pg-pop" id="pg-pop-${i}" style="display:none"></div>
     </div>
-    <div class="pg-cap">${shortD(dated[0].date)} → ${shortD(dated[dated.length-1].date)} · ┄ tendenza · tocca una barra</div>
+    <div class="pg-cap">${dated.length>n?`ultime ${n} · `:''}${shortD(ser[0].date)} → ${shortD(ser[n-1].date)} · ┄ tendenza · tocca una barra</div>
     ${lastLine}
   `;
 }
@@ -3183,36 +3203,51 @@ function drawFutCard(p, photoImg){
   shield(16); ctx.strokeStyle=t.line; ctx.globalAlpha=0.85; ctx.lineWidth=2.5; ctx.stroke();
   shield(20); ctx.strokeStyle='rgba(0,0,0,0.22)'; ctx.lineWidth=1.5; ctx.stroke(); ctx.globalAlpha=1;
   if(crisi){ ctx.save(); shield(0); ctx.clip();
-    ctx.globalCompositeOperation='saturation'; ctx.fillStyle='rgba(128,128,128,0.6)'; ctx.fillRect(x,y,w,h);   // colours washed out
+    ctx.globalCompositeOperation='saturation'; ctx.fillStyle='rgba(128,128,128,0.55)'; ctx.fillRect(x,y,w,h);   // colours washed out (not too dark)
     ctx.globalCompositeOperation='source-over';
-    const oc=ctx.createLinearGradient(0,y,0,y+340); oc.addColorStop(0,'rgba(18,24,34,0.5)'); oc.addColorStop(1,'rgba(18,24,34,0)');
-    ctx.fillStyle=oc; ctx.fillRect(x,y,w,340); ctx.restore(); }
+    const oc=ctx.createLinearGradient(0,y,0,y+340); oc.addColorStop(0,'rgba(18,24,34,0.28)'); oc.addColorStop(1,'rgba(18,24,34,0)');
+    ctx.fillStyle=oc; ctx.fillRect(x,y,w,340);
+    ctx.restore(); }
+  if(fire){ ctx.save(); shield(0); ctx.clip();   // warm heat over the whole card
+    const hg=ctx.createLinearGradient(0,y+h,0,y); hg.addColorStop(0,'rgba(255,90,0,0.34)'); hg.addColorStop(0.55,'rgba(255,150,0,0.12)'); hg.addColorStop(1,'rgba(255,190,60,0.04)');
+    ctx.fillStyle=hg; ctx.fillRect(x,y,w,h); ctx.restore(); }
 
   // embossed text helper
   const etext=(txt,tx,ty,font,col,align)=>{ ctx.font=font; ctx.textAlign=align||'center';
     ctx.save(); ctx.fillStyle=t.emboss; ctx.fillText(txt,tx,ty+2.5); ctx.restore();
     ctx.save(); ctx.shadowColor='rgba(0,0,0,0.25)'; ctx.shadowBlur=4; ctx.fillStyle=col; ctx.fillText(txt,tx,ty); ctx.restore(); };
 
-  // ── photo (fades into the card) or big initials ──
-  const px=x+232, py=y+64, ps=320;
-  if(photoImg){
-    const oc=document.createElement('canvas'); oc.width=oc.height=ps*2; const o=oc.getContext('2d'); o.scale(2,2);
-    const s=Math.max(ps/photoImg.naturalWidth, ps/photoImg.naturalHeight);
-    const iw=photoImg.naturalWidth*s, ih=photoImg.naturalHeight*s;
-    o.drawImage(photoImg,(ps-iw)/2,(ps-ih)/2,iw,ih);
-    o.globalCompositeOperation='destination-in';
-    const m=o.createLinearGradient(0,0,0,ps); m.addColorStop(0,'rgba(0,0,0,0)'); m.addColorStop(0.14,'rgba(0,0,0,1)'); m.addColorStop(0.66,'rgba(0,0,0,1)'); m.addColorStop(1,'rgba(0,0,0,0)');
-    o.fillStyle=m; o.fillRect(0,0,ps,ps);
-    const mx=o.createLinearGradient(0,0,ps,0); mx.addColorStop(0,'rgba(0,0,0,0)'); mx.addColorStop(0.12,'rgba(0,0,0,1)'); mx.addColorStop(0.88,'rgba(0,0,0,1)'); mx.addColorStop(1,'rgba(0,0,0,0)');
-    o.fillStyle=mx; o.fillRect(0,0,ps,ps);
-    ctx.save(); ctx.shadowColor='rgba(0,0,0,0.35)'; ctx.shadowBlur=18; ctx.drawImage(oc,px,py,ps,ps); ctx.restore();
-  }else{
-    const icx=px+ps/2, icy=py+ps/2-6;
-    const ig=ctx.createRadialGradient(icx-30,icy-40,10,icx,icy,130); ig.addColorStop(0,'rgba(255,255,255,0.45)'); ig.addColorStop(1,'rgba(0,0,0,0.18)');
-    ctx.beginPath(); ctx.arc(icx,icy,128,0,Math.PI*2); ctx.fillStyle=ig; ctx.fill();
-    ctx.strokeStyle=t.line; ctx.lineWidth=3; ctx.stroke();
-    etext(ini(p.name).replace(/&#0?39;/g,"'"),icx,icy+40,F('900 112px'),t.text);
+  // ── photo (or big initials) in a circle; the ring follows the state: 🔥 crown of flames · 🌧️ storm · otherwise the tier metal ──
+  const ps=320, S=290, ox=x+232+(ps-S)/2, oy=y+64+(ps-S)/2-4, ccx=ox+S/2, ccy=oy+S/2, R=S/2;
+  const circ=(r)=>{ ctx.beginPath(); ctx.arc(ccx,ccy,r,0,Math.PI*2); };
+  if(fire){ // 🔥 red-hot ring: wide warm glow + sparks rising above the photo
+    ctx.save(); const gl=ctx.createRadialGradient(ccx,ccy,R-10,ccx,ccy,R+60); gl.addColorStop(0,'rgba(255,140,0,0.75)'); gl.addColorStop(0.5,'rgba(255,70,0,0.3)'); gl.addColorStop(1,'rgba(255,40,0,0)');
+    ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(ccx,ccy,R+60,0,Math.PI*2); ctx.fill(); ctx.restore();
+    for(let k=0;k<38;k++){ const a=Math.PI*1.05+rnd()*Math.PI*0.9, d=R+6+rnd()*70, sx=ccx+Math.cos(a)*d, sy=ccy+Math.sin(a)*d-rnd()*30;
+      ctx.save(); ctx.globalAlpha=0.5+rnd()*0.5; ctx.shadowColor='#ff7a00'; ctx.shadowBlur=10; ctx.beginPath(); ctx.arc(sx,sy,1.5+rnd()*3.2,0,Math.PI*2); ctx.fillStyle=rnd()>0.5?'#ffd166':'#ff8a1f'; ctx.fill(); ctx.restore(); }
   }
+  ctx.save(); ctx.shadowColor=fire?'#ff6a00':'rgba(0,0,0,0.45)'; ctx.shadowBlur=fire?40:22; ctx.shadowOffsetY=fire?0:6;
+  circ(R); ctx.fillStyle=t.metal[3]; ctx.fill(); ctx.restore();
+  ctx.save(); circ(R); ctx.clip();
+  if(photoImg){
+    const sc=Math.max(S/photoImg.naturalWidth, S/photoImg.naturalHeight), iw=photoImg.naturalWidth*sc, ih=photoImg.naturalHeight*sc;
+    ctx.drawImage(photoImg,ox+(S-iw)/2,oy+(S-ih)/2,iw,ih);
+  }else{
+    const ig=ctx.createRadialGradient(ccx-30,ccy-40,10,ccx,ccy,R); ig.addColorStop(0,'rgba(255,255,255,0.45)'); ig.addColorStop(1,'rgba(0,0,0,0.18)');
+    ctx.fillStyle=ig; ctx.fillRect(ox,oy,S,S);
+    etext(ini(p.name).replace(/&#0?39;/g,"'"),ccx,ccy+40,F('900 112px'),t.text);
+  }
+  if(crisi){ // 🌧️ the photo stays in colour: a cold light and the rain on it
+    ctx.fillStyle='rgba(40,70,110,0.14)'; ctx.fillRect(ox,oy,S,S);
+    rain(110,0.5,oy-20,oy+S);
+  }
+  ctx.restore();
+  const ringC=fire?['#fff1a8','#ff8a00','#e0230b']:crisi?['#c3ccd8','#5d6a7d','#2c3440']:[t.line,t.metal[2],t.line];
+  const rg=ctx.createLinearGradient(ox,oy,ox+S,oy+S); rg.addColorStop(0,ringC[0]); rg.addColorStop(0.5,ringC[1]); rg.addColorStop(1,ringC[2]);
+  ctx.save(); if(fire){ ctx.shadowColor='#ff8a00'; ctx.shadowBlur=18; }
+  circ(R); ctx.lineWidth=fire||crisi?11:9; ctx.strokeStyle=rg; ctx.stroke(); ctx.restore();
+  ctx.save(); circ(R-6); ctx.lineWidth=1.5; ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.stroke(); ctx.restore();
+  if(crisi){ cloud(ox+S*0.2,oy+10,0.5,0.97); bolt(ox+S*0.1,oy+34,0.5); }   // a small storm sitting on the ring
 
   // ── tier label on top, then rating + PAGELLE badge (same colours as the app), roles, club badge ──
   etext(t.label.split('').join(' '),cx,y+40,F('800 17px'),t.sub);
@@ -3325,7 +3360,7 @@ function drawFutCard(p, photoImg){
     ctx.fillStyle='#ffffff'; ctx.textAlign='center'; ctx.font=F('900 21px');
     ctx.shadowColor=textShadow; ctx.shadowBlur=4; ctx.fillText(label,0,8); ctx.restore(); };
   if(crisi){
-    ctx.save(); shield(0); ctx.clip(); rain(70,0.32,y-20,y+h); ctx.restore();   // rain falling on the card too
+    ctx.save(); shield(0); ctx.clip(); rain(160,0.42,y-20,y+h); ctx.restore();   // rain falling on the card too
     cloud(x+62,y+8,0.62,0.95);                                                     // a cloud sitting on the top-left corner
     ribbon('IN CRISI',['#a3b0c2','#5d6a7d','#2c3440'],'rgba(10,14,22,0.9)');
   }
@@ -3335,9 +3370,11 @@ function drawFutCard(p, photoImg){
     ctx.fillStyle=fd; ctx.fillRect(0,y+h-6,W,70);
     ribbon('ON FIRE',['#ffd23f','#ff7a00','#e0230b'],'rgba(120,20,0,0.8)');
   }
+  if(fire||crisi){ ctx.save(); shield(0); ctx.lineWidth=7;   // the whole card edge lit by the state
+    ctx.strokeStyle=fire?'#ff8a1f':'#7f93ad'; ctx.shadowColor=fire?'#ff6a00':'#4d6585'; ctx.shadowBlur=34; ctx.stroke(); ctx.restore(); }
   // caption under the card
   ctx.fillStyle='#8a94a6'; ctx.font=F('italic 500 18px'); ctx.textAlign='center';
-  ctx.fillText('CalcioLercio · figurina ufficiale della Redazione Avv. Peppe Rella',W/2,H-38);
+  ctx.fillText('CalcioLercio · figurina ufficiale',W/2,H-38);
   ctx.font=F('500 12px'); ctx.fillStyle='#5d6676'; ctx.fillText('v'+APP_VERSION,W/2,H-16);
   return canvas;
 }
@@ -4305,16 +4342,31 @@ function playerTrophies(p){
   const feats=FEATS.map(f=>({k:f.k,t:f.t,d:f.d,count:seasons.reduce((s,S)=>s+((S.feats[f.k]||[]).find(x=>x.name===name)?.count||0),0)})).filter(f=>f.count>0);
   return {awards,feats};
 }
+// 🏆 Bacheca: one summary line (tap to open) → won trophies grouped, "in lizza" as a row of emoji, imprese as text
+let bachecaOpen=false;   // stays as chosen while the app is open, to compare several players
+const shortSeason=s=>String(s).replace(/^(\S{3})\S*\s+20(\d{2})/,'$1 $2');   // "Estate 2026" → "Est 26"
+function bachecaHTML(p){
+  const tr=playerTrophies(p), won=tr.awards.filter(a=>!a.live), live=tr.awards.filter(a=>a.live);
+  const nW=won.length, nL=live.length, nF=tr.feats.length;
+  const parts=[nW?`${nW} ${nW===1?'trofeo':'trofei'}`:'', nL?`${nL} in lizza`:'', nF?`${nF} ${nF===1?'impresa':'imprese'}`:''].filter(Boolean).join(' · ');
+  if(!parts) return `<div class="pe-sec"><div class="bach-sum static"><span class="pe-title" style="margin:0">🏆 Bacheca</span><span class="bach-sumt">Ancora nessun trofeo</span></div></div>`;
+  const g={}; won.forEach(a=>{ (g[a.k]=g[a.k]||{t:a.t,shame:a.shame,s:[]}).s.push(shortSeason(a.season)); });   // same award in more seasons → ×N
+  const chips=Object.values(g).map(x=>`<span class="trophy${x.shame?' shame':''}">${x.t}${x.s.length>1?` <b>×${x.s.length}</b>`:''}<small>${x.s.join(', ')}</small></span>`).join('');
+  const lizza=nL?`<div class="bach-live" onclick="this.classList.toggle('open')" title="Premi della stagione in corso: possono ancora cambiare">
+      <span class="bach-lbl">⏳ In lizza · ${[...new Set(live.map(a=>shortSeason(a.season)))].join(', ')}</span>
+      <span class="bach-emo">${live.map(a=>a.t.split(' ')[0]).join(' ')}</span><span class="bach-names">${live.map(a=>esc(a.t)).join(' · ')}</span><span class="bach-more">›</span></div>`:'';
+  const feats=nF?`<div class="bach-feats">${tr.feats.map(f=>`<span title="${f.d}">${f.t} <b>×${f.count}</b></span>`).join('')}</div>`:'';
+  return `<div class="pe-sec bach${bachecaOpen?' open':''}">
+      <div class="bach-sum" onclick="toggleBacheca(this)"><span class="pe-title" style="margin:0">🏆 Bacheca</span><span class="bach-sumt">${parts}</span><span class="bach-arr">▾</span></div>
+      <div class="bach-body">${chips?`<div class="trophies">${chips}</div>`:''}${lizza}${feats}</div>
+    </div>`;
+}
+function toggleBacheca(el){ const s=el.closest('.bach'); bachecaOpen=!s.classList.contains('open'); s.classList.toggle('open',bachecaOpen); }
 function playerExtrasHTML(p){
-  const tr=playerTrophies(p);
-  const trophies=tr.awards.map(a=>`<span class="trophy${a.shame?' shame':''}">${a.t}<small>${a.season}${a.live?' · in corso':''}</small></span>`);
-  const feats=tr.feats.map(f=>`<span class="feat" title="${f.d}">${f.t} <b>×${f.count}</b></span>`).join('');
   const q=playerPairs(p), pct=(a,b)=>`${a} ${a===1?(b==='v'?'vinta':'persa'):(b==='v'?'vinte':'perse')}`;
   const line=(ico,lbl,c,kind)=>c?`<div class="pair-line"><span class="pair-l">${ico} ${lbl}</span><span class="pair-n">${nameLink(c.name)}</span><span class="pair-v">${kind==='v'?pct(c.w,'v'):pct(c.l,'p')} su ${c.n}</span></div>`:'';
   const pairs=line('🤝','Compagno d\'oro',q.friend,'v')+line('💔','Compagno maledetto',q.cursed,'p')+line('😈','Bestia nera',q.nemesis,'p')+line('🎯','Vittima preferita',q.victim,'v');
-  return `<div class="pe-sec"><div class="pe-title">🏆 Bacheca</div>
-      ${trophies.length||feats?`<div class="trophies">${trophies.join('')}${feats}</div>`:'<div class="pe-empty">Ancora nessun trofeo</div>'}
-    </div>
+  return `${bachecaHTML(p)}
     <div class="pe-sec"><div class="pe-title">🤝 Compagni e avversari<button class="pe-cmp" onclick="compareFrom(${players.indexOf(p)})">⚔️ Confronta</button></div>
       ${pairs||'<div class="pe-empty">Servono almeno 3 partite con o contro lo stesso giocatore, e un bilancio di più di metà</div>'}
     </div>`;
@@ -4644,7 +4696,7 @@ function drawCompareCard(ia,ib,scope,ims){
     if(L===-1){ ctx.beginPath(); ctx.arc(550,y-7,5,0,Math.PI*2); ctx.fillStyle=CB; ctx.fill(); }
   });
   // footer
-  txt('CalcioLercio · Redazione Avv. Peppe Rella',W/2,H-40,F('italic 500 18px'),'#8a94a6');
+  txt('CalcioLercio · confronto ufficiale',W/2,H-40,F('italic 500 18px'),'#8a94a6');
   txt('v'+APP_VERSION,W/2,H-16,F('500 12px'),'#5d6676');
   return canvas;
 }
